@@ -75,34 +75,22 @@ export default function Navbar() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            gap: "12px",
             textDecoration: "none",
             flexShrink: 0,
           }}
         >
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              background: "linear-gradient(135deg, #C9971A, #E8B830)",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "Frank Ruhl Libre, serif",
-              fontWeight: 900,
-              color: "#060E1E",
-              fontSize: "13px",
-              letterSpacing: "-0.5px",
-              flexShrink: 0,
-            }}
-          >
-            ד״ה
-          </div>
+          <img
+            src="/logo.jpg"
+            alt={lang === "he" ? "דחיפה להגשמה" : "Push for Fulfillment"}
+            width={40}
+            height={40}
+            style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+          />
           <div style={{ lineHeight: 1.2 }}>
             <div
               style={{
-                color: "#fff",
+                color: "var(--ink)",
                 fontFamily: "Frank Ruhl Libre, serif",
                 fontWeight: 700,
                 fontSize: "16px",
@@ -112,11 +100,12 @@ export default function Navbar() {
             </div>
             <div
               style={{
-                color: "rgba(232,184,48,0.85)",
+                color: "var(--ink-2)",
                 fontSize: "10px",
-                fontWeight: 300,
-                letterSpacing: "1px",
+                fontWeight: 500,
+                letterSpacing: "0.12em",
                 textTransform: "uppercase",
+                fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
               }}
             >
               {lang === "he" ? "Push for Fulfillment" : "דחיפה להגשמה"}
@@ -167,9 +156,9 @@ export default function Navbar() {
               gap: "6px",
               padding: "7px 12px",
               borderRadius: "6px",
-              background: "rgba(255,255,255,0.1)",
-              color: "rgba(255,255,255,0.8)",
-              border: "1px solid rgba(255,255,255,0.15)",
+              background: "var(--paper)",
+              color: "var(--ink-2)",
+              border: "1px solid var(--hair)",
               cursor: "pointer",
               fontSize: "13px",
               fontFamily: "inherit",
@@ -185,7 +174,7 @@ export default function Navbar() {
           {loading ? null : user ? (
             <>
               <span
-                style={{ color: "rgba(255,255,255,0.85)", fontSize: "13px" }}
+                style={{ color: "var(--ink-2)", fontSize: "13px" }}
                 title={user.email || ""}
               >
                 {t.auth.welcome}
@@ -226,9 +215,9 @@ export default function Navbar() {
           <button
             onClick={toggleLang}
             style={{
-              background: "rgba(255,255,255,0.1)",
+              background: "var(--paper)",
               border: "none",
-              color: "rgba(255,255,255,0.8)",
+              color: "var(--ink-2)",
               padding: "6px 10px",
               borderRadius: "6px",
               cursor: "pointer",
@@ -244,7 +233,7 @@ export default function Navbar() {
             style={{
               background: "none",
               border: "none",
-              color: "#fff",
+              color: "var(--ink)",
               cursor: "pointer",
               padding: "6px",
               display: "flex",
@@ -260,8 +249,8 @@ export default function Navbar() {
         <div
           className="hide-desktop"
           style={{
-            background: "var(--navy)",
-            borderTop: "1px solid rgba(255,255,255,0.1)",
+            background: "var(--paper)",
+            borderTop: "1px solid var(--hair)",
             padding: "12px 16px 20px",
           }}
         >
