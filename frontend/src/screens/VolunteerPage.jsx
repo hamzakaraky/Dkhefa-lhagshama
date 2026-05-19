@@ -48,7 +48,7 @@ export default function VolunteerPage() {
     setSelectedAreas([])
   }
 
-  const STATUS_COLORS = { available:'#15803D', assigned:'#C9971A' }
+  const STATUS_COLORS = { available:'#2E6E45', assigned:'var(--ember)' }
 
   return (
     <>
@@ -113,15 +113,15 @@ export default function VolunteerPage() {
                       <label key={area} style={{
                         display:'flex', alignItems:'center', gap:'8px',
                         padding:'9px 13px', borderRadius:'8px',
-                        border:`1.5px solid ${selectedAreas.includes(area) ? 'var(--navy)' : 'var(--gray-200)'}`,
-                        background: selectedAreas.includes(area) ? '#EBF0FA' : 'var(--white)',
+                        border:`1px solid ${selectedAreas.includes(area) ? 'var(--ember)' : 'var(--hair)'}`,
+                        background: selectedAreas.includes(area) ? 'var(--sky-2)' : 'var(--paper)',
                         cursor:'pointer', fontSize:'13px', transition:'all .18s',
                       }}>
                         <input
                           type="checkbox"
                           checked={selectedAreas.includes(area)}
                           onChange={() => toggleArea(area)}
-                          style={{ accentColor:'var(--navy)', width:'15px', height:'15px' }}
+                          style={{ accentColor:'var(--ember)', width:'15px', height:'15px' }}
                         />
                         {area}
                       </label>
@@ -136,13 +136,13 @@ export default function VolunteerPage() {
                       <label key={val} style={{
                         display:'flex', alignItems:'center', gap:'8px',
                         padding:'10px 14px', borderRadius:'8px',
-                        border:`1.5px solid ${values.availability === val ? 'var(--navy)' : 'var(--gray-200)'}`,
-                        background: values.availability === val ? '#EBF0FA' : 'var(--white)',
+                        border:`1px solid ${values.availability === val ? 'var(--ember)' : 'var(--hair)'}`,
+                        background: values.availability === val ? 'var(--sky-2)' : 'var(--paper)',
                         cursor:'pointer', fontSize:'13.5px', transition:'all .18s',
                       }}>
                         <input type="radio" name="availability" value={val}
                           checked={values.availability === val} onChange={handleChange}
-                          style={{ accentColor:'var(--navy)' }} />
+                          style={{ accentColor:'var(--ember)' }} />
                         {label}
                       </label>
                     ))}
@@ -168,8 +168,8 @@ export default function VolunteerPage() {
             <div style={{ display:'flex', flexDirection:'column', gap:'14px' }}>
               {volunteers.map(vol => (
                 <div key={vol.id} style={{
-                  background:'var(--white)', borderRadius:'var(--radius)',
-                  border:'1px solid var(--gray-200)',
+                  background:'var(--paper)', borderRadius:'var(--radius)',
+                  border:'1px solid var(--hair)',
                   padding:'18px 20px',
                   display:'grid', gridTemplateColumns:'52px 1fr auto',
                   gap:'14px', alignItems:'center',
@@ -181,10 +181,10 @@ export default function VolunteerPage() {
                   {/* Avatar */}
                   <div style={{
                     width:'52px', height:'52px', borderRadius:'50%',
-                    background:'var(--navy)',
+                    background:'var(--ink)',
                     display:'flex', alignItems:'center', justifyContent:'center',
-                    fontFamily:'Frank Ruhl Libre, serif', fontWeight:900,
-                    color:'var(--gold-light)', fontSize:'17px',
+                    fontFamily:'Frank Ruhl Libre, serif', fontWeight:700,
+                    color:'var(--cream)', fontSize:'17px',
                   }}>
                     {vol.initials}
                   </div>
