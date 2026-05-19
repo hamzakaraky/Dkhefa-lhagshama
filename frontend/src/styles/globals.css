@@ -60,6 +60,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
 }
 
 body {
@@ -68,6 +69,7 @@ body {
   color: var(--gray-800);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* LTR mode (English) */
@@ -321,30 +323,52 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
 }
 
 /* ─────────────────────────────────────────
-   NAVBAR
+   NAVBAR (dark editorial — ink background, cream text)
 ───────────────────────────────────────── */
 .navbar {
-  background: var(--paper);
-  border-bottom: 1px solid var(--hair);
+  background: var(--ink);
+  border-bottom: 1px solid var(--ink-2);
   position: sticky;
   top: 0;
   z-index: 200;
-  box-shadow: 0 1px 0 rgba(15,30,45,0.04);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.15);
 }
 .nav-link {
   padding: 8px 13px;
   border-radius: 6px;
   font-size: 13.5px;
-  color: var(--ink-2);
+  color: rgba(244,238,224,0.78);
   cursor: pointer;
   transition: all 0.18s;
   background: none;
   border: none;
   font-family: inherit;
   white-space: nowrap;
+  text-decoration: none;
 }
-.nav-link:hover { color: var(--ink); background: rgba(15,30,45,0.06); }
+.nav-link:hover { color: var(--cream); background: rgba(244,238,224,0.08); }
 .nav-link.active { color: var(--ember); }
+
+/* Nav-only button variants — work on dark ink background */
+.btn-nav-primary {
+  background: var(--ember);
+  color: var(--cream);
+  border: 1px solid var(--ember);
+}
+.btn-nav-primary:hover:not(:disabled) {
+  background: #A65B43;
+  border-color: #A65B43;
+}
+.btn-nav-outline {
+  background: transparent;
+  color: var(--cream);
+  border: 1.5px solid rgba(244,238,224,0.35);
+}
+.btn-nav-outline:hover:not(:disabled) {
+  background: rgba(244,238,224,0.08);
+  border-color: var(--cream);
+  color: var(--cream);
+}
 
 /* ─────────────────────────────────────────
    HERO
@@ -356,6 +380,33 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   background-image:
     radial-gradient(circle at 15% 50%, rgba(185,105,78,0.05) 0%, transparent 60%),
     radial-gradient(circle at 85% 20%, rgba(15,30,45,0.04) 0%, transparent 60%);
+}
+
+/* Hero 2-col grid — logo (start side: right in HE, left in EN) + copy.
+   First child in DOM goes to inline-start automatically thanks to writing direction. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  gap: 56px;
+  align-items: center;
+}
+.hero-mark {
+  display: flex;
+  justify-content: center;
+}
+.hero-copy {
+  min-width: 0;
+  text-align: start;
+}
+.hero-copy .section-lede { max-width: 100%; }
+@media (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    text-align: center;
+  }
+  .hero-copy { text-align: center; }
+  .hero-copy > div:last-child { justify-content: center; }
 }
 
 /* ─────────────────────────────────────────
@@ -518,9 +569,14 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
 ───────────────────────────────────────── */
 @media (max-width: 768px) {
   .section-padding { padding: 48px 0; }
+}
+/* Nav uses a wider breakpoint than the body — the full desktop nav (logo +
+   wordmark + 6 links + lang + 2 auth buttons) needs ≥1100px to breathe.
+   Below that, switch to the hamburger menu. */
+@media (max-width: 1099px) {
   .hide-mobile { display: none !important; }
 }
-@media (min-width: 769px) {
+@media (min-width: 1100px) {
   .hide-desktop { display: none !important; }
 }
 

@@ -24,50 +24,62 @@ export default function HomePage() {
   return (
     <main>
       {/* ── HERO ────────────────────────────────────────── */}
-      <section style={{ background:'var(--sky-2)', padding:'88px 0 96px', position:'relative', overflow:'hidden' }}>
+      <section style={{ background:'var(--sky-2)', padding:'72px 0 88px', position:'relative', overflow:'hidden' }}>
         <div className="hero-pattern" style={{ position:'absolute', inset:0, pointerEvents:'none' }} />
-        <div className="page-container" style={{ position:'relative', zIndex:1, textAlign:'center' }}>
-          <img
-            src="/logo.jpg"
-            alt={lang === 'he' ? 'דחיפה להגשמה' : 'Push for Fulfillment'}
-            width={88}
-            height={88}
-            style={{ borderRadius:'50%', objectFit:'cover', marginBottom:'24px', boxShadow:'var(--shadow)' }}
-          />
-          <div className="section-eyebrow" style={{ textAlign:'center' }}>
-            {t.hero.badge}
-          </div>
-          <h1 className="section-display" style={{
-            fontSize:'clamp(34px, 5.5vw, 60px)',
-            maxWidth:'48rem',
-            margin:'0 auto 18px',
-            fontWeight:400,
-          }}>
-            {t.hero.title1}{' '}
-            <em>{t.hero.titleHighlight}</em>
-            <br />{t.hero.title2}
-          </h1>
-          <p className="section-lede" style={{ margin:'0 auto 36px', textAlign:'center' }}>
-            {t.hero.subtitle}
-          </p>
-          <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', justifyContent:'center', marginBottom:'56px' }}>
-            <button className="btn btn-primary btn-lg" onClick={() => navigate('/requests')}>
-              {t.hero.cta}
-              <ArrowIcon size={16} />
-            </button>
-            <button
-              className="btn btn-outline btn-lg"
-              onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior:'smooth' })}
-            >
-              {t.hero.ctaSecondary}
-            </button>
+        <div className="page-container" style={{ position:'relative', zIndex:1 }}>
+          {/* Two-column grid — logo first in DOM → start side (right in HE, left in EN) */}
+          <div className="hero-grid">
+            <div className="hero-mark">
+              <img
+                src="/logo.jpg"
+                alt={lang === 'he' ? 'דחיפה להגשמה' : 'Push for Fulfillment'}
+                style={{
+                  width:'min(320px, 70vw)',
+                  height:'min(320px, 70vw)',
+                  borderRadius:'50%',
+                  objectFit:'cover',
+                  boxShadow:'var(--shadow-lg)',
+                  border:'6px solid var(--paper)',
+                }}
+              />
+            </div>
+            <div className="hero-copy">
+              <div className="section-eyebrow">
+                {t.hero.badge}
+              </div>
+              <h1 className="section-display" style={{
+                fontSize:'clamp(30px, 4.8vw, 54px)',
+                margin:'0 0 18px',
+                fontWeight:400,
+              }}>
+                {t.hero.title1}{' '}
+                <em>{t.hero.titleHighlight}</em>
+                <br />{t.hero.title2}
+              </h1>
+              <p className="section-lede" style={{ margin:'0 0 32px' }}>
+                {t.hero.subtitle}
+              </p>
+              <div style={{ display:'flex', gap:'12px', flexWrap:'wrap', marginBottom:'8px' }}>
+                <button className="btn btn-primary btn-lg" onClick={() => navigate('/requests')}>
+                  {t.hero.cta}
+                  <ArrowIcon size={16} />
+                </button>
+                <button
+                  className="btn btn-outline btn-lg"
+                  onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior:'smooth' })}
+                >
+                  {t.hero.ctaSecondary}
+                </button>
+              </div>
+            </div>
           </div>
 
-          {/* STATS ROW */}
+          {/* STATS ROW — full-width band below the hero grid */}
           <div style={{
             display:'grid', gridTemplateColumns:'repeat(4, 1fr)',
             gap:'1px', background:'var(--hair)',
-            borderRadius:'14px', overflow:'hidden', maxWidth:'620px', margin:'0 auto',
+            borderRadius:'14px', overflow:'hidden',
+            maxWidth:'720px', margin:'56px auto 0',
           }}>
             {[
               { num: mockStats.beneficiaries, suffix:'',  label: t.hero.stats.beneficiaries },

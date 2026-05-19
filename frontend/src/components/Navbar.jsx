@@ -90,7 +90,7 @@ export default function Navbar() {
           <div style={{ lineHeight: 1.2 }}>
             <div
               style={{
-                color: "var(--ink)",
+                color: "var(--cream)",
                 fontFamily: "Frank Ruhl Libre, serif",
                 fontWeight: 700,
                 fontSize: "16px",
@@ -100,7 +100,7 @@ export default function Navbar() {
             </div>
             <div
               style={{
-                color: "var(--ink-2)",
+                color: "rgba(244,238,224,0.6)",
                 fontSize: "10px",
                 fontWeight: 500,
                 letterSpacing: "0.12em",
@@ -113,93 +113,100 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* DESKTOP LINKS */}
+        {/* DESKTOP TRAILING GROUP — links + controls in one container
+            so only ONE marginInlineStart:auto fires (prevents EN overflow) */}
         <div
           className="hide-mobile"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "2px",
+            gap: "16px",
             marginInlineStart: "auto",
+            minWidth: 0,
           }}
         >
-          {links.map((l) => (
-            <NavLink
-              key={l.key}
-              to={l.to}
-              className={({ isActive }) =>
-                `nav-link${isActive ? " active" : ""}`
-              }
-              end={l.to === "/"}
-            >
-              {l.label || t.nav[l.key]}
-            </NavLink>
-          ))}
-        </div>
-
-        {/* RIGHT CONTROLS */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            marginInlineStart: "auto",
-          }}
-          className="hide-mobile"
-        >
-          {/* Language toggle */}
-          <button
-            onClick={toggleLang}
+          <div
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "6px",
-              padding: "7px 12px",
-              borderRadius: "6px",
-              background: "var(--paper)",
-              color: "var(--ink-2)",
-              border: "1px solid var(--hair)",
-              cursor: "pointer",
-              fontSize: "13px",
-              fontFamily: "inherit",
-              transition: "all .2s",
+              gap: "2px",
             }}
-            title={lang === "he" ? "Switch to English" : "החלף לעברית"}
           >
-            <Globe size={14} />
-            {lang === "he" ? "EN" : "עב"}
-          </button>
+            {links.map((l) => (
+              <NavLink
+                key={l.key}
+                to={l.to}
+                className={({ isActive }) =>
+                  `nav-link${isActive ? " active" : ""}`
+                }
+                end={l.to === "/"}
+              >
+                {l.label || t.nav[l.key]}
+              </NavLink>
+            ))}
+          </div>
 
-          {/* Auth controls */}
-          {loading ? null : user ? (
-            <>
-              <span
-                style={{ color: "var(--ink-2)", fontSize: "13px" }}
-                title={user.email || ""}
-              >
-                {t.auth.welcome}
-                {user.email ? `, ${user.email.split("@")[0]}` : ""}
-              </span>
-              <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-                {t.auth.logout}
-              </button>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={() => navigate("/requests")}
-              >
-                {t.nav.submitBtn}
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/login" className="btn btn-outline btn-sm">
-                {t.auth.login.title}
-              </Link>
-              <Link href="/register" className="btn btn-primary btn-sm">
-                {t.auth.register.title}
-              </Link>
-            </>
-          )}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            {/* Language toggle */}
+            <button
+              onClick={toggleLang}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "7px 12px",
+                borderRadius: "6px",
+                background: "transparent",
+                color: "var(--cream)",
+                border: "1px solid rgba(244,238,224,0.25)",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontFamily: "inherit",
+                transition: "all .2s",
+              }}
+              title={lang === "he" ? "Switch to English" : "החלף לעברית"}
+            >
+              <Globe size={14} />
+              {lang === "he" ? "EN" : "עב"}
+            </button>
+
+            {/* Auth controls */}
+            {loading ? null : user ? (
+              <>
+                <span
+                  style={{ color: "rgba(244,238,224,0.7)", fontSize: "13px" }}
+                  title={user.email || ""}
+                >
+                  {t.auth.welcome}
+                  {user.email ? `, ${user.email.split("@")[0]}` : ""}
+                </span>
+                <button className="btn btn-nav-outline btn-sm" onClick={handleLogout}>
+                  {t.auth.logout}
+                </button>
+                <button
+                  className="btn btn-nav-primary btn-sm"
+                  onClick={() => navigate("/requests")}
+                >
+                  {t.nav.submitBtn}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="btn btn-nav-outline btn-sm">
+                  {t.auth.login.title}
+                </Link>
+                <Link href="/register" className="btn btn-nav-primary btn-sm">
+                  {t.auth.register.title}
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         {/* MOBILE CONTROLS */}
@@ -215,9 +222,9 @@ export default function Navbar() {
           <button
             onClick={toggleLang}
             style={{
-              background: "var(--paper)",
-              border: "none",
-              color: "var(--ink-2)",
+              background: "transparent",
+              border: "1px solid rgba(244,238,224,0.25)",
+              color: "var(--cream)",
               padding: "6px 10px",
               borderRadius: "6px",
               cursor: "pointer",
@@ -233,7 +240,7 @@ export default function Navbar() {
             style={{
               background: "none",
               border: "none",
-              color: "var(--ink)",
+              color: "var(--cream)",
               cursor: "pointer",
               padding: "6px",
               display: "flex",
@@ -249,8 +256,8 @@ export default function Navbar() {
         <div
           className="hide-desktop"
           style={{
-            background: "var(--paper)",
-            borderTop: "1px solid var(--hair)",
+            background: "var(--ink-2)",
+            borderTop: "1px solid rgba(244,238,224,0.12)",
             padding: "12px 16px 20px",
           }}
         >
