@@ -635,3 +635,8 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
 
 /* Page background */
 body { background-color: var(--paper); color: var(--ink); }
+
+/* Auth two-column responsive grid (Login + Register) */
+@media (min-width: 900px) {
+  .auth-grid { grid-template-columns: 1fr 1fr !important; }
+}
