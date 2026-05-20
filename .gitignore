@@ -42,7 +42,7 @@ coverage/
 .agents/
 skills-lock.json
 
-# Local tool / editor artifacts to ignore
+# Superpowers brainstorm/visual companion artifacts (local only)
 .superpowers/
 # Auto-generated command message logs
 2026-*-command-message*.txt

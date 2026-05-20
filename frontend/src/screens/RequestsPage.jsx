@@ -158,35 +158,39 @@ export default function RequestsPage() {
         <PageHeader title={rq.pageTitle} subtitle={rq.pageSubtitle} />
         <div className="page-container" style={{ maxWidth:'580px', padding:'56px 1.5rem' }}>
           <div className="card" style={{ padding:'48px 40px', textAlign:'center' }}>
+            <div className="section-eyebrow" style={{ textAlign:'center', marginBottom:'12px' }}>
+              {lang === 'he' ? 'בקשה נשלחה' : 'Request received'}
+            </div>
             <div style={{
               width:'72px', height:'72px',
-              background:'var(--gold-pale)',
+              background:'var(--cream)',
               borderRadius:'50%',
               display:'flex', alignItems:'center', justifyContent:'center',
               margin:'0 auto 20px',
             }}>
-              <CheckCircle size={34} color="var(--gold)" />
+              <CheckCircle size={34} color="var(--ember)" />
             </div>
-            <h2 style={{ fontFamily:'Frank Ruhl Libre, serif', fontSize:'26px', fontWeight:900, color:'var(--navy)', marginBottom:'12px' }}>
+            <h2 className="section-display" style={{ fontSize:'1.75rem', marginBottom:'12px' }}>
               {rq.success.title}
             </h2>
-            <p style={{ color:'var(--gray-500)', fontSize:'15px', marginBottom:'24px', lineHeight:1.7 }}>
+            <p style={{ color:'var(--ink-2)', fontSize:'15px', marginBottom:'24px', lineHeight:1.7 }}>
               {rq.success.subtitle}
             </p>
 
             {/* Tracking number */}
             <div style={{
-              background:'var(--navy)', color:'#fff',
+              background:'var(--ink)', color:'var(--cream)',
               padding:'14px 28px', borderRadius:'10px',
               display:'inline-flex', alignItems:'center', gap:'12px',
-              fontFamily:'monospace', fontSize:'20px', letterSpacing:'2px',
+              fontFamily:'ui-monospace, "SF Mono", Menlo, monospace',
+              fontSize:'18px', letterSpacing:'2px',
               marginBottom:'28px',
             }}>
               {trackingId}
               <button onClick={handleCopy} style={{
-                background:'rgba(255,255,255,0.15)', border:'none',
+                background:'rgba(244,238,224,0.15)', border:'none',
                 borderRadius:'6px', padding:'5px', cursor:'pointer',
-                display:'flex', color:'#fff',
+                display:'flex', color:'var(--cream)',
               }}>
                 <Copy size={15} />
               </button>
@@ -207,7 +211,7 @@ export default function RequestsPage() {
   }
 
   // ── FORM CARD WRAPPER ─────────────────────────────────────
-  const cardStyle = { background:'var(--white)', borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow)', border:'1px solid var(--gray-200)', padding:'36px' }
+  const cardStyle = { background:'var(--paper)', borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-sm)', border:'1px solid var(--hair)', padding:'36px' }
 
   return (
     <>
@@ -218,7 +222,7 @@ export default function RequestsPage() {
         {/* STEP 1 */}
         {step === 1 && (
           <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--navy)', marginBottom:'26px' }}>{rq.step1.title}</h3>
+            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'26px' }}>{rq.step1.title}</h3>
             <FormRow>
               <FormGroup>
                 <Label htmlFor="firstName" required>{rq.step1.firstName}</Label>
@@ -269,14 +273,14 @@ export default function RequestsPage() {
                   <label key={val} style={{
                     display:'flex', alignItems:'center', gap:'7px',
                     padding:'9px 16px', borderRadius:'8px',
-                    border:`1.5px solid ${values.gender === val ? 'var(--navy)' : 'var(--gray-200)'}`,
-                    background: values.gender === val ? '#EBF0FA' : 'var(--white)',
+                    border:`1px solid ${values.gender === val ? 'var(--ember)' : 'var(--hair)'}`,
+                    background: values.gender === val ? 'var(--sky-2)' : 'var(--paper)',
                     cursor:'pointer', fontSize:'13.5px', transition:'all .18s',
                   }}>
                     <input type="radio" name="gender" value={val}
                       checked={values.gender === val}
                       onChange={handleChange}
-                      style={{ accentColor:'var(--navy)' }} />
+                      style={{ accentColor:'var(--ember)' }} />
                     {label}
                   </label>
                 ))}
@@ -288,7 +292,7 @@ export default function RequestsPage() {
         {/* STEP 2 */}
         {step === 2 && (
           <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--navy)', marginBottom:'6px' }}>{rq.step2.title}</h3>
+            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'6px' }}>{rq.step2.title}</h3>
             <p style={{ fontSize:'13.5px', color:'var(--gray-400)', marginBottom:'24px' }}>{rq.step2.subtitle}</p>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px', marginBottom:'24px' }}>
               {CATS.map(({ key, Icon, bg, color }) => {
@@ -301,15 +305,12 @@ export default function RequestsPage() {
                     onClick={() => setValue('category', key)}
                     role="button" tabIndex={0}
                     onKeyPress={e => e.key === 'Enter' && setValue('category', key)}
-                    style={{
-                      border: selected ? '2px solid var(--navy)' : '2px solid var(--gray-200)',
-                    }}
                   >
                     <div style={{ width:'38px', height:'38px', borderRadius:'8px', background:bg, color, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                       <Icon size={20} />
                     </div>
                     <div>
-                      <strong style={{ display:'block', fontSize:'14px', color:'var(--navy)', marginBottom:'2px' }}>{cat.label}</strong>
+                      <strong style={{ display:'block', fontSize:'14px', color:'var(--ink)', marginBottom:'2px' }}>{cat.label}</strong>
                       <span style={{ fontSize:'12px', color:'var(--gray-400)' }}>{cat.hint}</span>
                     </div>
                   </div>
@@ -338,7 +339,7 @@ export default function RequestsPage() {
         {/* STEP 3 */}
         {step === 3 && (
           <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--navy)', marginBottom:'6px' }}>{rq.step3.title}</h3>
+            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'6px' }}>{rq.step3.title}</h3>
             <p style={{ fontSize:'13.5px', color:'var(--gray-400)', marginBottom:'24px' }}>{rq.step3.subtitle}</p>
             <FormGroup>
               <UploadArea
@@ -368,12 +369,12 @@ export default function RequestsPage() {
             </FormGroup>
             <div style={{
               marginTop:'16px', padding:'14px 16px',
-              background:'var(--gray-50)', borderRadius:'8px',
+              background:'var(--sky-2)', borderRadius:'8px',
               display:'flex', gap:'8px', alignItems:'flex-start',
-              border:'1px solid var(--gray-200)',
+              border:'1px solid var(--hair)',
             }}>
               <span style={{ fontSize:'16px' }}>🔒</span>
-              <p style={{ fontSize:'12.5px', color:'var(--gray-500)', lineHeight:1.6 }}>{rq.step3.security}</p>
+              <p style={{ fontSize:'12.5px', color:'var(--ink-2)', lineHeight:1.6 }}>{rq.step3.security}</p>
             </div>
           </div>
         )}
@@ -381,10 +382,10 @@ export default function RequestsPage() {
         {/* STEP 4 — SUMMARY */}
         {step === 4 && (
           <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--navy)', marginBottom:'22px' }}>{rq.step4.title}</h3>
+            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'22px' }}>{rq.step4.title}</h3>
             <div style={{
-              background:'var(--gray-50)', borderRadius:'10px',
-              border:'1px solid var(--gray-200)',
+              background:'var(--sky-2)', borderRadius:'10px',
+              border:'1px solid var(--hair)',
               padding:'22px', marginBottom:'26px',
             }}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px 20px' }}>
@@ -397,7 +398,7 @@ export default function RequestsPage() {
                 ].map(([label, val]) => (
                   <div key={label}>
                     <div style={{ fontSize:'12px', color:'var(--gray-400)', marginBottom:'2px' }}>{label}</div>
-                    <div style={{ fontSize:'14px', fontWeight:600, color:'var(--navy)' }}>{val || '—'}</div>
+                    <div style={{ fontSize:'14px', fontWeight:600, color:'var(--ink)' }}>{val || '—'}</div>
                   </div>
                 ))}
               </div>
@@ -415,7 +416,7 @@ export default function RequestsPage() {
                   type="checkbox" name="consent"
                   checked={values.consent}
                   onChange={handleChange}
-                  style={{ marginTop:'3px', width:'17px', height:'17px', accentColor:'var(--navy)', flexShrink:0 }}
+                  style={{ marginTop:'3px', width:'17px', height:'17px', accentColor:'var(--ember)', flexShrink:0 }}
                 />
                 <span style={{ fontSize:'13.5px', color:'var(--gray-600)', lineHeight:1.65 }}>
                   {rq.step4.consent}
@@ -434,7 +435,7 @@ export default function RequestsPage() {
             </button>
           ) : <div />}
           <button
-            className="btn btn-navy btn-lg"
+            className="btn btn-primary btn-lg"
             onClick={goNext}
           >
             {step === 4 ? (

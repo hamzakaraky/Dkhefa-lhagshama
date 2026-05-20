@@ -19,7 +19,7 @@ export default function StepIndicator({ steps, currentStep }) {
               <span style={{
                 fontSize:'11.5px',
                 marginTop:'6px',
-                color: isActive ? 'var(--navy)' : isDone ? 'var(--gold)' : 'var(--gray-400)',
+                color: isActive ? 'var(--ink)' : isDone ? 'var(--ember)' : 'var(--gray-400)',
                 fontWeight: isActive ? 600 : 400,
                 whiteSpace:'nowrap',
                 maxWidth:'76px', textAlign:'center', lineHeight:1.3,

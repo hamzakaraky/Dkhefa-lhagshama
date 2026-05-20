@@ -157,10 +157,10 @@ export default function DirectoryPage() {
   const NGO_AREAS = ['all', 'education', 'employment', 'legal', 'social', 'housing']
 
   const tabStyle = (active) => ({
-    padding:'12px 22px', fontSize:'14.5px', fontWeight:600,
+    padding:'12px 22px', fontSize:'14.5px', fontWeight:500,
     border:'none', background:'none', cursor:'pointer',
-    color: active ? 'var(--navy)' : 'var(--gray-400)',
-    borderBottom: active ? '3px solid var(--navy)' : '3px solid transparent',
+    color: active ? 'var(--ink)' : 'var(--ink-2)',
+    borderBottom: active ? '2px solid var(--ember)' : '2px solid transparent',
     marginBottom:'-2px', transition:'all .2s', fontFamily:'inherit',
   })
 
@@ -211,7 +211,7 @@ export default function DirectoryPage() {
 
       <div className="page-container section-padding">
         {/* TABS */}
-        <div style={{ borderBottom:'2px solid var(--gray-200)', marginBottom:'28px', display:'flex', gap:'4px' }}>
+        <div style={{ borderBottom:'1px solid var(--hair)', marginBottom:'28px', display:'flex', gap:'4px' }}>
           <button style={tabStyle(activeTab === 'business')} onClick={() => setActiveTab('business')}>
             🏪 {d.tabBusiness}
           </button>
@@ -225,19 +225,20 @@ export default function DirectoryPage() {
           <>
             {/* Smart suggestion banner */}
             <div style={{
-              background:'linear-gradient(135deg, var(--navy-dark), var(--navy))',
+              background:'var(--cream)',
+              border:'1px solid var(--hair)',
               borderRadius:'var(--radius)', padding:'14px 20px',
               display:'flex', alignItems:'center', gap:'12px',
-              marginBottom:'20px', color:'rgba(255,255,255,0.88)', fontSize:'13.5px',
+              marginBottom:'20px', color:'var(--ink)', fontSize:'13.5px',
             }}>
-              <span style={{ fontSize:'20px' }}>⚡</span>
+              <span style={{ fontSize:'18px', color:'var(--ember)' }}>⚡</span>
               <span>{d.smartSuggest}</span>
             </div>
 
             {/* Filter bar */}
             <div style={{
-              background:'var(--white)', borderRadius:'var(--radius)',
-              border:'1px solid var(--gray-200)', padding:'18px 20px',
+              background:"var(--paper)", borderRadius:"var(--radius)",
+              border:"1px solid var(--hair)", padding:"18px 20px",
               boxShadow:'var(--shadow-sm)', marginBottom:'24px',
               display:'flex', gap:'12px', alignItems:'center', flexWrap:'wrap',
             }}>
@@ -252,7 +253,7 @@ export default function DirectoryPage() {
                   placeholder={d.searchPH}
                   style={{
                     width:'100%', padding:'10px 14px 10px 36px',
-                    border:'1.5px solid var(--gray-200)', borderRadius:'8px',
+                    border:'1px solid var(--hair)', borderRadius:'8px',
                     fontSize:'14px', fontFamily:'inherit', paddingInlineStart:'36px',
                   }}
                 />
@@ -296,11 +297,11 @@ export default function DirectoryPage() {
                     {biz.featured && (
                       <div style={{
                         display:'inline-flex', alignItems:'center', gap:'4px',
-                        background:'var(--gold-pale)', color:'var(--gold)',
+                        background:'var(--cream)', color:'var(--ember)',
                         fontSize:'11px', fontWeight:700, padding:'3px 10px',
                         borderRadius:'20px', marginBottom:'12px',
                       }}>
-                        <Star size={10} fill="var(--gold)" /> {lang === 'he' ? 'מומלץ' : 'Featured'}
+                        <Star size={10} fill="var(--ember)" /> {lang === 'he' ? 'מומלץ' : 'Featured'}
                       </div>
                     )}
                     {/* Header */}
@@ -314,7 +315,7 @@ export default function DirectoryPage() {
                         {biz.logo}
                       </div>
                       <div>
-                        <div style={{ fontSize:'15px', fontWeight:700, color:'var(--navy)' }}>{biz.name}</div>
+                        <div style={{ fontSize:'15px', fontWeight:700, color:'var(--ink)' }}>{biz.name}</div>
                         <div style={{ display:'flex', alignItems:'center', gap:'5px', fontSize:'12px', color:'var(--gray-400)' }}>
                           <MapPin size={11} />
                           {lang === 'he' ? d.categories[biz.category] : d.categories[biz.category]} • {lang === 'he' ? biz.city : biz.cityEn}
@@ -335,8 +336,8 @@ export default function DirectoryPage() {
                     </div>
                     {/* Rating */}
                     <div style={{ display:'flex', alignItems:'center', gap:'4px', marginBottom:'14px' }}>
-                      <Star size={13} fill="var(--gold)" color="var(--gold)" />
-                      <span style={{ fontSize:'13px', fontWeight:600, color:'var(--navy)' }}>{biz.rating}</span>
+                      <Star size={13} fill="var(--ember)" color="var(--ember)" />
+                      <span style={{ fontSize:'13px', fontWeight:600, color:'var(--ink)' }}>{biz.rating}</span>
                       <span style={{ fontSize:'12px', color:'var(--gray-400)' }}>({biz.reviews})</span>
                     </div>
                     {/* Action */}
@@ -344,7 +345,7 @@ export default function DirectoryPage() {
                       <a href={`tel:${biz.phone}`} className="btn btn-outline btn-sm" style={{ flex:1, textDecoration:'none', display:'flex', justifyContent:'center' }}>
                         <Phone size={13} /> {biz.phone}
                       </a>
-                      <button className="btn btn-navy btn-sm">{d.moreBtn}</button>
+                      <button className="btn btn-primary btn-sm">{d.moreBtn}</button>
                     </div>
                   </div>
                 ))}
@@ -352,7 +353,7 @@ export default function DirectoryPage() {
             ) : (
               <div style={{ textAlign:'center', padding:'64px 0' }}>
                 <div style={{ fontSize:'40px', marginBottom:'12px' }}>🔍</div>
-                <h3 style={{ color:'var(--navy)', marginBottom:'8px' }}>{d.noResults}</h3>
+                <h3 style={{ color:'var(--ink)', marginBottom:'8px' }}>{d.noResults}</h3>
                 <p style={{ color:'var(--gray-400)' }}>{d.noResultsHint}</p>
               </div>
             )}
@@ -365,8 +366,8 @@ export default function DirectoryPage() {
           <>
             {/* Filter */}
             <div style={{
-              background:'var(--white)', borderRadius:'var(--radius)',
-              border:'1px solid var(--gray-200)', padding:'18px 20px',
+              background:"var(--paper)", borderRadius:"var(--radius)",
+              border:"1px solid var(--hair)", padding:"18px 20px",
               boxShadow:'var(--shadow-sm)', marginBottom:'24px',
               display:'flex', gap:'12px', alignItems:'center', flexWrap:'wrap',
             }}>
@@ -381,7 +382,7 @@ export default function DirectoryPage() {
                   placeholder={d.searchNGO}
                   style={{
                     width:'100%', padding:'10px 14px 10px 36px',
-                    border:'1.5px solid var(--gray-200)', borderRadius:'8px',
+                    border:'1px solid var(--hair)', borderRadius:'8px',
                     fontSize:'14px', fontFamily:'inherit', paddingInlineStart:'36px',
                   }}
                 />
@@ -499,7 +500,7 @@ export default function DirectoryPage() {
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowRegForm(false)}>
           <div className="modal-box">
             <div className="modal-header">
-              <h3 style={{ fontSize:'17px', fontWeight:700, color:'var(--navy)' }}>
+              <h3 style={{ fontSize:'17px', fontWeight:700, color:'var(--ink)' }}>
                 {lang === 'he' ? '+ רישום עסק חדש' : '+ Register New Business'}
               </h3>
               <button onClick={() => setShowRegForm(false)} className="btn btn-ghost btn-sm" style={{ padding:'4px' }}>✕</button>
