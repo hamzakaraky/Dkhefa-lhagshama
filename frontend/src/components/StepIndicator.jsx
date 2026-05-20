@@ -21,8 +21,8 @@ export default function StepIndicator({ steps, currentStep }) {
                 marginTop:'6px',
                 color: isActive ? 'var(--ink)' : isDone ? 'var(--ember)' : 'var(--gray-400)',
                 fontWeight: isActive ? 600 : 400,
-                whiteSpace:'nowrap',
-                maxWidth:'76px', textAlign:'center', lineHeight:1.3,
+                width:'92px', textAlign:'center', lineHeight:1.3,
+                wordBreak:'break-word',
               }}>
                 {label}
               </span>

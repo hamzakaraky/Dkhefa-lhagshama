@@ -341,11 +341,11 @@ export default function DirectoryPage() {
                       <span style={{ fontSize:'12px', color:'var(--gray-400)' }}>({biz.reviews})</span>
                     </div>
                     {/* Action */}
-                    <div style={{ display:'flex', gap:'8px' }}>
-                      <a href={`tel:${biz.phone}`} className="btn btn-outline btn-sm" style={{ flex:1, textDecoration:'none', display:'flex', justifyContent:'center' }}>
+                    <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
+                      <a href={`tel:${biz.phone}`} className="btn btn-outline btn-sm" style={{ flex:'1 1 140px', minWidth:0, textDecoration:'none', display:'flex', justifyContent:'center', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                         <Phone size={13} /> {biz.phone}
                       </a>
-                      <button className="btn btn-primary btn-sm">{d.moreBtn}</button>
+                      <button className="btn btn-primary btn-sm" style={{ flex:'0 0 auto', whiteSpace:'nowrap' }}>{d.moreBtn}</button>
                     </div>
                   </div>
                 ))}

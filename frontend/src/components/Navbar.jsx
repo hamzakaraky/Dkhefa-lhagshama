@@ -27,14 +27,13 @@ export default function Navbar() {
     );
   };
 
-  // Build link set conditional on auth state — admin + track only when signed in.
+  // Build link set conditional on auth state.
+  // Only pages that actually exist — /about, /contact, /track are not built.
   const baseLinks = [
     { key: "home", to: "/" },
     { key: "requests", to: "/requests" },
     { key: "directory", to: "/directory" },
     { key: "volunteers", to: "/volunteer" },
-    { key: "about", to: "/about" },
-    { key: "contact", to: "/contact" },
   ];
   const links = user
     ? [
@@ -48,7 +47,7 @@ export default function Navbar() {
               },
             ]
           : []),
-        { key: "track", to: "/track" },
+        { key: "chats", to: "/chats", label: lang === "he" ? "צ׳אט" : "Chat" },
         ...(role === "admin" ? [{ key: "admin", to: "/admin" }] : []),
       ]
     : baseLinks;
@@ -87,28 +86,17 @@ export default function Navbar() {
             height={40}
             style={{ borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
           />
-          <div style={{ lineHeight: 1.2 }}>
+          <div style={{ lineHeight: 1.2 }} className="nav-wordmark">
             <div
               style={{
                 color: "var(--cream)",
                 fontFamily: "Frank Ruhl Libre, serif",
                 fontWeight: 700,
                 fontSize: "16px",
+                whiteSpace: "nowrap",
               }}
             >
               {lang === "he" ? "דחיפה להגשמה" : "Push for Fulfillment"}
-            </div>
-            <div
-              style={{
-                color: "rgba(244,238,224,0.6)",
-                fontSize: "10px",
-                fontWeight: 500,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-              }}
-            >
-              {lang === "he" ? "Push for Fulfillment" : "דחיפה להגשמה"}
             </div>
           </div>
         </Link>
@@ -120,7 +108,7 @@ export default function Navbar() {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "16px",
+            gap: "12px",
             marginInlineStart: "auto",
             minWidth: 0,
           }}
@@ -179,13 +167,6 @@ export default function Navbar() {
             {/* Auth controls */}
             {loading ? null : user ? (
               <>
-                <span
-                  style={{ color: "rgba(244,238,224,0.7)", fontSize: "13px" }}
-                  title={user.email || ""}
-                >
-                  {t.auth.welcome}
-                  {user.email ? `, ${user.email.split("@")[0]}` : ""}
-                </span>
                 <button className="btn btn-nav-outline btn-sm" onClick={handleLogout}>
                   {t.auth.logout}
                 </button>
