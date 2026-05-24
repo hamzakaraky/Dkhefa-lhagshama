@@ -34,6 +34,7 @@ backend/serviceAccountKey.json
 backend/privateKey.json
 # NOTE: `.firebaserc` IS committed — it's the public project-id map, not a secret.
 
+
 # Build artifacts
 .next/
 out/
@@ -43,6 +44,7 @@ coverage/
 skills-lock.json
 
 # Superpowers brainstorm/visual companion artifacts (local only)
+docs/superpowers/
 .superpowers/
 # Auto-generated command message logs
 2026-*-command-message*.txt

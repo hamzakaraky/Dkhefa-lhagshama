@@ -12,7 +12,9 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
     "seed": "ts-node --project tsconfig.scripts.json scripts/seed.ts",
-    "set-admin": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setAdminClaim.ts"
+    "set-admin": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setAdminClaim.ts",
+    "set-volunteer": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setVolunteerClaim.ts",
+    "set-roles": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setRoles.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
