@@ -9,12 +9,42 @@
  * Volunteer / businessOwner roles are assigned by admin tooling, NOT here.
  * Admin is bootstrapped via `scripts/setAdminClaim.ts`.
  */
+import { FieldValue } from "firebase-admin/firestore";
 import { Router, type Request, type Response } from "express";
 
-import { auth as firebaseAuth } from "@/lib/firebaseAdmin";
+import { auth as firebaseAuth, db } from "@/lib/firebaseAdmin";
 import { authenticate } from "@/middleware/auth";
 
 const router = Router();
+
+/**
+ * Ensure a `users/{uid}` profile doc exists (#63). Idempotent: a merge-set
+ * only fills missing scalar fields on first call and refreshes `updatedAt`.
+ * Failures here must not block role assignment, so callers log-and-continue.
+ */
+async function ensureUserProfile(
+  uid: string,
+  email: string | undefined,
+  role: string,
+): Promise<void> {
+  const ref = db().collection("users").doc(uid);
+  const snap = await ref.get();
+  if (snap.exists) return;
+  await ref.set({
+    email: email ?? "",
+    role,
+    displayName: "",
+    firstName: "",
+    lastName: "",
+    phone: "",
+    city: "",
+    age: null,
+    gender: "",
+    preferredLang: "he",
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+}
 
 /**
  * POST /api/auth/register
@@ -33,6 +63,9 @@ router.post("/register", authenticate, async (req: Request, res: Response) => {
     // If this token already carries a privileged role, do not overwrite it.
     // Newly created self-signups usually arrive here without a role yet.
     if (req.user.role && req.user.role !== "beneficiary") {
+      await ensureUserProfile(req.user.uid, req.user.email, req.user.role).catch(
+        (err) => console.error("[auth/register] profile ensure failed:", err),
+      );
       res.json({ ok: true, role: req.user.role, alreadyAssigned: true });
       return;
     }
@@ -40,6 +73,9 @@ router.post("/register", authenticate, async (req: Request, res: Response) => {
     await firebaseAuth().setCustomUserClaims(req.user.uid, {
       role: "beneficiary",
     });
+    await ensureUserProfile(req.user.uid, req.user.email, "beneficiary").catch(
+      (err) => console.error("[auth/register] profile ensure failed:", err),
+    );
     res.json({ ok: true, role: "beneficiary" });
   } catch (err) {
     // eslint-disable-next-line no-console

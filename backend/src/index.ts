@@ -18,6 +18,7 @@ import businessesRouter from '@/routes/businesses';
 import chatsRouter from '@/routes/chats';
 import requestsRouter from '@/routes/requests';
 import uploadsRouter from '@/routes/uploads';
+import usersRouter from '@/routes/users';
 import { authenticate } from '@/middleware/auth';
 
 const PORT = Number(process.env.PORT ?? 3001);
@@ -63,6 +64,7 @@ app.use('/api/auth',     authRouter);
 app.use('/api/chats',    chatsRouter);
 app.use('/api/requests', requestsRouter);
 app.use('/api/uploads',  uploadsRouter);
+app.use('/api/users',    usersRouter);
 app.use('/api/businesses', businessesRouter);
 app.use('/api/answers', answersRouter);
 app.use('/api/admin',    adminRouter);

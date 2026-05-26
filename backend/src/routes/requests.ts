@@ -18,48 +18,86 @@ import { z } from 'zod';
 
 import { db } from '@/lib/firebaseAdmin';
 import { writeAuditLog } from '@/lib/audit';
+import { writeRequestEvent } from '@/lib/requestEvents';
 import { authenticate } from '@/middleware/auth';
 
 const router = Router();
 
+// ── Status lifecycle (#64) ──────────────────────────────────────────────────
+// Forward-only ordering is enforced by the admin endpoints (#92); this is the
+// canonical set of states. Exported so admin/edge-case streams reuse it.
+export const REQUEST_STATUSES = [
+  'pending',
+  'in_progress',
+  'resolved',
+  'rejected',
+  'closed',
+] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+
 // ── Schema ────────────────────────────────────────────────────────────────
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const createRequestSchema = z.object({
-  // Client-generated UUID, used as both Firestore doc id and Storage path prefix.
-  // Using `create()` server-side rejects duplicate ids loudly.
-  requestId: z.string().regex(UUID_V4, 'requestId must be a v4 UUID'),
+const createRequestSchema = z
+  .object({
+    // Client-generated UUID, used as both Firestore doc id and Storage path prefix.
+    // Using `create()` server-side rejects duplicate ids loudly.
+    requestId: z.string().regex(UUID_V4, 'requestId must be a v4 UUID'),
 
-  // Personal info
-  firstName: z.string().trim().min(1).max(80),
-  lastName:  z.string().trim().min(1).max(80),
-  idNumber:  z.string().trim().min(1).max(40),
-  phone:     z.string().trim().min(1).max(40),
-  email:     z.string().trim().email().max(120),
-  city:      z.string().trim().min(1).max(80),
-  age:       z.coerce.number().int().min(0).max(120),
-  gender:    z.enum(['male', 'female', 'other', '']).default(''),
+    // Personal info
+    firstName: z.string().trim().min(1).max(80),
+    lastName:  z.string().trim().min(1).max(80),
 
-  // Request body
-  category:    z.enum(['education', 'employment', 'legal', 'social']),
-  description: z.string().trim().min(10).max(4000),
-  urgency:     z.enum(['low', 'medium', 'high']).default('low'),
+    // Identity (#66). idType drives whether an Israeli ID number is required.
+    //   israeli_id → idNumber required
+    //   passport / none → idNumber optional, idNote explains the situation
+    idType:   z.enum(['israeli_id', 'passport', 'none']).default('israeli_id'),
+    idNumber: z.string().trim().max(40).optional().default(''),
+    idNote:   z.string().trim().max(400).optional().default(''),
 
-  // Consent — must be true. Aligns with wiki UC-01 step 4.
-  consent: z.literal(true, {
-    errorMap: () => ({ message: 'consent must be true' }),
-  }),
+    phone:     z.string().trim().min(1).max(40),
+    email:     z.string().trim().email().max(120),
+    city:      z.string().trim().min(1).max(80),
+    age:       z.coerce.number().int().min(0).max(120),
+    gender:    z.enum(['male', 'female', 'other', '']).default(''),
 
-  // Optional Storage paths under requests/{requestId}/...
-  attachmentPaths: z.array(z.string().min(1)).max(20).optional().default([]),
+    // Request body
+    category:    z.enum(['education', 'employment', 'legal', 'social']),
+    description: z.string().trim().min(10).max(4000),
+    urgency:     z.enum(['low', 'medium', 'high']).default('low'),
 
-  // Volunteer-on-behalf alt flow (UC-01 A2). Full UX deferred; schema scaffolded.
-  onBehalfOf: z
-    .object({
-      uid: z.string().min(1).optional(),
-    })
-    .optional(),
-});
+    // Optional deadline (#68). ISO date or datetime string; validated parseable.
+    deadline: z
+      .string()
+      .trim()
+      .refine((s) => !Number.isNaN(Date.parse(s)), 'deadline must be a valid date')
+      .optional(),
+
+    // Consent — must be true. Aligns with wiki UC-01 step 4.
+    consent: z.literal(true, {
+      errorMap: () => ({ message: 'consent must be true' }),
+    }),
+
+    // Optional Storage paths under requests/{requestId}/...
+    attachmentPaths: z.array(z.string().min(1)).max(20).optional().default([]),
+
+    // Volunteer-on-behalf alt flow (UC-01 A2). Full UX deferred; schema scaffolded.
+    onBehalfOf: z
+      .object({
+        uid: z.string().min(1).optional(),
+      })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    // An Israeli ID number is mandatory only when idType is israeli_id (#66).
+    if (data.idType === 'israeli_id' && data.idNumber.trim().length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['idNumber'],
+        message: 'idNumber is required when idType is israeli_id',
+      });
+    }
+  });
 
 type CreateRequestInput = z.infer<typeof createRequestSchema>;
 
@@ -109,7 +147,9 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       // Personal info snapshot at submit time
       firstName: input.firstName,
       lastName:  input.lastName,
+      idType:    input.idType,
       idNumber:  input.idNumber,
+      idNote:    input.idNote,
       phone:     input.phone,
       email:     input.email,
       city:      input.city,
@@ -120,11 +160,14 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       category:    input.category,
       description: input.description,
       urgency:     input.urgency,
+      deadline:    input.deadline ?? null,
 
       // Lifecycle
-      status:      'pending',
-      handler:     null,
-      notes:       '',
+      status:              'pending',
+      handler:             null,
+      assignedVolunteerId: null,
+      assignedAt:          null,
+      notes:               '',
 
       // Attachments
       attachmentPaths: input.attachmentPaths ?? [],
@@ -164,6 +207,19 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     console.error('[requests.create] audit write failed:', err);
   });
 
+  // Timeline event — user-facing history (#65). Fire-and-forget like the audit
+  // log. visibility 'all' so the beneficiary sees their request was received.
+  writeRequestEvent({
+    requestId: input.requestId,
+    type: 'created',
+    actorId: req.user.uid,
+    visibility: 'all',
+    details: { category: input.category, urgency: input.urgency },
+  }).catch((err) => {
+    // eslint-disable-next-line no-console
+    console.error('[requests.create] event write failed:', err);
+  });
+
   res.status(201).json({ requestId: input.requestId });
 });
 
@@ -192,6 +248,7 @@ router.get('/mine', authenticate, async (req: Request, res: Response) => {
         urgency:         data.urgency,
         status:          data.status,
         description:     data.description,
+        deadline:        data.deadline ?? null,
         attachmentPaths: data.attachmentPaths ?? [],
         // Firestore timestamps -> ISO strings for the client
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,

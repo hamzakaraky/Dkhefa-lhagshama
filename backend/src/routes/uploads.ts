@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto';
 
 import express, { Router, type Request, type Response } from 'express';
 
-import { auth as firebaseAuth, storage } from '@/lib/firebaseAdmin';
+import { storage } from '@/lib/firebaseAdmin';
+import { writeRequestEvent } from '@/lib/requestEvents';
 import { authenticate } from '@/middleware/auth';
 
 const router = Router();
@@ -63,6 +64,18 @@ router.post('/requests/:requestId', authenticate, express.raw({ type: '*/*', lim
     const [downloadURL] = await bucketFile.getSignedUrl({
       action: 'read',
       expires: '2500-01-01T00:00:00.000Z',
+    });
+
+    // Timeline event (#65) — fire-and-forget; don't fail the upload on it.
+    writeRequestEvent({
+      requestId,
+      type: 'attachment_added',
+      actorId: req.user.uid,
+      visibility: 'all',
+      details: { filename, path },
+    }).catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error('[uploads.request] event write failed:', err);
     });
 
     res.status(201).json({ path, downloadURL });

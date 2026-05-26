@@ -108,6 +108,136 @@ describe("/requests", () => {
       db.collection("requests").doc("req-new").set({ beneficiaryId: BENEFICIARY })
     );
   });
+
+  test("assigned volunteer can read the request (#64)", async () => {
+    const VOLUNTEER = "uid-assigned-vol";
+    await seedDoc("requests", "req-assigned", {
+      beneficiaryId: BENEFICIARY,
+      handler: null,
+      assignedVolunteerId: VOLUNTEER,
+      category: "education",
+      status: "in_progress",
+    });
+    const db = authed(VOLUNTEER, { role: "volunteer" }).firestore();
+    await assertSucceeds(db.collection("requests").doc("req-assigned").get());
+  });
+
+  test("unassigned volunteer cannot read someone else's request (#64)", async () => {
+    const db = authed("uid-other-vol", { role: "volunteer" }).firestore();
+    await assertFails(db.collection("requests").doc(REQUEST_ID).get());
+  });
+});
+
+// ── /users — UC profile (#63) ─────────────────────────────────────────────
+
+describe("/users", () => {
+  const OWNER = "uid-profile-owner";
+  const STRANGER = "uid-profile-stranger";
+
+  beforeEach(async () => {
+    await seedDoc("users", OWNER, {
+      email: "owner@example.com",
+      role: "beneficiary",
+      displayName: "Owner",
+    });
+  });
+
+  test("owner can read own profile", async () => {
+    const db = authed(OWNER).firestore();
+    await assertSucceeds(db.collection("users").doc(OWNER).get());
+  });
+
+  test("admin can read any profile", async () => {
+    const db = authed("uid-admin", { role: "admin" }).firestore();
+    await assertSucceeds(db.collection("users").doc(OWNER).get());
+  });
+
+  test("stranger cannot read another user's profile", async () => {
+    const db = authed(STRANGER).firestore();
+    await assertFails(db.collection("users").doc(OWNER).get());
+  });
+
+  test("unauthenticated user cannot read a profile", async () => {
+    const db = anon().firestore();
+    await assertFails(db.collection("users").doc(OWNER).get());
+  });
+
+  test("client cannot write its own profile (server-only via PATCH)", async () => {
+    const db = authed(OWNER).firestore();
+    await assertFails(
+      db.collection("users").doc(OWNER).set({ role: "admin" }, { merge: true })
+    );
+  });
+});
+
+// ── /requestEvents — timeline (#65) ────────────────────────────────────────
+
+describe("/requestEvents", () => {
+  const BENEFICIARY = "uid-re-bene";
+  const PARENT_REQUEST = "req-re-001";
+
+  beforeEach(async () => {
+    await seedDoc("requests", PARENT_REQUEST, {
+      beneficiaryId: BENEFICIARY,
+      handler: null,
+      category: "legal",
+      status: "pending",
+    });
+    await seedDoc("requestEvents", "evt-public", {
+      requestId: PARENT_REQUEST,
+      type: "created",
+      visibility: "all",
+      actorId: BENEFICIARY,
+    });
+    await seedDoc("requestEvents", "evt-internal", {
+      requestId: PARENT_REQUEST,
+      type: "note_added",
+      visibility: "internal",
+      actorId: "uid-admin",
+    });
+  });
+
+  test("admin can read any event", async () => {
+    const db = authed("uid-admin", { role: "admin" }).firestore();
+    await assertSucceeds(db.collection("requestEvents").doc("evt-internal").get());
+  });
+
+  test("volunteer can read any event", async () => {
+    const db = authed("uid-vol", { role: "volunteer" }).firestore();
+    await assertSucceeds(db.collection("requestEvents").doc("evt-internal").get());
+  });
+
+  test("beneficiary can read a public event on own request", async () => {
+    const db = authed(BENEFICIARY).firestore();
+    await assertSucceeds(db.collection("requestEvents").doc("evt-public").get());
+  });
+
+  test("beneficiary cannot read an internal event on own request", async () => {
+    const db = authed(BENEFICIARY).firestore();
+    await assertFails(db.collection("requestEvents").doc("evt-internal").get());
+  });
+
+  test("stranger cannot read a public event on someone else's request", async () => {
+    const db = authed("uid-re-stranger").firestore();
+    await assertFails(db.collection("requestEvents").doc("evt-public").get());
+  });
+
+  test("unauthenticated user cannot read an event", async () => {
+    const db = anon().firestore();
+    await assertFails(db.collection("requestEvents").doc("evt-public").get());
+  });
+
+  test("client cannot write an event", async () => {
+    const db = authed(BENEFICIARY).firestore();
+    await assertFails(
+      db.collection("requestEvents").doc("evt-new").set({
+        requestId: PARENT_REQUEST,
+        type: "created",
+        visibility: "all",
+        actorId: BENEFICIARY,
+      })
+    );
+  });
 });
 
 // ── /chats (Risk-#5 mitigation) ──────────────────────────────────────────

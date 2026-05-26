@@ -28,7 +28,35 @@ service cloud.firestore {
       allow read: if isSignedIn() && (
         resource.data.beneficiaryId == request.auth.uid
         || resource.data.handler == request.auth.uid
+        || resource.data.assignedVolunteerId == request.auth.uid
         || isAdmin()
+      );
+      allow create, update, delete: if false;
+    }
+
+    // ── /users — profile collection (#63) ───────────────────────────────
+    // Owner reads own profile; admin reads all. Writes are server-only:
+    // GET/PATCH /api/users/me go through Express (Admin SDK bypasses rules)
+    // and lazy-create on register. The client never writes here directly —
+    // this prevents role/email self-escalation.
+    match /users/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
+      allow create, update, delete: if false;
+    }
+
+    // ── /requestEvents — request timeline (#65) ──────────────────────────
+    // Append-only audit trail of a request's lifecycle. Volunteers and admins
+    // see every event; the owning beneficiary sees only events flagged
+    // visibility == 'all' (internal notes stay hidden). Writes are server-only
+    // via writeRequestEvent() (Admin SDK).
+    match /requestEvents/{eventId} {
+      allow read: if isSignedIn() && (
+        isAdmin()
+        || hasRole('volunteer')
+        || (
+          resource.data.visibility == 'all'
+          && get(/databases/$(database)/documents/requests/$(resource.data.requestId)).data.beneficiaryId == request.auth.uid
+        )
       );
       allow create, update, delete: if false;
     }
