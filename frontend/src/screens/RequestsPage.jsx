@@ -263,7 +263,7 @@ export default function RequestsPage() {
       // #94 — replace route so back-button doesn't re-open the form
       router.replace(`/my-requests?new=${newId}`)
     } catch (err) {
-      // eslint-disable-next-line no-console
+
       console.error('[RequestsPage] submit failed:', err)
       toast(lang === 'he' ? 'שליחת הבקשה נכשלה' : 'Submit failed — please try again.', 'error')
     } finally {

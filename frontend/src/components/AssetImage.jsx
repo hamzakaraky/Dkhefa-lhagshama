@@ -99,7 +99,7 @@ export default function AssetImage({
 
   if (!asset) {
     // Unknown slot key — fail loud in dev, render nothing in prod.
-    // eslint-disable-next-line no-console
+
     if (process.env.NODE_ENV !== 'production') console.warn(`[AssetImage] unknown slot "${slot}"`)
     return null
   }

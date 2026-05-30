@@ -76,7 +76,7 @@ export default function UploadArea({ label, hint, formats, required, onUpload, e
       setFile(f)
       if (onUpload) onUpload({ file: f, path: result.path, downloadURL: result.downloadURL })
     } catch (err) {
-      // eslint-disable-next-line no-console
+
       console.error('[UploadArea] upload failed:', err)
       setErrMsg('Upload failed — please try again.')
     } finally {
