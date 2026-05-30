@@ -8,12 +8,13 @@ import {
   EmptyState,
   ErrorState,
   TableSkeleton,
+  adminErrorMessage,
 } from '@/components/admin/AdminUI'
 
 const ROLES = ['beneficiary', 'businessOwner', 'volunteer', 'admin']
 
 export default function AdminUsersPage() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const a = t.admin
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -26,12 +27,12 @@ export default function AdminUsersPage() {
     try {
       const res = await apiJson('/api/admin/users')
       setItems(res.items || [])
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setLoading(false)
     }
-  }, [a.ui.loading])
+  }, [lang])
 
   useEffect(() => {
     load()
@@ -41,17 +42,19 @@ export default function AdminUsersPage() {
     setBusyId(uid)
     setError(null)
     try {
-      if (role === 'beneficiary') {
-        await apiFetch(`/api/admin/users/${uid}/demote`, { method: 'POST' })
-      } else {
-        await apiFetch(`/api/admin/users/${uid}/promote`, {
-          method: 'POST',
-          body: JSON.stringify({ role }),
-        })
+      const res = role === 'beneficiary'
+        ? await apiFetch(`/api/admin/users/${uid}/demote`, { method: 'POST' })
+        : await apiFetch(`/api/admin/users/${uid}/promote`, {
+            method: 'POST',
+            body: JSON.stringify({ role }),
+          })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw { status: res.status, error: body?.error, detail: body }
       }
       await load()
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setBusyId(null)
     }
@@ -61,12 +64,16 @@ export default function AdminUsersPage() {
     setBusyId(uid)
     setError(null)
     try {
-      await apiFetch(`/api/admin/users/${uid}/${disabled ? 'enable' : 'disable'}`, {
+      const res = await apiFetch(`/api/admin/users/${uid}/${disabled ? 'enable' : 'disable'}`, {
         method: 'POST',
       })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw { status: res.status, error: body?.error, detail: body }
+      }
       await load()
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setBusyId(null)
     }

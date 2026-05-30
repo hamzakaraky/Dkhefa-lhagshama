@@ -3,10 +3,10 @@ import Link from 'next/link'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { apiJson } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
-import { StatCard, ErrorState } from '@/components/admin/AdminUI'
+import { StatCard, ErrorState, adminErrorMessage } from '@/components/admin/AdminUI'
 
 export default function AdminDashboard() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const a = t.admin
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,8 +18,8 @@ export default function AdminDashboard() {
     try {
       const data = await apiJson('/api/admin/stats')
       setStats(data)
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setLoading(false)
     }

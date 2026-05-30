@@ -1,5 +1,20 @@
 import { Inbox } from 'lucide-react'
 
+// Maps a thrown apiJson error to a clear, localized message. A 401/403 means
+// the signed-in user has no admin custom claim — surface a dedicated message
+// (and how to grant access) instead of a generic blank/loading state.
+export function adminErrorMessage(err, lang) {
+  const status = err?.status
+  if (status === 401 || status === 403) {
+    return lang === 'he'
+      ? 'נדרשת הרשאת מנהל. התחבר/י עם חשבון מנהל (או הרץ npm run set-admin -- <email> בשרת והתחבר/י מחדש).'
+      : 'Admin access required. Sign in with an admin account (or run `npm run set-admin -- <email>` on the backend, then sign out and back in).'
+  }
+  return lang === 'he'
+    ? 'טעינת הנתונים נכשלה. נסה/י שוב.'
+    : 'Failed to load data. Please try again.'
+}
+
 export function StatCard({ label, value, loading }) {
   return (
     <div className="stat-card">

@@ -131,38 +131,50 @@ export default function RequestsPage() {
     }
   }, [authLoading, user, router, values])
 
-  // #67 — auto-fill from profile on mount (only once, after auth resolves)
-  const fillFromProfile = useCallback(async () => {
-    if (profileLoaded || profileLoading || !user) return
+  // #67 — core profile loader. `announce` controls whether we surface a toast
+  // (true for the explicit "auto-fill" button, false for the silent mount fill).
+  // Note: this intentionally does NOT early-return on `profileLoaded` so the
+  // button keeps working even after the silent mount fill already ran.
+  const loadProfileInto = useCallback(async (announce) => {
+    if (profileLoading || !user) return
     setProfileLoading(true)
     try {
       const data = await apiJson('/api/users/me')
       const p = data.profile || {}
-      if (p.firstName)   setValue('firstName', p.firstName)
-      if (p.lastName)    setValue('lastName',  p.lastName)
-      if (p.phone)       setValue('phone',     p.phone)
-      if (p.city)        setValue('city',      p.city)
-      if (p.age)         setValue('age',       String(p.age))
+      let filledAny = false
+      if (p.firstName)   { setValue('firstName', p.firstName); filledAny = true }
+      if (p.lastName)    { setValue('lastName',  p.lastName);  filledAny = true }
+      if (p.phone)       { setValue('phone',     p.phone);     filledAny = true }
+      if (p.city)        { setValue('city',      p.city);      filledAny = true }
+      if (p.age)         { setValue('age',       String(p.age)); filledAny = true }
       if (p.gender) {
         // Canonical gender from DB (male/female/other) → UI code (M/F/O)
         const reverseMap = { male:'M', female:'F', other:'O' }
         setValue('gender', reverseMap[p.gender] || '')
+        filledAny = true
       }
       // Email is editable but prefill from auth or profile
       const emailSrc = p.email || user.email || ''
-      if (emailSrc) setValue('email', emailSrc)
+      if (emailSrc) { setValue('email', emailSrc); filledAny = true }
       setProfileLoaded(true)
+      if (announce) {
+        toast(filledAny ? s2.autoFill.filled : s2.autoFill.nothing, filledAny ? 'success' : 'info')
+      }
     } catch {
       // Profile fetch failure is non-fatal; the user can fill manually
+      if (announce) toast(s2.autoFill.fillError, 'error')
     } finally {
       setProfileLoading(false)
     }
-  }, [profileLoaded, profileLoading, user, setValue])
+  }, [profileLoading, user, setValue, toast, s2.autoFill])
+
+  // Explicit "auto-fill from my profile" button handler (#67) — always runs.
+  const fillFromProfile = useCallback(() => loadProfileInto(true), [loadProfileInto])
 
   // Silent auto-fill on mount (after auth resolves)
   useEffect(() => {
     if (user && !profileLoaded && !draft) {
-      fillFromProfile()
+      loadProfileInto(false)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
@@ -663,12 +675,12 @@ export default function RequestsPage() {
               <BackArrow size={16} /> {rq.nav.back}
             </button>
           ) : <div />}
-          {/* #86 — disable submit (step 4 only) if email is not yet verified */}
+          {/* #86 — email verification is a gentle reminder (banner above), NOT a
+              hard block: an unverified user can still submit a request. */}
           <button
             className="btn btn-primary btn-lg"
             onClick={goNext}
-            disabled={submitting || (step === 4 && !emailVerified)}
-            title={step === 4 && !emailVerified ? vb.text : ''}
+            disabled={submitting}
           >
             {step === 4 ? (
               submitting

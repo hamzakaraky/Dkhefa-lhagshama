@@ -8,10 +8,11 @@ import {
   EmptyState,
   ErrorState,
   TableSkeleton,
+  adminErrorMessage,
 } from '@/components/admin/AdminUI'
 
 export default function AdminVolunteersPage() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const a = t.admin
   const [tab, setTab] = useState('pending') // 'pending' | 'active'
   const [data, setData] = useState({ pending: [], active: [] })
@@ -25,12 +26,12 @@ export default function AdminVolunteersPage() {
     try {
       const res = await apiJson('/api/admin/volunteers')
       setData({ pending: res.pending || [], active: res.active || [] })
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setLoading(false)
     }
-  }, [a.ui.loading])
+  }, [lang])
 
   useEffect(() => {
     load()
@@ -40,10 +41,14 @@ export default function AdminVolunteersPage() {
     setBusyId(id)
     setError(null)
     try {
-      await apiFetch(`/api/admin/volunteers/${id}/${action}`, { method: 'POST' })
+      const res = await apiFetch(`/api/admin/volunteers/${id}/${action}`, { method: 'POST' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw { status: res.status, error: body?.error, detail: body }
+      }
       await load()
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setBusyId(null)
     }
