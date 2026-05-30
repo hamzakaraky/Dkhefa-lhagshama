@@ -17,6 +17,7 @@ import answersRouter from '@/routes/answers';
 import authRouter from '@/routes/auth';
 import businessesRouter from '@/routes/businesses';
 import chatsRouter from '@/routes/chats';
+import ratingsRouter from '@/routes/ratings';
 import requestsRouter from '@/routes/requests';
 import uploadsRouter from '@/routes/uploads';
 import usersRouter from '@/routes/users';
