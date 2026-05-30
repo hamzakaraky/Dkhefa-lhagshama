@@ -596,6 +596,152 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   .hero-copy { order: 1; }
 }
 
+/* ── Bolder hero (additive) ───────────────────────────────────────────
+   Layered depth on the sky band: a soft ember bloom anchored to the
+   logo side, a faint sky wash on the copy side, plus a hairline grain.
+   All decorative layers are aria-hidden via ::before/::after.          */
+.hero-bold {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 90% at var(--hero-bloom-x, 18%) 8%, rgba(185,105,78,0.16), transparent 52%),
+    radial-gradient(100% 80% at 92% 100%, rgba(15,30,45,0.06), transparent 58%),
+    linear-gradient(180deg, var(--sky-3) 0%, var(--sky-2) 100%);
+}
+[dir="rtl"] .hero-bold { --hero-bloom-x: 82%; }
+/* A confident accent rule the copy hangs off — short, ember, decisive. */
+.hero-bold::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  block-size: 3px;
+  background: linear-gradient(90deg, var(--ember) 0%, var(--ember-700) 40%, transparent 80%);
+  z-index: -1;
+}
+[dir="rtl"] .hero-bold::before { background: linear-gradient(270deg, var(--ember) 0%, var(--ember-700) 40%, transparent 80%); }
+
+/* Stronger type presence: drive the hero heading to the fluid ceiling
+   and pair a heavier serif weight against the lede for real contrast. */
+.hero-title-bold {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-hero);
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.hero-title-bold em {
+  font-style: italic;
+  font-weight: 600;
+  color: var(--ember);
+}
+
+/* Logo gets a layered ember halo so it reads as the focal anchor. */
+.hero-mark-bold { position: relative; }
+.hero-mark-bold::after {
+  content: "";
+  position: absolute;
+  inset: -8%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 40%, rgba(185,105,78,0.22), transparent 68%);
+  filter: blur(6px);
+}
+
+/* Hero entrance: a single staged settle (mark + copy lines), not a
+   per-section reflex. Children opt in with .hero-rise + a delay var.   */
+.hero-enter .hero-rise {
+  animation: heroRise var(--dur-4) var(--ease-out-expo) both;
+  animation-delay: var(--rise-delay, 0ms);
+}
+@keyframes heroRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-enter .hero-mark-bold {
+  animation: heroMarkIn var(--dur-4) var(--ease-out-expo) both;
+}
+@keyframes heroMarkIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Inline hero stat figures: tabular, confident, tied to the rule above. */
+.hero-stat-num {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: clamp(1.9rem, 1.5rem + 1.4vw, 2.3rem);
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-enter .hero-rise,
+  .hero-enter .hero-mark-bold {
+    animation: heroFade var(--dur-2) var(--ease-out) both;
+  }
+  @keyframes heroFade { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* ── Elevated landing rhythm (additive) ───────────────────────────────
+   Section headers get a quiet ember tick; service feature + stories +
+   partners gain a touch more hover life without changing structure.    */
+.section-head-bold { position: relative; }
+.section-display-bold {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-weight: 500;
+  font-size: var(--fs-display);
+  line-height: 1.1;
+  letter-spacing: -0.014em;
+  color: var(--ink);
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+
+/* The lead service tile is the section's hero — give it real lift. */
+.service-feature.card-interactive:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--ember);
+}
+.service-feature .service-icon-lead { transition: transform var(--dur-3) var(--ease-out); }
+.service-feature.card-interactive:hover .service-icon-lead { transform: scale(1.06) rotate(-3deg); }
+.service-feature.card-interactive:hover .service-cta { color: var(--ember-700); }
+
+/* Story figures lift gently on hover (they sit on the ink band). */
+.story-figure {
+  transition: transform var(--dur-3) var(--ease-out),
+              border-color var(--dur-3) var(--ease-out),
+              background-color var(--dur-3) var(--ease-out);
+}
+.story-figure:hover {
+  transform: translateY(-3px);
+  background: rgba(244,238,224,0.08);
+  border-color: rgba(185,105,78,0.4);
+}
+
+/* Step numbers pop on row hover for a touch of life in the sequence. */
+.step-item .step-num { transition: transform var(--dur-3) var(--ease-out), box-shadow var(--dur-3) var(--ease-out); }
+.step-item:hover .step-num { transform: scale(1.06); box-shadow: 0 0 0 5px var(--ember-soft); background: var(--ember); }
+
+/* Partner pills lift a hair and warm their mark on hover. */
+.partner-pill { transition: box-shadow var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out); }
+.partner-pill:hover { transform: translateY(-2px); }
+.partner-pill .partner-mark { transition: background-color var(--dur-2) var(--ease-out); }
+.partner-pill:hover .partner-mark { background: var(--ember); }
+
+@media (prefers-reduced-motion: reduce) {
+  .service-feature.card-interactive:hover,
+  .service-feature.card-interactive:hover .service-icon-lead,
+  .story-figure:hover,
+  .step-item:hover .step-num,
+  .partner-pill:hover { transform: none !important; }
+}
+
 /* ─────────────────────────────────────────
    STEP INDICATOR
 ───────────────────────────────────────── */

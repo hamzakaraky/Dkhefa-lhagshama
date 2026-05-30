@@ -30,44 +30,35 @@ export default function HomePage() {
     <main>
       {/* ── HERO — asymmetric: copy leads, portrait anchors the start side ── */}
       <section
-        className="hero-pattern"
-        style={{ background: 'var(--sky-2)', position: 'relative', overflow: 'hidden' }}
+        className="hero-bold hero-enter"
+        style={{ position: 'relative', overflow: 'hidden' }}
       >
-        <div className="page-container" style={{ position: 'relative', zIndex: 1, paddingBlock: 'clamp(48px, 7vw, 84px)' }}>
+        <div className="page-container" style={{ position: 'relative', zIndex: 1, paddingBlock: 'clamp(56px, 7.5vw, 96px)' }}>
           <div className="hero-grid">
             <div className="hero-mark">
-              <AssetImage
-                slot="logo"
-                rounded="var(--radius-xl)"
-                ratio="1 / 1"
-                priority
-                shadow="var(--shadow-xl)"
-                border="1px solid rgba(255,255,255,0.6)"
-                style={{ width: 'min(360px, 78vw)' }}
-              />
+              <div className="hero-mark-bold">
+                <AssetImage
+                  slot="logo"
+                  rounded="var(--radius-xl)"
+                  ratio="1 / 1"
+                  priority
+                  shadow="var(--shadow-xl)"
+                  border="1px solid rgba(255,255,255,0.6)"
+                  style={{ width: 'min(360px, 78vw)' }}
+                />
+              </div>
             </div>
 
             <div className="hero-copy">
-              <span className="eyebrow" style={{ color: 'var(--ink-2)' }}>{t.hero.badge}</span>
-              <h1
-                style={{
-                  fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-                  fontSize: 'var(--fs-hero)',
-                  lineHeight: 1.08,
-                  letterSpacing: '-0.015em',
-                  fontWeight: 400,
-                  color: 'var(--ink)',
-                  margin: '0 0 18px',
-                  textWrap: 'balance',
-                }}
-              >
+              <span className="eyebrow hero-rise" style={{ color: 'var(--ink-2)', '--rise-delay': '40ms' }}>{t.hero.badge}</span>
+              <h1 className="hero-title-bold hero-rise" style={{ '--rise-delay': '90ms' }}>
                 {t.hero.title1}{' '}
-                <em style={{ fontStyle: 'italic', color: 'var(--ember)' }}>{t.hero.titleHighlight}</em>{' '}
+                <em>{t.hero.titleHighlight}</em>{' '}
                 {t.hero.title2}
               </h1>
-              <p className="section-lede" style={{ margin: '0 0 28px' }}>{t.hero.subtitle}</p>
+              <p className="section-lede hero-rise" style={{ margin: '0 0 28px', '--rise-delay': '150ms' }}>{t.hero.subtitle}</p>
 
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="hero-rise" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', '--rise-delay': '210ms' }}>
                 <button className="btn btn-ember btn-lg" onClick={() => navigate('/requests')}>
                   {t.hero.cta}
                   <ArrowIcon size={16} />
@@ -82,6 +73,7 @@ export default function HomePage() {
 
               {/* Inline stat strip — woven into the hero, not a separate metric band */}
               <dl
+                className="hero-rise"
                 style={{
                   display: 'flex',
                   flexWrap: 'wrap',
@@ -89,6 +81,7 @@ export default function HomePage() {
                   margin: '36px 0 0',
                   paddingBlockStart: '24px',
                   borderBlockStart: '1px solid var(--hair)',
+                  '--rise-delay': '270ms',
                 }}
               >
                 {[
@@ -98,7 +91,7 @@ export default function HomePage() {
                   { num: mockStats.yearsActive,   suffix: '',  label: t.hero.stats.years },
                 ].map((s, i) => (
                   <div key={i}>
-                    <dd style={{ margin: 0, fontFamily: 'Frank Ruhl Libre, serif', fontSize: '1.9rem', fontWeight: 700, color: 'var(--ink)', lineHeight: 1 }}>
+                    <dd className="hero-stat-num" style={{ margin: 0 }}>
                       <StatCard num={s.num} suffix={s.suffix} delay={i * 120} />
                     </dd>
                     <dt
@@ -122,7 +115,7 @@ export default function HomePage() {
       <section id="services-section" className="section-padding" style={{ background: 'var(--paper)' }}>
         <div className="page-container">
           <header style={{ maxWidth: '46rem', marginBlockEnd: '40px' }}>
-            <h2 className="section-display" style={{ margin: '0 0 14px' }}>{t.services.title}</h2>
+            <h2 className="section-display-bold">{t.services.title}</h2>
             <p className="section-lede" style={{ margin: 0 }}>{t.services.subtitle}</p>
           </header>
 
@@ -170,7 +163,7 @@ export default function HomePage() {
           className="page-container impact-grid"
         >
           <div>
-            <h2 className="section-display" style={{ margin: '0 0 16px' }}>{t.home.impactTitle}</h2>
+            <h2 className="section-display-bold" style={{ marginBlockEnd: '16px' }}>{t.home.impactTitle}</h2>
             <p className="section-lede" style={{ margin: 0 }}>{t.home.impactBody}</p>
           </div>
           <AssetImage
@@ -214,6 +207,7 @@ export default function HomePage() {
             {mockStories.map((s) => (
               <figure
                 key={s.id}
+                className="story-figure"
                 style={{
                   background: 'rgba(244,238,224,0.05)',
                   border: '1px solid rgba(244,238,224,0.12)',
@@ -276,7 +270,7 @@ export default function HomePage() {
       <section className="section-padding" style={{ background: 'var(--paper)' }}>
         <div className="page-container">
           <header style={{ maxWidth: '40rem', marginBlockEnd: '40px' }}>
-            <h2 className="section-display" style={{ margin: '0 0 14px' }}>
+            <h2 className="section-display-bold">
               {lang === 'he' ? 'איך זה עובד' : 'How it works'}
             </h2>
             <p className="section-lede" style={{ margin: 0 }}>
