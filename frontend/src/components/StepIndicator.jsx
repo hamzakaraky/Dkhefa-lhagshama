@@ -1,37 +1,24 @@
 import { Check } from 'lucide-react'
 
+// API preserved: { steps: string[], currentStep: number (1-indexed) }
 export default function StepIndicator({ steps, currentStep }) {
   return (
-    <div style={{
-      display:'flex', alignItems:'center', justifyContent:'center',
-      marginBottom:'36px', flexWrap:'nowrap',
-    }}>
+    <div className="stepper" role="list" aria-label="Progress">
       {steps.map((label, i) => {
         const num = i + 1
-        const isDone   = num < currentStep
+        const isDone = num < currentStep
         const isActive = num === currentStep
+        const state = isDone ? 'is-done' : isActive ? 'is-active' : 'is-upcoming'
         return (
-          <div key={i} style={{ display:'flex', alignItems:'center' }}>
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'center' }}>
-              <div className={`step-dot ${isDone ? 'done' : isActive ? 'active' : 'todo'}`}>
-                {isDone ? <Check size={14} strokeWidth={3} /> : num}
-              </div>
-              <span style={{
-                fontSize:'11.5px',
-                marginTop:'6px',
-                color: isActive ? 'var(--ink)' : isDone ? 'var(--ember)' : 'var(--gray-400)',
-                fontWeight: isActive ? 600 : 400,
-                width:'92px', textAlign:'center', lineHeight:1.3,
-                wordBreak:'break-word',
-              }}>
-                {label}
+          <div key={i} style={{ display: 'flex', alignItems: 'flex-start', flex: i < steps.length - 1 ? '1 1 auto' : '0 0 auto' }}>
+            <div className={`stepper-node ${state}`} role="listitem" aria-current={isActive ? 'step' : undefined}>
+              <span className="stepper-dot" aria-hidden="true">
+                {isDone ? <Check size={16} strokeWidth={3} /> : num}
               </span>
+              <span className="stepper-label">{label}</span>
             </div>
             {i < steps.length - 1 && (
-              <div
-                className={`step-connector ${isDone ? 'done' : ''}`}
-                style={{ marginBottom:'20px', marginInline:'6px' }}
-              />
+              <span className={`stepper-rail ${isDone ? 'is-done' : ''}`} aria-hidden="true" />
             )}
           </div>
         )

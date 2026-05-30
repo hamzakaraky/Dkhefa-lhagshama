@@ -12,6 +12,7 @@
  * Issue #69.
  */
 import { useState } from 'react'
+import { Check, X as XIcon, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -33,45 +34,39 @@ const inputStyle = {
 // ── Small checkbox component ──────────────────────────────────────────────────
 function Checkbox({ checked, onChange, label }) {
   return (
-    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer', fontSize: 13.5, color: 'var(--ink)', lineHeight: 1.5 }}>
+    <label className="consent-row">
       <input
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ marginTop: 3, flexShrink: 0 }}
       />
       <span>{label}</span>
     </label>
   )
 }
 
+// ── Password rule row (#85 visual checklist) ─────────────────────────────────
+function PwCheck({ ok, label }) {
+  return (
+    <div className={`pw-check${ok ? ' is-ok' : ''}`}>
+      {ok ? <Check size={13} strokeWidth={3} /> : <XIcon size={13} strokeWidth={3} />}
+      <span>{label}</span>
+    </div>
+  )
+}
+
 // ── Tab toggle ────────────────────────────────────────────────────────────────
 function TabToggle({ active, labels, onChange }) {
   return (
-    <div style={{
-      display: 'flex',
-      borderRadius: 8,
-      overflow: 'hidden',
-      border: '1.5px solid var(--ember)',
-      marginBottom: 20,
-    }}>
-      {['beneficiary', 'volunteer'].map((tab, i) => (
+    <div className="seg" role="tablist" style={{ marginBottom: 20 }}>
+      {['beneficiary', 'volunteer'].map((tab) => (
         <button
           key={tab}
           type="button"
+          role="tab"
+          aria-selected={active === tab}
           onClick={() => onChange(tab)}
-          style={{
-            flex: 1,
-            padding: '10px 0',
-            fontSize: 14,
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            background: active === tab ? 'var(--ember)' : 'transparent',
-            color: active === tab ? '#fff' : 'var(--ember)',
-            borderRight: i === 0 ? '1.5px solid var(--ember)' : 'none',
-            transition: 'background 0.15s, color 0.15s',
-          }}
+          className={`seg-btn${active === tab ? ' is-active' : ''}`}
         >
           {labels[tab]}
         </button>
@@ -124,18 +119,24 @@ function BeneficiaryForm({ t }) {
         <input type="email" autoComplete="email" required value={email}
           onChange={(e) => setEmail(e.target.value)} className="form-input" />
       </label>
-      <label style={inputStyle}>
-        {a.password}
-        <input type="password" autoComplete="new-password" required minLength={6}
+      <div style={inputStyle}>
+        <label htmlFor="ben-password">{a.password}</label>
+        <input id="ben-password" type="password" autoComplete="new-password" required minLength={6}
           value={password} onChange={(e) => setPassword(e.target.value)} className="form-input" />
-      </label>
+        {password.length > 0 && (
+          <div className="pw-checks" style={{ marginTop: 8 }}>
+            <PwCheck ok={password.length >= 8} label={a.pwRuleLength} />
+            <PwCheck ok={/\d/.test(password)} label={a.pwRuleDigit} />
+          </div>
+        )}
+      </div>
       <label style={inputStyle}>
         {a.confirmPassword}
         <input type="password" autoComplete="new-password" required minLength={6}
           value={confirm} onChange={(e) => setConfirm(e.target.value)} className="form-input" />
       </label>
-      {error && <div style={{ color: 'var(--ember)', fontSize: 13.5 }}>{error}</div>}
-      <button type="submit" disabled={submitting} className="btn btn-primary" style={{ marginTop: 4 }}>
+      {error && <div className="form-error"><AlertCircle size={12} /><span>{error}</span></div>}
+      <button type="submit" disabled={submitting} className={`btn btn-primary${submitting ? ' is-loading' : ''}`} aria-busy={submitting} style={{ marginTop: 4 }}>
         {submitting ? a.submitting : a.submit}
       </button>
       <div style={{ fontSize: 13.5, textAlign: 'center', color: 'var(--ink-2)', marginTop: 4 }}>
@@ -183,7 +184,7 @@ function VolunteerStep1({ v, a, onNext }) {
         <input type="password" autoComplete="new-password" required minLength={6}
           value={confirm} onChange={(e) => setConfirm(e.target.value)} className="form-input" />
       </label>
-      {error && <div style={{ color: 'var(--ember)', fontSize: 13.5 }}>{error}</div>}
+      {error && <div className="form-error"><AlertCircle size={12} /><span>{error}</span></div>}
       <button type="submit" className="btn btn-primary" style={{ marginTop: 4 }}>
         {v.nextStep}
       </button>
@@ -314,26 +315,22 @@ function VolunteerStep2({ v, a, accountData, onBack }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         <div style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 500 }}>{v.areasOfHelp}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {v.areasList.map((area) => (
-            <button
-              key={area}
-              type="button"
-              onClick={() => toggleArea(area)}
-              style={{
-                padding: '6px 14px',
-                borderRadius: 20,
-                fontSize: 13,
-                fontWeight: 500,
-                border: '1.5px solid var(--ember)',
-                cursor: 'pointer',
-                background: selectedAreas.includes(area) ? 'var(--ember)' : 'transparent',
-                color: selectedAreas.includes(area) ? '#fff' : 'var(--ember)',
-                transition: 'background 0.15s, color 0.15s',
-              }}
-            >
-              {area}
-            </button>
-          ))}
+          {v.areasList.map((area) => {
+            const on = selectedAreas.includes(area)
+            return (
+              <button
+                key={area}
+                type="button"
+                aria-pressed={on}
+                onClick={() => toggleArea(area)}
+                className={`opt-pill${on ? ' is-on' : ''}`}
+                style={{ borderRadius: 999 }}
+              >
+                {on && <Check size={13} strokeWidth={3} />}
+                {area}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -347,7 +344,7 @@ function VolunteerStep2({ v, a, accountData, onBack }) {
         <div style={{ fontSize: 13.5, color: 'var(--ink)', fontWeight: 500 }}>{v.availability}</div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {availOptions.map((opt) => (
-            <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13.5 }}>
+            <label key={opt.value} className={`opt-pill${availability === opt.value ? ' is-on' : ''}`}>
               <input type="radio" name="availability" value={opt.value}
                 checked={availability === opt.value}
                 onChange={() => setAvailability(opt.value)} />
@@ -366,14 +363,13 @@ function VolunteerStep2({ v, a, accountData, onBack }) {
 
       <Checkbox checked={consent} onChange={setConsent} label={v.consent} />
 
-      {error && <div style={{ color: 'var(--ember)', fontSize: 13.5 }}>{error}</div>}
+      {error && <div className="form-error"><AlertCircle size={12} /><span>{error}</span></div>}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-        <button type="button" onClick={onBack} className="btn"
-          style={{ flex: '0 0 auto', background: 'var(--paper)', border: '1.5px solid var(--sky-3)', color: 'var(--ink)' }}>
+        <button type="button" onClick={onBack} className="btn btn-outline" style={{ flex: '0 0 auto' }}>
           {v.backStep}
         </button>
-        <button type="submit" disabled={submitting} className="btn btn-primary" style={{ flex: 1 }}>
+        <button type="submit" disabled={submitting} className={`btn btn-primary${submitting ? ' is-loading' : ''}`} aria-busy={submitting} style={{ flex: 1 }}>
           {submitting ? v.submitting : v.submit}
         </button>
       </div>

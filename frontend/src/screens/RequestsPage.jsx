@@ -4,7 +4,7 @@ const useNavigate = () => {
   const router = useRouter()
   return (to) => router.push(to)
 }
-import { CheckCircle, Copy, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, AlertTriangle } from 'lucide-react'
+import { CheckCircle, Copy, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, AlertTriangle, ShieldCheck, Sparkles } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import StepIndicator from '../components/StepIndicator'
 import UploadArea from '../components/UploadArea'
@@ -291,9 +291,9 @@ export default function RequestsPage() {
         <PageHeader title={rq.pageTitle} subtitle={rq.pageSubtitle} />
         <div className="page-container" style={{ maxWidth:'580px', padding:'56px 1.5rem' }}>
           <div className="card" style={{ padding:'40px 36px', textAlign:'center' }}>
-            <div style={{
+            <div aria-hidden="true" style={{
               width:'64px', height:'64px',
-              background:'var(--cream)',
+              background:'var(--ember-soft)',
               borderRadius:'50%',
               display:'flex', alignItems:'center', justifyContent:'center',
               margin:'0 auto 20px',
@@ -315,9 +315,6 @@ export default function RequestsPage() {
     )
   }
 
-  // ── Card style ────────────────────────────────────────────────
-  const cardStyle = { background:'var(--paper)', borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-sm)', border:'1px solid var(--hair)', padding:'36px' }
-
   // #86 — t.auth.verifyBanner strings
   const vb = t.auth.verifyBanner
 
@@ -325,57 +322,44 @@ export default function RequestsPage() {
     <>
       <PageHeader title={rq.pageTitle} subtitle={rq.pageSubtitle} />
 
-      {/* #86 — email-not-verified banner; shown only when user is signed in but unverified */}
-      {!emailVerified && (
-        <div style={{
-          background: '#FFF9E6',
-          borderBottom: '1px solid #F5C842',
-          padding: '12px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '10px',
-          fontSize: '14px',
-          color: '#7C5F00',
-        }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-          <span>{vb.text}</span>
-          <button
-            onClick={handleResendVerification}
-            disabled={resendSent}
-            style={{
-              background: 'none',
-              border: '1px solid #F5C842',
-              borderRadius: '6px',
-              padding: '3px 10px',
-              cursor: resendSent ? 'default' : 'pointer',
-              fontSize: '13px',
-              color: '#7C5F00',
-              fontWeight: 500,
-            }}
-          >
-            {resendSent ? vb.sent : vb.resend}
-          </button>
-        </div>
-      )}
+      <div className="page-container" style={{ maxWidth:'780px', padding:'40px 1.5rem 72px' }}>
+        {/* #86 — email-not-verified banner; shown only when user is signed in but unverified */}
+        {!emailVerified && (
+          <div className="form-banner form-banner-info" style={{ marginBottom:'24px' }}>
+            <AlertTriangle size={16} />
+            <span style={{ flex:1, fontWeight:500 }}>{vb.text}</span>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={handleResendVerification}
+              disabled={resendSent}
+            >
+              {resendSent ? vb.sent : vb.resend}
+            </button>
+          </div>
+        )}
 
-      <div className="page-container" style={{ maxWidth:'780px', padding:'48px 1.5rem 72px' }}>
-        <StepIndicator steps={steps} currentStep={step} />
+        <div className="card">
+          <div style={{ padding:'24px 24px 20px', background:'var(--gray-50)', borderBottom:'1px solid var(--hair)' }}>
+            <StepIndicator steps={steps} currentStep={step} />
+          </div>
+          <div className="card-body" style={{ padding:'32px' }}>
 
         {/* STEP 1 — PERSONAL DETAILS */}
         {step === 1 && (
-          <div style={cardStyle}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'26px' }}>
-              <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', margin:0 }}>{rq.step1.title}</h3>
+          <div>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'16px', flexWrap:'wrap', marginBottom:'24px' }}>
+              <h3 style={{ fontSize:'1.25rem', fontWeight:700, color:'var(--ink)', margin:0 }}>{rq.step1.title}</h3>
               {/* #67 — auto-fill button */}
               <button
                 type="button"
-                className="btn btn-outline btn-sm"
+                className={`btn btn-ghost btn-sm${profileLoading ? ' is-loading' : ''}`}
                 onClick={fillFromProfile}
                 disabled={profileLoading}
-                style={{ fontSize:'12.5px', padding:'6px 14px' }}
+                aria-busy={profileLoading}
+                style={{ color:'var(--ember)' }}
               >
-                {profileLoading ? t.common.loading : s2.autoFill.fillBtn}
+                <Sparkles size={14} /> {s2.autoFill.fillBtn}
               </button>
             </div>
 
@@ -401,17 +385,10 @@ export default function RequestsPage() {
                   ['passport',   s2.idType.passport],
                   ['none',       s2.idType.none],
                 ].map(([val, label]) => (
-                  <label key={val} style={{
-                    display:'flex', alignItems:'center', gap:'7px',
-                    padding:'9px 16px', borderRadius:'8px',
-                    border:`1px solid ${values.idType === val ? 'var(--ember)' : 'var(--hair)'}`,
-                    background: values.idType === val ? 'var(--sky-2)' : 'var(--paper)',
-                    cursor:'pointer', fontSize:'13.5px', transition:'all .18s',
-                  }}>
+                  <label key={val} className={`opt-pill${values.idType === val ? ' is-on' : ''}`}>
                     <input type="radio" name="idType" value={val}
                       checked={values.idType === val}
-                      onChange={handleChange}
-                      style={{ accentColor:'var(--ember)' }} />
+                      onChange={handleChange} />
                     {label}
                   </label>
                 ))}
@@ -476,17 +453,10 @@ export default function RequestsPage() {
               <Label>{rq.step1.gender}</Label>
               <div style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
                 {[['M', rq.step1.genderM], ['F', rq.step1.genderF], ['O', rq.step1.genderO]].map(([val, label]) => (
-                  <label key={val} style={{
-                    display:'flex', alignItems:'center', gap:'7px',
-                    padding:'9px 16px', borderRadius:'8px',
-                    border:`1px solid ${values.gender === val ? 'var(--ember)' : 'var(--hair)'}`,
-                    background: values.gender === val ? 'var(--sky-2)' : 'var(--paper)',
-                    cursor:'pointer', fontSize:'13.5px', transition:'all .18s',
-                  }}>
+                  <label key={val} className={`opt-pill${values.gender === val ? ' is-on' : ''}`}>
                     <input type="radio" name="gender" value={val}
                       checked={values.gender === val}
-                      onChange={handleChange}
-                      style={{ accentColor:'var(--ember)' }} />
+                      onChange={handleChange} />
                     {label}
                   </label>
                 ))}
@@ -497,29 +467,31 @@ export default function RequestsPage() {
 
         {/* STEP 2 — REQUEST TYPE */}
         {step === 2 && (
-          <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'6px' }}>{rq.step2.title}</h3>
-            <p style={{ fontSize:'13.5px', color:'var(--gray-400)', marginBottom:'24px' }}>{rq.step2.subtitle}</p>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:'12px', marginBottom:'24px' }}>
+          <div>
+            <h3 style={{ fontSize:'1.25rem', fontWeight:700, color:'var(--ink)', marginBottom:'4px' }}>{rq.step2.title}</h3>
+            <p style={{ fontSize:'14px', color:'var(--gray-600)', marginBottom:'20px' }}>{rq.step2.subtitle}</p>
+            <div className="choice-grid" role="radiogroup" aria-label={rq.step2.title} style={{ marginBottom:'24px' }}>
               {CATS.map(({ key, Icon, bg, color }) => {
                 const cat = rq.step2.cats[key]
                 const selected = values.category === key
                 return (
-                  <div
+                  <button
                     key={key}
-                    className={`cat-option${selected ? ' selected' : ''}`}
+                    type="button"
+                    className="choice-tile"
+                    role="radio"
+                    aria-checked={selected}
+                    aria-pressed={selected}
                     onClick={() => setValue('category', key)}
-                    role="button" tabIndex={0}
-                    onKeyPress={e => e.key === 'Enter' && setValue('category', key)}
                   >
-                    <div style={{ width:'38px', height:'38px', borderRadius:'8px', background:bg, color, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <span className="choice-tile-icon" aria-hidden="true" style={{ background:bg, color }}>
                       <Icon size={20} />
-                    </div>
-                    <div>
-                      <strong style={{ display:'block', fontSize:'14px', color:'var(--ink)', marginBottom:'2px' }}>{cat.label}</strong>
-                      <span style={{ fontSize:'12px', color:'var(--gray-400)' }}>{cat.hint}</span>
-                    </div>
-                  </div>
+                    </span>
+                    <span style={{ minWidth:0 }}>
+                      <span className="choice-tile-title">{cat.label}</span>
+                      <span className="choice-tile-hint">{cat.hint}</span>
+                    </span>
+                  </button>
                 )
               })}
             </div>
@@ -557,9 +529,9 @@ export default function RequestsPage() {
 
         {/* STEP 3 — DOCUMENTS */}
         {step === 3 && (
-          <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'6px' }}>{rq.step3.title}</h3>
-            <p style={{ fontSize:'13.5px', color:'var(--gray-400)', marginBottom:'24px' }}>{rq.step3.subtitle}</p>
+          <div>
+            <h3 style={{ fontSize:'1.25rem', fontWeight:700, color:'var(--ink)', marginBottom:'4px' }}>{rq.step3.title}</h3>
+            <p style={{ fontSize:'14px', color:'var(--gray-600)', marginBottom:'20px' }}>{rq.step3.subtitle}</p>
             <FormGroup>
               <UploadArea
                 label={rq.step3.idLabel}
@@ -585,28 +557,19 @@ export default function RequestsPage() {
                 }}
               />
             </FormGroup>
-            <div style={{
-              marginTop:'16px', padding:'14px 16px',
-              background:'var(--sky-2)', borderRadius:'8px',
-              display:'flex', gap:'8px', alignItems:'flex-start',
-              border:'1px solid var(--hair)',
-            }}>
-              <span style={{ fontSize:'16px' }}>🔒</span>
-              <p style={{ fontSize:'12.5px', color:'var(--ink-2)', lineHeight:1.6 }}>{rq.step3.security}</p>
+            <div className="soft-note" style={{ marginTop:'16px' }}>
+              <ShieldCheck size={18} className="soft-note-icon" aria-hidden="true" />
+              <p>{rq.step3.security}</p>
             </div>
           </div>
         )}
 
         {/* STEP 4 — SUMMARY + CONSENT */}
         {step === 4 && (
-          <div style={cardStyle}>
-            <h3 style={{ fontSize:'19px', fontWeight:700, color:'var(--ink)', marginBottom:'22px' }}>{rq.step4.title}</h3>
-            <div style={{
-              background:'var(--sky-2)', borderRadius:'10px',
-              border:'1px solid var(--hair)',
-              padding:'22px', marginBottom:'26px',
-            }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px 20px' }}>
+          <div>
+            <h3 style={{ fontSize:'1.25rem', fontWeight:700, color:'var(--ink)', marginBottom:'20px' }}>{rq.step4.title}</h3>
+            <div className="review-panel" style={{ marginBottom:'24px' }}>
+              <dl className="review-grid">
                 {[
                   [rq.step4.fullName,  `${values.firstName} ${values.lastName}`],
                   [rq.step4.phone,     values.phone],
@@ -615,77 +578,71 @@ export default function RequestsPage() {
                   [rq.step4.urgency,   values.urgency === 'high' ? rq.step2.urgencyHigh : values.urgency === 'medium' ? rq.step2.urgencyMed : rq.step2.urgencyLow],
                   ...(values.deadline ? [[t.myRequests.table.deadline, values.deadline]] : []),
                 ].map(([label, val]) => (
-                  <div key={label}>
-                    <div style={{ fontSize:'12px', color:'var(--gray-400)', marginBottom:'2px' }}>{label}</div>
-                    <div style={{ fontSize:'14px', fontWeight:600, color:'var(--ink)' }}>{val || '—'}</div>
+                  <div key={label} className="review-item">
+                    <dt>{label}</dt>
+                    <dd>{val || '—'}</dd>
                   </div>
                 ))}
-              </div>
+              </dl>
               {values.description && (
-                <div style={{ marginTop:'14px', paddingTop:'14px', borderTop:'1px solid var(--gray-200)' }}>
-                  <div style={{ fontSize:'12px', color:'var(--gray-400)', marginBottom:'4px' }}>{rq.step4.description}</div>
-                  <div style={{ fontSize:'13.5px', color:'var(--gray-700)', lineHeight:1.65 }}>{values.description}</div>
+                <div className="review-note">
+                  <div style={{ fontSize:'12px', color:'var(--gray-500)', marginBottom:'4px' }}>{rq.step4.description}</div>
+                  <div style={{ fontSize:'14px', color:'var(--gray-700)', lineHeight:1.7 }}>{values.description}</div>
                 </div>
               )}
             </div>
 
             <FormGroup>
-              <label style={{ display:'flex', alignItems:'flex-start', gap:'10px', cursor:'pointer' }}>
+              <label className="consent-row">
                 <input
                   type="checkbox" name="consent"
                   checked={values.consent}
                   onChange={handleChange}
-                  style={{ marginTop:'3px', width:'17px', height:'17px', accentColor:'var(--ember)', flexShrink:0 }}
                 />
-                <span style={{ fontSize:'13.5px', color:'var(--gray-600)', lineHeight:1.65 }}>
-                  {rq.step4.consent}
-                </span>
+                <span>{rq.step4.consent}</span>
               </label>
               {errors.consent && <div className="form-error" style={{ marginTop:'8px' }}>{errors.consent}</div>}
             </FormGroup>
 
             {/* #67 — save-to-profile offer */}
             {showSaveProfile && (
-              <div style={{
-                marginTop:'16px', padding:'14px 16px',
-                background:'var(--sky-2)', borderRadius:'8px',
-                display:'flex', gap:'12px', alignItems:'center',
-                border:'1px solid var(--hair)',
-              }}>
-                <span style={{ flex:1, fontSize:'13px', color:'var(--ink-2)' }}>
+              <div className="soft-note" style={{ marginTop:'16px', alignItems:'center', flexWrap:'wrap' }}>
+                <span style={{ flex:1, minWidth:'180px', fontSize:'13px', color:'var(--ink-2)' }}>
                   {s2.autoFill.saveToProfile}
                 </span>
-                <button className="btn btn-outline btn-sm" onClick={offerSaveProfile}
-                  style={{ fontSize:'12.5px', padding:'6px 14px' }}>
-                  {t.common.save}
-                </button>
-                <button className="btn btn-ghost btn-sm" onClick={() => setShowSaveProfile(false)}
-                  style={{ fontSize:'12.5px', padding:'6px 10px' }}>
-                  {t.common.cancel}
-                </button>
+                <div style={{ display:'flex', gap:'8px' }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={offerSaveProfile}>
+                    {t.common.save}
+                  </button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowSaveProfile(false)}>
+                    {t.common.cancel}
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
 
+          </div>
+        </div>
+
         {/* NAV BUTTONS */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'24px' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:'12px', marginTop:'24px' }}>
           {step > 1 ? (
             <button className="btn btn-outline" onClick={() => setStep(s => s - 1)} disabled={submitting}>
               <BackArrow size={16} /> {rq.nav.back}
             </button>
-          ) : <div />}
+          ) : <span />}
           {/* #86 — email verification is a gentle reminder (banner above), NOT a
               hard block: an unverified user can still submit a request. */}
           <button
-            className="btn btn-primary btn-lg"
+            className={`btn ${step === 4 ? 'btn-ember' : 'btn-primary'} btn-lg${submitting ? ' is-loading' : ''}`}
             onClick={goNext}
             disabled={submitting}
+            aria-busy={submitting}
           >
             {step === 4 ? (
-              submitting
-                ? <>{t.common.loading}</>
-                : <><CheckCircle size={16} /> {rq.nav.submit}</>
+              <><CheckCircle size={16} /> {rq.nav.submit}</>
             ) : (
               <>{rq.nav.next} <NextArrow size={16} /></>
             )}
