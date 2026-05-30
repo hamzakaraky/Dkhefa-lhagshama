@@ -9,12 +9,13 @@ import {
   EmptyState,
   ErrorState,
   TableSkeleton,
+  adminErrorMessage,
 } from '@/components/admin/AdminUI'
 
 const STATUS_FILTERS = ['', 'pending', 'in_progress', 'resolved', 'rejected', 'closed']
 
 export default function AdminRequestsListPage() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const a = t.admin
   const [status, setStatus] = useState('')
   const [items, setItems] = useState([])
@@ -28,12 +29,12 @@ export default function AdminRequestsListPage() {
       const qs = status ? `?status=${status}` : ''
       const res = await apiJson(`/api/admin/requests${qs}`)
       setItems(res.items || [])
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setLoading(false)
     }
-  }, [status, a.ui.loading])
+  }, [status, lang])
 
   useEffect(() => {
     load()

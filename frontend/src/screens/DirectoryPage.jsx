@@ -184,6 +184,14 @@ export default function DirectoryPage() {
         : 'Please fill in all required fields.');
     }
 
+    // The backend (Zod) requires a description of at least 10 characters.
+    // Validate here so the user gets a precise message instead of a generic 400.
+    if (trimmed.description.length < 10) {
+      return window.alert(lang === 'he'
+        ? 'התיאור חייב לכלול לפחות 10 תווים.'
+        : 'The description must be at least 10 characters long.');
+    }
+
     setRegisterSubmitting(true)
     try {
       await apiJson('/api/businesses', {
@@ -195,10 +203,35 @@ export default function DirectoryPage() {
       setShowRegForm(false)
       setRegisterForm({ business_name: '', owner_name: '', phone: '', category: 'food', city: '', desc: '' })
     } catch (err) {
-      window.alert(lang === 'he'
-        ? 'שגיאה בשליחת העסק. נסה שוב מאוחר יותר.'
-        : 'Failed to submit the business. Please try again later.')
+      // Surface the real backend error so failures are diagnosable instead of a
+      // blanket "try again later". apiJson throws { status, error, detail }.
       console.error('[DirectoryPage] register business failed:', err)
+      // 401 means no signed-in user — registering a business requires login so
+      // the submission can be tied to an owner (firestore rules key off ownerId).
+      if (err?.status === 401) {
+        window.alert(lang === 'he'
+          ? 'יש להתחבר כדי לרשום עסק.'
+          : 'Please sign in to register a business.')
+        setRegisterSubmitting(false)
+        return
+      }
+      const fieldErrors = err?.detail?.fieldErrors
+      let detailMsg = ''
+      if (fieldErrors && typeof fieldErrors === 'object') {
+        detailMsg = Object.entries(fieldErrors)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join('\n')
+      } else if (typeof err?.detail === 'string') {
+        detailMsg = err.detail
+      } else if (err?.detail?.error) {
+        detailMsg = err.detail.error
+      } else if (err?.error) {
+        detailMsg = err.error
+      }
+      const base = lang === 'he'
+        ? 'שגיאה בשליחת העסק.'
+        : 'Failed to submit the business.'
+      window.alert(detailMsg ? `${base}\n${detailMsg}` : base)
     } finally {
       setRegisterSubmitting(false)
     }

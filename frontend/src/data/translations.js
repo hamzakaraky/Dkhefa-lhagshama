@@ -707,6 +707,9 @@ const translations = {
         saved:          'הפרטים נשמרו בפרופיל',
         saveError:      'שמירת הפרופיל נכשלה',
         emailNote:      'ניתן לשנות את כתובת האימייל',
+        filled:         'הטופס מולא מהפרופיל שלך',
+        nothing:        'אין פרטים שמורים בפרופיל למילוי',
+        fillError:      'טעינת הפרופיל נכשלה. נסה למלא ידנית.',
       },
       // #68 — deadline picker
       deadline: {
@@ -1415,6 +1418,9 @@ const translations = {
         saved:         'Details saved to profile',
         saveError:     'Failed to save profile',
         emailNote:     'You may change your email address',
+        filled:        'Form filled from your profile',
+        nothing:       'No saved profile details to fill',
+        fillError:     'Could not load your profile. Please fill manually.',
       },
       // #68 — deadline picker
       deadline: {

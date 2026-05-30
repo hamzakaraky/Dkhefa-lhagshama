@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext'
 import { useApp } from '@/contexts/AppContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
-import { EmptyState, ErrorState, TableSkeleton } from '@/components/admin/AdminUI'
+import { EmptyState, ErrorState, TableSkeleton, adminErrorMessage } from '@/components/admin/AdminUI'
 
 const ENTITY_FILTERS = ['all', 'businesses', 'organizations', 'answers']
 
@@ -34,12 +34,12 @@ export default function AdminApprovalsPage() {
     try {
       const res = await apiJson('/api/admin/pending')
       setItems(res.items || [])
-    } catch {
-      setError(a.ui.loading)
+    } catch (err) {
+      setError(adminErrorMessage(err, lang))
     } finally {
       setLoading(false)
     }
-  }, [a.ui.loading])
+  }, [lang])
 
   useEffect(() => {
     load()
@@ -49,10 +49,11 @@ export default function AdminApprovalsPage() {
     setBusyId(item.id)
     try {
       const endpoint = action.replace('_', '-')
-      await apiFetch(`/api/admin/${endpoint}`, {
+      const res = await apiFetch(`/api/admin/${endpoint}`, {
         method: 'POST',
         body: JSON.stringify({ entityType: item.entityType, entityId: item.id }),
       })
+      if (!res.ok) throw new Error('action_failed')
       setItems((prev) => prev.filter((i) => i.id !== item.id))
       toast(lang === 'he' ? 'בוצע בהצלחה' : 'Done', 'success')
     } catch {
