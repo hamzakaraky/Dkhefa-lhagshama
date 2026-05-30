@@ -454,7 +454,8 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   padding: 32px 20px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color var(--dur-2) var(--ease-out),
+              background-color var(--dur-2) var(--ease-out);
   background: var(--sky-2);
 }
 .upload-area:hover {
@@ -608,7 +609,9 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   font-size: 13px;
   font-weight: 700;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  transition: all 0.3s;
+  transition: background-color var(--dur-3) var(--ease-out),
+              color var(--dur-3) var(--ease-out),
+              box-shadow var(--dur-3) var(--ease-out);
   flex-shrink: 0;
 }
 .step-dot.done { background: var(--ink); color: var(--cream); }
@@ -625,7 +628,8 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   border-radius: var(--radius);
   padding: 16px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color var(--dur-2) var(--ease-out),
+              background-color var(--dur-2) var(--ease-out);
   display: flex;
   align-items: center;
   gap: 13px;
@@ -702,7 +706,9 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.18s;
+  transition: border-color var(--dur-2) var(--ease-out),
+              background-color var(--dur-2) var(--ease-out),
+              color var(--dur-2) var(--ease-out);
   color: var(--ink-2);
 }
 .page-btn:hover { border-color: var(--ink); color: var(--ink); }
