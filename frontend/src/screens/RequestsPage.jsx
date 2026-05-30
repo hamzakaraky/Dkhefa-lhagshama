@@ -4,7 +4,7 @@ const useNavigate = () => {
   const router = useRouter()
   return (to) => router.push(to)
 }
-import { CheckCircle, Copy, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, Printer } from 'lucide-react'
+import { CheckCircle, Copy, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, Printer, AlertTriangle } from 'lucide-react'
 import PageHeader from '../components/PageHeader'
 import StepIndicator from '../components/StepIndicator'
 import UploadArea from '../components/UploadArea'
@@ -12,6 +12,8 @@ import { FormGroup, Label, Input, Select, Textarea, FormRow } from '../component
 import { useLanguage } from '../contexts/LanguageContext'
 import { useApp } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
+import { sendEmailVerification } from 'firebase/auth' // #86
+import { firebaseAuth } from '../lib/firebase' // #86
 import { useForm } from '../hooks/useForm'
 import { validateStep1, validateStep2, validateStep3, validateStep4 } from '../utils/validators'
 import { copyToClipboard } from '../utils/helpers'
@@ -32,6 +34,21 @@ export default function RequestsPage() {
   const router = useRouter()
   const BackArrow  = isRTL ? ArrowRight : ArrowLeft
   const NextArrow  = isRTL ? ArrowLeft  : ArrowRight
+
+  // #86 — track email verification state so we can show a banner
+  const emailVerified = user?.emailVerified ?? false
+  const [resendSent, setResendSent] = useState(false)
+
+  const handleResendVerification = async () => {
+    const fbUser = firebaseAuth.currentUser
+    if (!fbUser) return
+    try {
+      await sendEmailVerification(fbUser)
+      setResendSent(true)
+    } catch {
+      // swallow — the toast system is not critical here
+    }
+  }
 
   const [step, setStep] = useState(1)
   const [trackingId, setTrackingId] = useState('')
@@ -213,9 +230,47 @@ export default function RequestsPage() {
   // ── FORM CARD WRAPPER ─────────────────────────────────────
   const cardStyle = { background:'var(--paper)', borderRadius:'var(--radius-lg)', boxShadow:'var(--shadow-sm)', border:'1px solid var(--hair)', padding:'36px' }
 
+  // #86 — t.auth.verifyBanner strings
+  const vb = t.auth.verifyBanner
+
   return (
     <>
       <PageHeader title={rq.pageTitle} subtitle={rq.pageSubtitle} />
+
+      {/* #86 — email-not-verified banner; shown only when user is signed in but unverified */}
+      {!emailVerified && (
+        <div style={{
+          background: '#FFF9E6',
+          borderBottom: '1px solid #F5C842',
+          padding: '12px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          fontSize: '14px',
+          color: '#7C5F00',
+        }}>
+          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+          <span>{vb.text}</span>
+          <button
+            onClick={handleResendVerification}
+            disabled={resendSent}
+            style={{
+              background: 'none',
+              border: '1px solid #F5C842',
+              borderRadius: '6px',
+              padding: '3px 10px',
+              cursor: resendSent ? 'default' : 'pointer',
+              fontSize: '13px',
+              color: '#7C5F00',
+              fontWeight: 500,
+            }}
+          >
+            {resendSent ? vb.sent : vb.resend}
+          </button>
+        </div>
+      )}
+
       <div className="page-container" style={{ maxWidth:'780px', padding:'48px 1.5rem 72px' }}>
         <StepIndicator steps={steps} currentStep={step} />
 
@@ -434,9 +489,12 @@ export default function RequestsPage() {
               <BackArrow size={16} /> {rq.nav.back}
             </button>
           ) : <div />}
+          {/* #86 — disable submit (step 4 only) if email is not yet verified */}
           <button
             className="btn btn-primary btn-lg"
             onClick={goNext}
+            disabled={step === 4 && !emailVerified}
+            title={step === 4 && !emailVerified ? vb.text : undefined}
           >
             {step === 4 ? (
               <><CheckCircle size={16} /> {rq.nav.submit}</>
