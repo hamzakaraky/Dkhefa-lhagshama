@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback } from "react";
-import { CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, AlertCircle, FileText } from "lucide-react";
 
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -17,16 +17,21 @@ function DeadlinePill({ deadline, t }) {
   const days = Math.round((new Date(deadline) - Date.now()) / 86400000);
   const overdue = days < 0;
   const label = t.myRequests.dueIn(days);
+  const tone = overdue ? "danger" : days <= 3 ? "warning" : "info";
+  const palette = {
+    danger:  { bg: "var(--danger-soft)",  fg: "var(--danger)" },
+    warning: { bg: "var(--warning-soft)", fg: "var(--warning)" },
+    info:    { bg: "var(--sky-2)",        fg: "var(--ink-2)" },
+  }[tone];
   return (
     <span style={{
       display: "inline-block",
       padding: "3px 10px",
       borderRadius: "999px",
       fontSize: "12px",
-      fontWeight: 500,
-      background: overdue ? "#FEE2E2" : days <= 3 ? "#FEF3C7" : "var(--sky-2)",
-      color: overdue ? "#991B1B" : days <= 3 ? "#92400E" : "var(--ink-2)",
-      border: `1px solid ${overdue ? "#FECACA" : days <= 3 ? "#FDE68A" : "var(--hair)"}`,
+      fontWeight: 600,
+      background: palette.bg,
+      color: palette.fg,
     }}>
       {label}
     </span>
@@ -59,42 +64,24 @@ function RequestTimeline({ requestId, t }) {
 
   return (
     <div style={{ marginTop: "12px" }}>
-      <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--ink-2)", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px" }}>
+      <div style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--ink)", marginBottom: "12px" }}>
         {tl.title}
       </div>
       {events.length === 0 ? (
-        <div style={{ color: "var(--gray-400)", fontSize: "13px" }}>{tl.noEvents}</div>
+        <div style={{ color: "var(--gray-500)", fontSize: "13px" }}>{tl.noEvents}</div>
       ) : (
-        <ol style={{ listStyle: "none", margin: 0, padding: 0, position: "relative" }}>
+        <ol className="timeline">
           {events.map((ev, i) => {
             const typeLabel = tl.types[ev.type] || ev.type;
             const dateStr = ev.createdAt ? formatDate(ev.createdAt, t.lang) : "";
             const isLast = i === events.length - 1;
             return (
-              <li key={ev.id} style={{ display: "flex", gap: "12px", paddingBottom: isLast ? 0 : "14px", position: "relative" }}>
-                {/* Connector line */}
-                {!isLast && (
-                  <div style={{
-                    position: "absolute",
-                    left: "9px",
-                    top: "20px",
-                    bottom: 0,
-                    width: "2px",
-                    background: "var(--hair)",
-                  }} />
-                )}
-                {/* Dot */}
-                <div style={{
-                  width: "20px", height: "20px", borderRadius: "50%",
-                  background: "var(--ember)", flexShrink: 0,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  zIndex: 1,
-                }}>
-                  <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#fff" }} />
-                </div>
+              <li key={ev.id} className="timeline-item">
+                {!isLast && <span className="timeline-rail" aria-hidden="true" />}
+                <span className="timeline-dot" aria-hidden="true" />
                 <div style={{ flex: 1, paddingTop: "1px" }}>
-                  <div style={{ fontSize: "13.5px", fontWeight: 500, color: "var(--ink)" }}>{typeLabel}</div>
-                  {dateStr && <div style={{ fontSize: "12px", color: "var(--gray-400)", marginTop: "2px" }}>{dateStr}</div>}
+                  <div className="timeline-title">{typeLabel}</div>
+                  {dateStr && <div className="timeline-time">{dateStr}</div>}
                 </div>
               </li>
             );
@@ -144,26 +131,27 @@ function RateExperienceCard({ requestId, t }) {
     <div
       style={{
         marginTop: "16px",
-        padding: "18px 20px",
-        background: "var(--paper)",
-        border: "1px solid var(--hair)",
-        borderRadius: "12px",
+        padding: "20px 22px",
+        background: "var(--white)",
+        border: "1px solid var(--gray-200)",
+        borderRadius: "var(--radius)",
+        boxShadow: "var(--shadow-xs)",
       }}
     >
-      <div style={{ fontSize: "14px", fontWeight: 700, color: "var(--ink)", marginBottom: "6px" }}>
+      <div style={{ fontSize: "15px", fontWeight: 700, color: "var(--ink)", marginBottom: "6px" }}>
         {r.cardTitle}
       </div>
       {alreadyRated ? (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--success)", fontSize: "13.5px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "var(--success)", fontSize: "14px", fontWeight: 600 }}>
           <CheckCircle size={16} /> {r.thanks}
         </div>
       ) : (
         <>
-          <p style={{ fontSize: "13px", color: "var(--gray-500)", marginBottom: "12px", lineHeight: 1.6 }}>
+          <p style={{ fontSize: "13px", color: "var(--gray-600)", marginBottom: "14px", lineHeight: 1.6 }}>
             {r.cardSubtitle}
           </p>
           <RatingForm onSubmit={handleSubmit} submitting={submitting} />
-          {error && <div style={{ color: "var(--danger)", fontSize: 13, marginTop: 8 }}>{error}</div>}
+          {error && <div className="form-error" style={{ marginTop: 10 }}><span>{error}</span></div>}
         </>
       )}
     </div>
@@ -280,7 +268,7 @@ export default function MyRequestsPage() {
     <>
       <PageHeader title={t.myRequests.title} subtitle={t.myRequests.subtitle}>
         <div style={{ marginTop: "22px", display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "10px" }}>
-          <Link href="/requests" className="btn btn-primary btn-sm">
+          <Link href="/requests" className="btn btn-ember btn-sm">
             {t.myRequests.submitCta}
           </Link>
         </div>
@@ -290,18 +278,11 @@ export default function MyRequestsPage() {
 
         {/* #94 — New-request success banner */}
         {newId && !loading && (
-          <div style={{
-            display: "flex", alignItems: "center", gap: "12px",
-            padding: "14px 20px", marginBottom: "24px",
-            background: "#ECFDF5", border: "1px solid #6EE7B7",
-            borderRadius: "10px",
-          }}>
-            <CheckCircle size={20} color="#059669" />
+          <div className="form-banner form-banner-success" style={{ marginBottom: "24px", alignItems: "flex-start" }}>
+            <CheckCircle size={18} />
             <div>
-              <div style={{ fontSize: "14px", fontWeight: 600, color: "#065F46" }}>
-                {t.stream2.newRequestBadge}
-              </div>
-              <div style={{ fontSize: "12.5px", color: "#047857", fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace' }}>
+              <div style={{ fontWeight: 700 }}>{t.stream2.newRequestBadge}</div>
+              <div style={{ fontSize: "12.5px", fontWeight: 500, fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', marginTop: "2px" }}>
                 {newId}
               </div>
             </div>
@@ -309,15 +290,24 @@ export default function MyRequestsPage() {
         )}
 
         {loading || authLoading ? (
-          <div className="card" style={{ padding: "28px", textAlign: "center" }}>
-            {t.myRequests.loading}
+          <div className="card" style={{ padding: "24px" }} aria-busy="true" aria-label={t.myRequests.loading}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "12px 0", borderBottom: i < 2 ? "1px solid var(--hair)" : "none" }}>
+                <div className="skeleton skeleton-line" style={{ width: "30%" }} />
+                <div className="skeleton skeleton-line" style={{ width: "18%" }} />
+                <div className="skeleton skeleton-line" style={{ width: "22%", marginInlineStart: "auto" }} />
+              </div>
+            ))}
           </div>
         ) : error ? (
-          <div className="card" style={{ padding: "28px" }}>
-            <h2 style={{ fontSize: "20px", fontWeight: 700, color: "var(--ink)", marginBottom: "8px" }}>
+          <div className="card" style={{ padding: "32px", textAlign: "center" }}>
+            <div aria-hidden="true" style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--danger-soft)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <AlertCircle size={24} color="var(--danger)" />
+            </div>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "var(--ink)", marginBottom: "8px" }}>
               {lang === "he" ? "אירעה שגיאה בטעינת הבקשות" : "We could not load your requests"}
             </h2>
-            <p style={{ color: "var(--gray-500)", marginBottom: "18px", lineHeight: 1.7 }}>
+            <p style={{ color: "var(--gray-600)", marginBottom: "20px", lineHeight: 1.7, maxWidth: "44ch", marginInline: "auto" }}>
               {lang === "he"
                 ? "נסה/י לרענן את הדף או לחזור שוב מאוחר יותר."
                 : "Try refreshing the page or come back again in a moment."}
@@ -327,11 +317,14 @@ export default function MyRequestsPage() {
             </button>
           </div>
         ) : items.length === 0 ? (
-          <div className="card" style={{ padding: "34px", textAlign: "center" }}>
-            <h2 style={{ fontSize: "22px", fontWeight: 700, color: "var(--ink)", marginBottom: "10px" }}>
+          <div className="card" style={{ padding: "48px 32px", textAlign: "center" }}>
+            <div aria-hidden="true" style={{ width: 56, height: 56, borderRadius: "50%", background: "var(--sky-2)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 18px" }}>
+              <FileText size={26} color="var(--ink-2)" />
+            </div>
+            <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--ink)", marginBottom: "10px" }}>
               {t.myRequests.empty}
             </h2>
-            <p style={{ color: "var(--gray-500)", marginBottom: "22px", lineHeight: 1.7 }}>
+            <p style={{ color: "var(--gray-600)", marginBottom: "24px", lineHeight: 1.7, maxWidth: "46ch", marginInline: "auto" }}>
               {lang === "he"
                 ? "כשתשלח/י בקשה חדשה, היא תופיע כאן עם מספר המעקב והסטטוס שלה."
                 : "When you submit a new request, it will appear here with its tracking number and status."}
@@ -379,14 +372,12 @@ export default function MyRequestsPage() {
 
 const thStyle = {
   textAlign: "start",
-  padding: "14px 18px",
-  fontSize: "11px",
-  color: "var(--ink-2)",
-  fontWeight: 500,
-  fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-  letterSpacing: "0.12em",
-  textTransform: "uppercase",
-  borderBottom: "1px solid var(--hair)",
+  padding: "13px 18px",
+  fontSize: "12.5px",
+  color: "var(--ink)",
+  fontWeight: 700,
+  borderBottom: "1px solid var(--gray-200)",
+  whiteSpace: "nowrap",
 };
 
 const tdStyle = {

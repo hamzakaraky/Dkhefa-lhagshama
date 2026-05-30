@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Upload, CheckCircle, X } from 'lucide-react'
+import { Upload, CheckCircle, X, FileText } from 'lucide-react'
 import { uploadAttachment } from '../lib/storage'
 import { sanitizeFilename } from '../utils/sanitizeFilename' // #96
 
@@ -22,6 +22,7 @@ export default function UploadArea({ label, hint, formats, required, onUpload, e
   const [uploading, setUploading] = useState(false)
   const [percent, setPercent] = useState(0)
   const [errMsg, setErrMsg] = useState('')
+  const [dragging, setDragging] = useState(false)
   const handleRef = useRef(null)
 
   // Cancel an in-flight upload if the component unmounts.
@@ -85,6 +86,7 @@ export default function UploadArea({ label, hint, formats, required, onUpload, e
 
   const handleDrop = (e) => {
     e.preventDefault()
+    setDragging(false)
     const f = e.dataTransfer.files[0]
     if (f) handleFile(f)
   }
@@ -96,24 +98,30 @@ export default function UploadArea({ label, hint, formats, required, onUpload, e
     if (onUpload) onUpload(null)
   }
 
+  const inputId = `file-${label}`
+  const openPicker = () => document.getElementById(inputId).click()
+
+  // ── Uploaded state: compact file card with remove ──
   if (file && !uploading) {
     return (
-      <div className="upload-area has-file" style={{ cursor:'default' }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:'10px' }}>
-          <CheckCircle size={22} color="var(--success)" />
-          <div>
-            <div style={{ fontWeight:600, fontSize:'14px', color:'var(--success)' }}>{file.name}</div>
-            <div style={{ fontSize:'12px', color:'var(--gray-400)' }}>
-              {(file.size / 1024).toFixed(0)} KB
-            </div>
-          </div>
-          <button onClick={remove} style={{
-            background:'none', border:'none', cursor:'pointer',
-            color:'var(--gray-400)', padding:'4px', marginInlineStart:'8px', display:'flex',
-          }}>
-            <X size={16} />
-          </button>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-3)',
+        padding: 'var(--sp-3) var(--sp-4)', border: '1px solid var(--success)',
+        background: 'var(--success-soft)', borderRadius: 'var(--radius)',
+      }}>
+        <div aria-hidden="true" style={{
+          width: 38, height: 38, borderRadius: 'var(--radius-sm)', flexShrink: 0,
+          background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <CheckCircle size={20} color="var(--success)" />
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</div>
+          <div style={{ fontSize: '12px', color: 'var(--gray-600)' }}>{(file.size / 1024).toFixed(0)} KB</div>
+        </div>
+        <button type="button" onClick={remove} aria-label={`Remove ${file.name}`} className="btn btn-ghost btn-sm" style={{ padding: 'var(--sp-2)' }}>
+          <X size={16} />
+        </button>
       </div>
     )
   }
@@ -121,57 +129,63 @@ export default function UploadArea({ label, hint, formats, required, onUpload, e
   return (
     <div>
       <div
-        className="upload-area"
-        onClick={() => document.getElementById(`file-${label}`).click()}
-        onDragOver={e => e.preventDefault()}
+        className={`upload-area${dragging ? ' is-dragging' : ''}`}
+        onClick={openPicker}
+        onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
+        onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         role="button"
         tabIndex={0}
-        onKeyPress={e => e.key === 'Enter' && document.getElementById(`file-${label}`).click()}
+        aria-label={label}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker() } }}
+        style={dragging ? { borderColor: 'var(--ember)', background: 'var(--ember-soft)' } : undefined}
       >
         {uploading ? (
-          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'10px', width:'100%' }}>
-            <div style={{
-              width:'32px', height:'32px', border:'3px solid var(--gray-200)',
-              borderTopColor:'var(--ink)', borderRadius:'50%',
-              animation:'spin 0.8s linear infinite',
-            }} />
-            <span style={{ fontSize:'13.5px', color:'var(--gray-500)' }}>
-              Uploading… {percent ? `${percent.toFixed(0)}%` : ''}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--sp-3)', width: '100%' }}>
+            <div className="spinner-ring" aria-hidden="true" />
+            <span style={{ fontSize: '13.5px', color: 'var(--gray-600)' }}>
+              {percent ? `${percent.toFixed(0)}%` : ''}
             </span>
-            <div style={{ width:'80%', height:6, background:'var(--gray-200)', borderRadius:3, overflow:'hidden' }}>
-              <div style={{
-                width: `${percent.toFixed(0)}%`,
-                height:'100%',
-                background:'var(--ink)',
-                transition:'width 0.15s linear',
-              }} />
+            <div style={{ width: '80%', height: 6, background: 'var(--gray-200)', borderRadius: 3, overflow: 'hidden' }}>
+              <div style={{ width: `${percent.toFixed(0)}%`, height: '100%', background: 'var(--ink)', transition: 'width 0.15s linear' }} />
             </div>
           </div>
         ) : (
           <>
-            <Upload size={28} style={{ color:'var(--gray-400)', marginBottom:'10px' }} />
-            <div style={{ fontWeight:600, fontSize:'14px', color:'var(--ink)', marginBottom:'6px' }}>
-              {label} {required && <span style={{ color:'var(--danger)' }}>*</span>}
+            <div aria-hidden="true" style={{
+              width: 48, height: 48, borderRadius: 'var(--radius)', margin: '0 auto var(--sp-3)',
+              background: 'var(--white)', border: '1px solid var(--hair)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Upload size={20} color="var(--gray-600)" />
             </div>
-            <div style={{ fontSize:'13px', color:'var(--gray-500)', marginBottom:'6px' }}>{hint}</div>
-            <div style={{ fontSize:'12px', color:'var(--gray-400)' }}>{formats}</div>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--ink)', marginBottom: 'var(--sp-1)' }}>
+              {label} {required && <span style={{ color: 'var(--danger)' }}>*</span>}
+            </div>
+            <div style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: 'var(--sp-1)' }}>{hint}</div>
+            <div style={{ fontSize: '12px', color: 'var(--gray-500)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <FileText size={12} /> {formats}
+            </div>
           </>
         )}
       </div>
       {(errMsg || error) && (
-        <div className="form-error" style={{ marginTop:'6px' }}>
+        <div className="form-error" style={{ marginTop: 'var(--sp-2)' }}>
           <span>{errMsg || error}</span>
         </div>
       )}
       <input
         type="file"
-        id={`file-${label}`}
+        id={inputId}
         accept=".jpg,.jpeg,.png,.pdf,.docx"
-        style={{ display:'none' }}
-        onChange={e => handleFile(e.target.files[0])}
+        style={{ display: 'none' }}
+        onChange={(e) => handleFile(e.target.files[0])}
       />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`
+        .spinner-ring { width: 32px; height: 32px; border: 3px solid var(--gray-200); border-top-color: var(--ink); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg) } }
+        @media (prefers-reduced-motion: reduce) { .spinner-ring { animation-duration: 1.6s; } }
+      `}</style>
     </div>
   )
 }

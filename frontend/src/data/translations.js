@@ -572,6 +572,8 @@ const translations = {
         passwordMismatch:'הסיסמאות אינן תואמות',
         passwordTooShort:'הסיסמה חייבת להכיל לפחות 8 תווים', // #85
         passwordNoDigit: 'הסיסמה חייבת להכיל לפחות ספרה אחת', // #85
+        pwRuleLength: 'מספר הסיסמה חייב להכיל לפחות 8 תווים',
+        pwRuleDigit: 'הסיסמה חייבת לכלול לפחות ספרה אחת',
         error:           'הרשמה נכשלה. אנא נסה/י שוב.',
         emailInUse:      'אימייל זה כבר רשום במערכת.',
         verifyEmailSent: 'נשלח אימייל אימות — אנא בדוק/י את תיבת הדואר שלך.', // #86
@@ -1283,6 +1285,8 @@ const translations = {
         passwordMismatch:"Passwords don't match",
         passwordTooShort:'Password must be at least 8 characters', // #85
         passwordNoDigit: 'Password must contain at least one digit', // #85
+        pwRuleLength: 'At least 8 characters',
+        pwRuleDigit: 'At least one number',
         error:           'Registration failed. Please try again.',
         emailInUse:      'This email is already registered.',
         verifyEmailSent: 'Verification email sent — please check your inbox.', // #86
