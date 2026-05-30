@@ -1,13 +1,19 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, AlertTriangle } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { StatusBadge, ErrorState } from '@/components/admin/AdminUI'
 
 const STATUSES = ['pending', 'in_progress', 'resolved', 'rejected', 'closed']
+
+// Normalize a language token to a comparable lowercase code (e.g. 'Hebrew' →
+// 'he' is out of scope; we compare the raw stored codes like 'he'/'am'/'en').
+function normLang(v) {
+  return String(v ?? '').trim().toLowerCase()
+}
 
 function eventLabel(ev, a) {
   switch (ev.type) {
@@ -39,6 +45,8 @@ export default function AdminRequestDetailPage() {
   const [assignTo, setAssignTo] = useState('')
   const [statusVal, setStatusVal] = useState('pending')
   const [note, setNote] = useState('')
+  const [dismissedFormer, setDismissedFormer] = useState(false)
+  const [dismissedLangWarn, setDismissedLangWarn] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -64,18 +72,28 @@ export default function AdminRequestDetailPage() {
     load()
   }, [load])
 
-  const post = async (path, body) => {
+  // apiFetch returns the raw Response and does NOT throw on non-2xx, so we must
+  // inspect res.ok ourselves. `onError(status, body)` lets callers map a
+  // specific failure (e.g. #92 status conflicts) to a friendly message.
+  const post = async (path, body, onError) => {
     setSaving(true)
     setError(null)
     try {
-      await apiFetch(`/api/admin/requests/${id}/${path}`, {
+      const res = await apiFetch(`/api/admin/requests/${id}/${path}`, {
         method: 'POST',
         body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        let payload = null
+        try { payload = await res.json() } catch { payload = null }
+        setError((onError && onError(res.status, payload)) || a.reqDetail.statusGenericError)
+        return false
+      }
       await load()
       return true
     } catch {
-      setError(a.ui.loading)
+      // Network / unexpected failure.
+      setError((onError && onError(0, null)) || a.reqDetail.statusGenericError)
       return false
     } finally {
       setSaving(false)
@@ -85,8 +103,18 @@ export default function AdminRequestDetailPage() {
   const handleAssign = () => {
     if (assignTo) post('assign', { volunteerId: assignTo })
   }
+  // #92 — surface forward-only / concurrent-update failures clearly.
   const handleStatus = () => {
-    if (statusVal) post('status', { status: statusVal })
+    if (!statusVal) return
+    post('status', { status: statusVal }, (status, payload) => {
+      if (status === 409) {
+        // invalid_transition (backward move) vs concurrent_update (stale write)
+        return payload && payload.error === 'invalid_transition'
+          ? a.reqDetail.statusBackwardError
+          : a.reqDetail.statusConflictError
+      }
+      return a.reqDetail.statusGenericError
+    })
   }
   const handleNote = async () => {
     const trimmed = note.trim()
@@ -106,6 +134,45 @@ export default function AdminRequestDetailPage() {
     ? [request.firstName, request.lastName].filter(Boolean).join(' ')
     : ''
 
+  // The currently-assigned volunteer, looked up in the *active* list returned
+  // by the API. If a request has an assigned volunteer but they're absent from
+  // the active list, they have been deactivated since assignment (#91).
+  const assignedVolunteer = useMemo(
+    () =>
+      request && request.assignedVolunteerId
+        ? volunteers.find((v) => v.uid === request.assignedVolunteerId) || null
+        : null,
+    [request, volunteers],
+  )
+
+  // #91 — assigned to someone who is no longer an active volunteer.
+  const isFormerVolunteer = Boolean(
+    request && request.assignedVolunteerId && !assignedVolunteer,
+  )
+
+  // Label for the assigned volunteer cell: prefer their name, fall back to uid.
+  const assignedLabel = request && request.assignedVolunteerId
+    ? (assignedVolunteer && assignedVolunteer.fullName) || request.assignedVolunteerId
+    : a.reqDetail.unassigned
+
+  // #95 — non-blocking language-match check for the volunteer being *picked* in
+  // the assign dropdown. Requests don't yet carry a language field, so we treat
+  // Hebrew ('he') as the community default and warn if the chosen volunteer's
+  // languages don't include the beneficiary's language. If language data is
+  // missing on either side we stay silent (no warning).
+  const langMismatch = useMemo(() => {
+    if (!assignTo || !request) return false
+    const candidate = volunteers.find((v) => v.uid === assignTo)
+    if (!candidate) return false
+    const volLangs = (candidate.languages || []).map(normLang).filter(Boolean)
+    if (volLangs.length === 0) return false
+    const beneficiaryLang = normLang(
+      request.language || request.preferredLanguage || 'he',
+    )
+    if (!beneficiaryLang) return false
+    return !volLangs.includes(beneficiaryLang)
+  }, [assignTo, volunteers, request])
+
   return (
     <AdminLayout title={a.reqDetail.title}>
       <Link href="/admin/requests" className="admin-back-link">
@@ -115,6 +182,21 @@ export default function AdminRequestDetailPage() {
 
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
       {loading && <p className="admin-muted">{a.ui.loading}</p>}
+
+      {/* #91 — assigned volunteer was deactivated; prompt reassignment */}
+      {!loading && request && isFormerVolunteer && !dismissedFormer && (
+        <div className="admin-notice admin-notice-warn" role="alert">
+          <AlertTriangle size={18} aria-hidden="true" />
+          <span>{a.reqDetail.formerVolWarning}</span>
+          <button
+            type="button"
+            className="admin-notice-action"
+            onClick={() => setDismissedFormer(true)}
+          >
+            {a.reqDetail.dismiss}
+          </button>
+        </div>
+      )}
 
       {!loading && request && (
         <div className="admin-detail-grid">
@@ -139,7 +221,12 @@ export default function AdminRequestDetailPage() {
               </div>
               <div>
                 <dt>{a.reqDetail.assignedTo}</dt>
-                <dd>{request.assignedVolunteerId || a.reqDetail.unassigned}</dd>
+                <dd>
+                  {assignedLabel}
+                  {isFormerVolunteer && (
+                    <span className="former-tag">{a.reqDetail.formerTag}</span>
+                  )}
+                </dd>
               </div>
             </dl>
 
@@ -167,7 +254,10 @@ export default function AdminRequestDetailPage() {
                 id="assign"
                 className="form-select"
                 value={assignTo}
-                onChange={(e) => setAssignTo(e.target.value)}
+                onChange={(e) => {
+                  setAssignTo(e.target.value)
+                  setDismissedLangWarn(false)
+                }}
               >
                 <option value="">{a.reqDetail.chooseVol}</option>
                 {volunteers.map((v) => (
@@ -176,6 +266,20 @@ export default function AdminRequestDetailPage() {
                   </option>
                 ))}
               </select>
+              {/* #95 — non-blocking language-mismatch warning */}
+              {langMismatch && !dismissedLangWarn && (
+                <div className="admin-notice admin-notice-warn" role="status">
+                  <AlertTriangle size={16} aria-hidden="true" />
+                  <span>{a.reqDetail.langMismatchWarning}</span>
+                  <button
+                    type="button"
+                    className="admin-notice-action"
+                    onClick={() => setDismissedLangWarn(true)}
+                  >
+                    {a.reqDetail.dismiss}
+                  </button>
+                </div>
+              )}
               <button
                 type="button"
                 className="btn btn-primary admin-side-btn"
