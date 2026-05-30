@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { ArrowLeft, AlertTriangle } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
-import { apiJson, apiFetch, ApiError } from '@/lib/apiClient'
+import { apiJson, apiFetch } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { StatusBadge, ErrorState } from '@/components/admin/AdminUI'
 
@@ -72,20 +72,28 @@ export default function AdminRequestDetailPage() {
     load()
   }, [load])
 
+  // apiFetch returns the raw Response and does NOT throw on non-2xx, so we must
+  // inspect res.ok ourselves. `onError(status, body)` lets callers map a
+  // specific failure (e.g. #92 status conflicts) to a friendly message.
   const post = async (path, body, onError) => {
     setSaving(true)
     setError(null)
     try {
-      await apiFetch(`/api/admin/requests/${id}/${path}`, {
+      const res = await apiFetch(`/api/admin/requests/${id}/${path}`, {
         method: 'POST',
         body: JSON.stringify(body),
       })
+      if (!res.ok) {
+        let payload = null
+        try { payload = await res.json() } catch { payload = null }
+        setError((onError && onError(res.status, payload)) || a.reqDetail.statusGenericError)
+        return false
+      }
       await load()
       return true
-    } catch (err) {
-      // Let the caller map specific failures (e.g. #92 status conflicts) to a
-      // friendly message; otherwise fall back to a generic one.
-      setError((onError && onError(err)) || a.reqDetail.statusGenericError)
+    } catch {
+      // Network / unexpected failure.
+      setError((onError && onError(0, null)) || a.reqDetail.statusGenericError)
       return false
     } finally {
       setSaving(false)
@@ -98,14 +106,12 @@ export default function AdminRequestDetailPage() {
   // #92 — surface forward-only / concurrent-update failures clearly.
   const handleStatus = () => {
     if (!statusVal) return
-    post('status', { status: statusVal }, (err) => {
-      if (err instanceof ApiError) {
-        if (err.status === 409) {
-          // invalid_transition (backward) vs concurrent_update (stale write)
-          return err.body && err.body.error === 'invalid_transition'
-            ? a.reqDetail.statusBackwardError
-            : a.reqDetail.statusConflictError
-        }
+    post('status', { status: statusVal }, (status, payload) => {
+      if (status === 409) {
+        // invalid_transition (backward move) vs concurrent_update (stale write)
+        return payload && payload.error === 'invalid_transition'
+          ? a.reqDetail.statusBackwardError
+          : a.reqDetail.statusConflictError
       }
       return a.reqDetail.statusGenericError
     })
