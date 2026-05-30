@@ -21,7 +21,7 @@ router.get('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const { category, region, audience } = parsed.data;
+  const { category } = parsed.data;
 
   try {
     let query = db()
@@ -29,15 +29,20 @@ router.get('/', async (req: Request, res: Response) => {
       .where('status', '==', 'approved')
       .orderBy('createdAt', 'desc');
 
+    // `category` is an enum key (not translated), so an equality filter is safe.
     if (category) query = query.where('category', '==', category);
-    if (region) query = query.where('region', '==', region);
-    if (audience) query = query.where('audience', '==', audience);
+
+    // `region`/`audience` are bilingual `{ he, en }` objects, so a server-side
+    // string equality filter can never match. They are filtered client-side in
+    // DirectoryPage against the active-language value instead.
 
     const snapshot = await query.get();
     const items = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
+        // Translatable fields pass through as the bilingual `{ he, en }` contract;
+        // the UI renders the active language. `category` stays an enum key.
         title: data.title ?? null,
         body: data.body ?? null,
         category: data.category ?? null,

@@ -33,12 +33,16 @@ router.get('/', async (_req: Request, res: Response) => {
       const data = doc.data();
       return {
         id: doc.id,
-        name: data.name,
-        ownerName: data.ownerName,
-        phone: data.phone,
-        category: data.category,
-        city: data.city,
-        description: data.description,
+        // Translatable fields (`name`/`city`/`description`/`tags`) pass through as
+        // the bilingual `{ he, en }` contract (tags as `{ he: [], en: [] }`); the
+        // UI renders the active language. `category` stays an enum key.
+        name: data.name ?? null,
+        ownerName: data.ownerName ?? null,
+        phone: data.phone ?? null,
+        category: data.category ?? null,
+        city: data.city ?? null,
+        description: data.description ?? null,
+        tags: data.tags ?? { he: [], en: [] },
         approved: data.approved ?? false,
         featured: data.featured ?? false,
         rating: data.rating ?? 0,
@@ -79,8 +83,19 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   const input: CreateBusinessInput = parsed.data;
 
   try {
+    // User-submitted businesses arrive as flat strings. Store the translatable
+    // fields under the bilingual `{ he, en }` contract so they match the seeded
+    // shape and the directory renderer. We don't have a translation at submit
+    // time, so the same submitted string is stored in both `he` and `en` (the
+    // owner/admin can refine the second language later). `tags` starts empty.
     const docRef = await db().collection('businesses').add({
-      ...input,
+      name: { he: input.name, en: input.name },
+      ownerName: input.ownerName,
+      phone: input.phone,
+      category: input.category,
+      city: { he: input.city, en: input.city },
+      description: { he: input.description, en: input.description },
+      tags: { he: [], en: [] },
       ownerId,
       approved: false,
       status: 'pending',

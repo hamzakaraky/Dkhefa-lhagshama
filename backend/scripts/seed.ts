@@ -52,17 +52,23 @@ const REGIONS: TaxonomyEntry[] = [
 //
 //  `category` values are the NGO_AREAS filter chips in DirectoryPage:
 //    education | employment | legal | social | housing
-//  (every one of those is covered below). `title`/`body`/`region`/`audience`
-//  are single strings that the card renders verbatim, so they are written as
-//  bilingual "HE | EN" strings — the same convention used in mockData.js.
+//  (every one of those is covered below). Translatable fields
+//  (`title`/`body`/`region`/`audience`) use the bilingual field contract
+//  `{ he, en }` so the API can pass them through and the UI renders the
+//  active language. `category` stays an enum key (not translated).
 // ─────────────────────────────────────────────────────────────
+interface Bilingual {
+  he: string;
+  en: string;
+}
+
 interface AnswerSeed {
   id: string;
-  title: string;
-  body: string;
+  title: Bilingual;
+  body: Bilingual;
   category: string;
-  region: string;
-  audience: string;
+  region: Bilingual;
+  audience: Bilingual;
   sourceName: string;
   sourceUrl: string;
 }
@@ -70,101 +76,131 @@ interface AnswerSeed {
 const ANSWERS: AnswerSeed[] = [
   {
     id: 'answer-rashi-scholarships',
-    title: 'מלגות קרן ראשי לסטודנטים | Rashi Foundation Scholarships',
-    body: 'מלגות לימוד לסטודנטים ממוצא אתיופי, הכשרות מקצועיות וליווי קריירה אישי. | Tuition scholarships for students of Ethiopian origin, professional training and personal career mentoring.',
+    title: { he: 'מלגות קרן ראשי לסטודנטים', en: 'Rashi Foundation Scholarships' },
+    body: {
+      he: 'מלגות לימוד לסטודנטים ממוצא אתיופי, הכשרות מקצועיות וליווי קריירה אישי.',
+      en: 'Tuition scholarships for students of Ethiopian origin, professional training and personal career mentoring.',
+    },
     category: 'education',
-    region: 'מרכז | Center',
-    audience: 'סטודנטים | Students',
+    region: { he: 'מרכז', en: 'Center' },
+    audience: { he: 'סטודנטים', en: 'Students' },
     sourceName: 'קרן ראשי | Rashi Foundation',
     sourceUrl: 'https://www.rashi.org.il',
   },
   {
     id: 'answer-fidel-hebrew',
-    title: 'תכנית פידל ללימודי עברית | Fidel Hebrew Learning Program',
-    body: 'שיעורי עברית, אוריינות והכנה לבחינות לבני הקהילה האתיופית בכל הגילים. | Hebrew classes, literacy and exam preparation for Ethiopian-Israeli community members of all ages.',
+    title: { he: 'תכנית פידל ללימודי עברית', en: 'Fidel Hebrew Learning Program' },
+    body: {
+      he: 'שיעורי עברית, אוריינות והכנה לבחינות לבני הקהילה האתיופית בכל הגילים.',
+      en: 'Hebrew classes, literacy and exam preparation for Ethiopian-Israeli community members of all ages.',
+    },
     category: 'education',
-    region: 'ירושלים | Jerusalem',
-    audience: 'עולים חדשים | New immigrants',
+    region: { he: 'ירושלים', en: 'Jerusalem' },
+    audience: { he: 'עולים חדשים', en: 'New immigrants' },
     sourceName: 'עמותת פידל | Fidel Association',
     sourceUrl: 'https://www.fidel.org.il',
   },
   {
     id: 'answer-tech-careers',
-    title: 'מסלול הייטק לקהילה | Community Tech Careers Track',
-    body: 'הכשרת תוכנה, השמה במשרות הייטק וליווי מעסיקים לבוגרי הקהילה. | Software bootcamps, placement in tech jobs and employer mentoring for community graduates.',
+    title: { he: 'מסלול הייטק לקהילה', en: 'Community Tech Careers Track' },
+    body: {
+      he: 'הכשרת תוכנה, השמה במשרות הייטק וליווי מעסיקים לבוגרי הקהילה.',
+      en: 'Software bootcamps, placement in tech jobs and employer mentoring for community graduates.',
+    },
     category: 'employment',
-    region: 'תל אביב | Tel Aviv',
-    audience: 'מחפשי עבודה | Job seekers',
+    region: { he: 'תל אביב', en: 'Tel Aviv' },
+    audience: { he: 'מחפשי עבודה', en: 'Job seekers' },
     sourceName: 'טק-קריירה | Tech-Career',
     sourceUrl: 'https://www.techcareer.org.il',
   },
   {
     id: 'answer-employment-center',
-    title: 'מרכז הכוון תעסוקתי | Employment Guidance Center',
-    body: 'ייעוץ קריירה, כתיבת קורות חיים, הכנה לראיונות והכשרות מקצועיות. | Career counseling, CV writing, interview preparation and vocational training.',
+    title: { he: 'מרכז הכוון תעסוקתי', en: 'Employment Guidance Center' },
+    body: {
+      he: 'ייעוץ קריירה, כתיבת קורות חיים, הכנה לראיונות והכשרות מקצועיות.',
+      en: 'Career counseling, CV writing, interview preparation and vocational training.',
+    },
     category: 'employment',
-    region: 'חיפה | Haifa',
-    audience: 'מבוגרים | Adults',
+    region: { he: 'חיפה', en: 'Haifa' },
+    audience: { he: 'מבוגרים', en: 'Adults' },
     sourceName: 'משרד העבודה | Ministry of Labor',
     sourceUrl: 'https://www.gov.il/he/departments/employment',
   },
   {
     id: 'answer-legal-aid',
-    title: 'סיוע משפטי חינם | Free Legal Aid Clinic',
-    body: 'ייצוג משפטי ללא תשלום, הגנה על זכויות מהגרים וייעוץ בנושאי מעמד ועבודה. | Free legal representation, protection of immigrant rights and counseling on status and labor matters.',
+    title: { he: 'סיוע משפטי חינם', en: 'Free Legal Aid Clinic' },
+    body: {
+      he: 'ייצוג משפטי ללא תשלום, הגנה על זכויות מהגרים וייעוץ בנושאי מעמד ועבודה.',
+      en: 'Free legal representation, protection of immigrant rights and counseling on status and labor matters.',
+    },
     category: 'legal',
-    region: 'מרכז | Center',
-    audience: 'כלל הקהילה | General public',
+    region: { he: 'מרכז', en: 'Center' },
+    audience: { he: 'כלל הקהילה', en: 'General public' },
     sourceName: 'איגוד לזכויות אדם | Human Rights Association',
     sourceUrl: 'https://www.humanrights.org.il',
   },
   {
     id: 'answer-rights-bureaucracy',
-    title: 'מימוש זכויות מול הרשויות | Rights & Bureaucracy Support',
-    body: 'מרכזי סיוע לאזרחים בקשיים מול הבירוקרטיה הממשלתית ומיצוי זכויות. | Support centers helping citizens navigate government bureaucracy and realize their rights.',
+    title: { he: 'מימוש זכויות מול הרשויות', en: 'Rights & Bureaucracy Support' },
+    body: {
+      he: 'מרכזי סיוע לאזרחים בקשיים מול הבירוקרטיה הממשלתית ומיצוי זכויות.',
+      en: 'Support centers helping citizens navigate government bureaucracy and realize their rights.',
+    },
     category: 'legal',
-    region: 'דרום | South',
-    audience: 'משפחות | Families',
+    region: { he: 'דרום', en: 'South' },
+    audience: { he: 'משפחות', en: 'Families' },
     sourceName: 'ידיד | Yedid',
     sourceUrl: 'https://www.yedid.org.il',
   },
   {
     id: 'answer-jdc-welfare',
-    title: 'ג׳וינט ישראל — שירותים חברתיים | JDC Israel Social Services',
-    body: 'סיוע לאוכלוסיות נזקקות: קשישים, ילדים, אנשים עם מוגבלויות ומשפחות במצוקה. | Aid for vulnerable populations: elderly, children, people with disabilities and families in distress.',
+    title: { he: 'ג׳וינט ישראל — שירותים חברתיים', en: 'JDC Israel Social Services' },
+    body: {
+      he: 'סיוע לאוכלוסיות נזקקות: קשישים, ילדים, אנשים עם מוגבלויות ומשפחות במצוקה.',
+      en: 'Aid for vulnerable populations: elderly, children, people with disabilities and families in distress.',
+    },
     category: 'social',
-    region: 'צפון | North',
-    audience: 'קשישים | Elderly',
+    region: { he: 'צפון', en: 'North' },
+    audience: { he: 'קשישים', en: 'Elderly' },
     sourceName: 'ג׳וינט ישראל | JDC Israel',
     sourceUrl: 'https://www.jdc.org.il',
   },
   {
     id: 'answer-family-support',
-    title: 'קבוצות תמיכה למשפחות | Family Support Groups',
-    body: 'קבוצות תמיכה, ייעוץ הורי וליווי רגשי לנשים ולמשפחות בקהילה. | Support groups, parental guidance and emotional accompaniment for women and families in the community.',
+    title: { he: 'קבוצות תמיכה למשפחות', en: 'Family Support Groups' },
+    body: {
+      he: 'קבוצות תמיכה, ייעוץ הורי וליווי רגשי לנשים ולמשפחות בקהילה.',
+      en: 'Support groups, parental guidance and emotional accompaniment for women and families in the community.',
+    },
     category: 'social',
-    region: 'נגב | Negev',
-    audience: 'נשים | Women',
+    region: { he: 'נגב', en: 'Negev' },
+    audience: { he: 'נשים', en: 'Women' },
     sourceName: 'דחיפה להגשמה | Push for Fulfillment',
     sourceUrl: 'https://www.pushforfulfillment.org.il',
   },
   {
     id: 'answer-housing-emergency',
-    title: 'סיוע בדיור ועזרה ראשונה | Housing & Emergency Aid',
-    body: 'סיוע בדיור, מזון חירום ושירותים לעולים חדשים ולמשפחות במשבר. | Housing assistance, emergency food and services for new immigrants and families in crisis.',
+    title: { he: 'סיוע בדיור ועזרה ראשונה', en: 'Housing & Emergency Aid' },
+    body: {
+      he: 'סיוע בדיור, מזון חירום ושירותים לעולים חדשים ולמשפחות במשבר.',
+      en: 'Housing assistance, emergency food and services for new immigrants and families in crisis.',
+    },
     category: 'housing',
-    region: 'שרון | Sharon',
-    audience: 'משפחות במשבר | Families in crisis',
+    region: { he: 'שרון', en: 'Sharon' },
+    audience: { he: 'משפחות במשבר', en: 'Families in crisis' },
     sourceName: 'עמותת בית | Beit Association',
     sourceUrl: 'https://www.beit.org.il',
   },
   {
     id: 'answer-public-housing',
-    title: 'זכאות לדיור ציבורי | Public Housing Eligibility',
-    body: 'ליווי בהגשת בקשות לדיור ציבורי, סבסוד שכר דירה ומימוש זכויות מול משרד השיכון. | Guidance on public housing applications, rent subsidies and exercising rights with the Housing Ministry.',
+    title: { he: 'זכאות לדיור ציבורי', en: 'Public Housing Eligibility' },
+    body: {
+      he: 'ליווי בהגשת בקשות לדיור ציבורי, סבסוד שכר דירה ומימוש זכויות מול משרד השיכון.',
+      en: 'Guidance on public housing applications, rent subsidies and exercising rights with the Housing Ministry.',
+    },
     category: 'housing',
-    region: 'ירושלים | Jerusalem',
-    audience: 'עולים חדשים | New immigrants',
+    region: { he: 'ירושלים', en: 'Jerusalem' },
+    audience: { he: 'עולים חדשים', en: 'New immigrants' },
     sourceName: 'משרד הבינוי והשיכון | Ministry of Housing',
     sourceUrl: 'https://www.gov.il/he/departments/ministry_of_construction_and_housing',
   },
@@ -176,20 +212,27 @@ const ANSWERS: AnswerSeed[] = [
 //  Shape mirrors GET /api/businesses (businesses.ts) + DirectoryPage.jsx.
 //  Route filters on `status === 'approved'` and orders by `createdAt desc`.
 //  Each doc MUST carry: status:'approved', approved:true, createdAt:<Timestamp>,
-//  name, ownerName, phone, category, city, description, featured, rating, reviews.
+//  name, ownerName, phone, category, city, description, tags, featured, rating, reviews.
 //
 //  `category` spans every business filter chip in DirectoryPage:
 //    food | services | health | education | beauty | tech
-//  `name`/`description` are bilingual "HE | EN" (mockData.js convention).
+//  Translatable fields use the bilingual `{ he, en }` contract; `tags` is
+//  `{ he: string[], en: string[] }`. `category` stays an enum key.
 // ─────────────────────────────────────────────────────────────
+interface BilingualTags {
+  he: string[];
+  en: string[];
+}
+
 interface BusinessSeed {
   id: string;
-  name: string;
+  name: Bilingual;
   ownerName: string;
   phone: string;
   category: string;
-  city: string;
-  description: string;
+  city: Bilingual;
+  description: Bilingual;
+  tags: BilingualTags;
   featured: boolean;
   rating: number;
   reviews: number;
@@ -198,120 +241,160 @@ interface BusinessSeed {
 const BUSINESSES: BusinessSeed[] = [
   {
     id: 'biz-star-of-addis',
-    name: 'מסעדת כוכב אדיס | Star of Addis',
+    name: { he: 'מסעדת כוכב אדיס', en: 'Star of Addis' },
     ownerName: 'אלמז טספאי | Almaz Tesfaye',
     phone: '03-555-1234',
     category: 'food',
-    city: 'תל אביב | Tel Aviv',
-    description: 'מסעדה אתיופית מסורתית. אינג׳רה, תבשילים מסורתיים ואירוח חם ואותנטי. | Traditional Ethiopian restaurant. Injera, traditional stews and warm, authentic hospitality.',
+    city: { he: 'תל אביב', en: 'Tel Aviv' },
+    description: {
+      he: 'מסעדה אתיופית מסורתית. אינג׳רה, תבשילים מסורתיים ואירוח חם ואותנטי.',
+      en: 'Traditional Ethiopian restaurant. Injera, traditional stews and warm, authentic hospitality.',
+    },
+    tags: { he: ['מסעדה', 'אינג׳רה', 'אתיופי'], en: ['restaurant', 'injera', 'ethiopian'] },
     featured: true,
     rating: 4.8,
     reviews: 42,
   },
   {
     id: 'biz-jimma-cafe',
-    name: 'בית קפה ג׳ימה | Jimma Café',
+    name: { he: 'בית קפה ג׳ימה', en: 'Jimma Café' },
     ownerName: 'דניאל ברహנו | Daniel Berhanu',
     phone: '03-555-2468',
     category: 'food',
-    city: 'תל אביב | Tel Aviv',
-    description: 'קפה אתיופי מסורתי עם טקס קפה, עוגות ביתיות ואווירה נעימה. | Traditional Ethiopian coffee with a coffee ceremony, homemade cakes and a pleasant atmosphere.',
+    city: { he: 'תל אביב', en: 'Tel Aviv' },
+    description: {
+      he: 'קפה אתיופי מסורתי עם טקס קפה, עוגות ביתיות ואווירה נעימה.',
+      en: 'Traditional Ethiopian coffee with a coffee ceremony, homemade cakes and a pleasant atmosphere.',
+    },
+    tags: { he: ['קפה', 'טקס קפה', 'מאפים'], en: ['coffee', 'ceremony', 'bakery'] },
     featured: false,
     rating: 4.9,
     reviews: 87,
   },
   {
     id: 'biz-shlomo-barber',
-    name: 'מספרת שלמה | Shlomo\'s Barber',
+    name: { he: 'מספרת שלמה', en: 'Shlomo\'s Barber' },
     ownerName: 'שלמה מקוריה | Shlomo Makuria',
     phone: '04-555-5678',
     category: 'services',
-    city: 'חיפה | Haifa',
-    description: 'מספרה מקצועית לכל סוגי השיער. ניסיון של 15 שנה בשיער מתולתל ואפרו. | Professional barbershop for all hair types. 15 years of experience with curly and afro hair.',
+    city: { he: 'חיפה', en: 'Haifa' },
+    description: {
+      he: 'מספרה מקצועית לכל סוגי השיער. ניסיון של 15 שנה בשיער מתולתל ואפרו.',
+      en: 'Professional barbershop for all hair types. 15 years of experience with curly and afro hair.',
+    },
+    tags: { he: ['מספרה', 'תספורת', 'שיער'], en: ['barber', 'haircut', 'hair'] },
     featured: false,
     rating: 4.9,
     reviews: 78,
   },
   {
     id: 'biz-alamo-renovations',
-    name: 'שיפוצניק אלעמו | Alamo Renovations',
+    name: { he: 'שיפוצניק אלעמו', en: 'Alamo Renovations' },
     ownerName: 'אלעמו דסטה | Alamo Desta',
     phone: '08-555-1357',
     category: 'services',
-    city: 'אשדוד | Ashdod',
-    description: 'שיפוצים, אינסטלציה ועבודות בנייה. אמין, מקצועי ומחיר הוגן. | Renovations, plumbing and construction work. Reliable, professional and fair priced.',
+    city: { he: 'אשדוד', en: 'Ashdod' },
+    description: {
+      he: 'שיפוצים, אינסטלציה ועבודות בנייה. אמין, מקצועי ומחיר הוגן.',
+      en: 'Renovations, plumbing and construction work. Reliable, professional and fair priced.',
+    },
+    tags: { he: ['שיפוצים', 'אינסטלציה', 'בנייה'], en: ['renovations', 'plumbing', 'construction'] },
     featured: false,
     rating: 4.8,
     reviews: 44,
   },
   {
     id: 'biz-dr-lama-clinic',
-    name: 'מרפאת ד"ר לאמה | Dr. Lama Clinic',
+    name: { he: 'מרפאת ד"ר לאמה', en: 'Dr. Lama Clinic' },
     ownerName: 'ד"ר לאמה אבבה | Dr. Lama Abebe',
     phone: '02-555-9012',
     category: 'health',
-    city: 'ירושלים | Jerusalem',
-    description: 'רפואת משפחה ורפואה כללית. שפות: עברית, אמהרית ואנגלית. | Family medicine and general practice. Languages: Hebrew, Amharic and English.',
+    city: { he: 'ירושלים', en: 'Jerusalem' },
+    description: {
+      he: 'רפואת משפחה ורפואה כללית. שפות: עברית, אמהרית ואנגלית.',
+      en: 'Family medicine and general practice. Languages: Hebrew, Amharic and English.',
+    },
+    tags: { he: ['רופא', 'מרפאה', 'אמהרית'], en: ['doctor', 'clinic', 'amharic'] },
     featured: true,
     rating: 4.7,
     reviews: 55,
   },
   {
     id: 'biz-tena-physio',
-    name: 'קליניקת פיזיותרפיה טנה | Tena Physiotherapy',
+    name: { he: 'קליניקת פיזיותרפיה טנה', en: 'Tena Physiotherapy' },
     ownerName: 'מולא גרמה | Mulu Germa',
     phone: '04-555-7788',
     category: 'health',
-    city: 'חיפה | Haifa',
-    description: 'פיזיותרפיה ושיקום, טיפול בכאבי גב וספורט. ליווי אישי בעברית ואמהרית. | Physiotherapy and rehabilitation, back-pain and sports treatment. Personal care in Hebrew and Amharic.',
+    city: { he: 'חיפה', en: 'Haifa' },
+    description: {
+      he: 'פיזיותרפיה ושיקום, טיפול בכאבי גב וספורט. ליווי אישי בעברית ואמהרית.',
+      en: 'Physiotherapy and rehabilitation, back-pain and sports treatment. Personal care in Hebrew and Amharic.',
+    },
+    tags: { he: ['פיזיותרפיה', 'שיקום', 'ספורט'], en: ['physiotherapy', 'rehab', 'sports'] },
     featured: false,
     rating: 4.6,
     reviews: 27,
   },
   {
     id: 'biz-ethiopian-art-academy',
-    name: 'אקדמיה לאמנות אתיופית | Ethiopian Art Academy',
+    name: { he: 'אקדמיה לאמנות אתיופית', en: 'Ethiopian Art Academy' },
     ownerName: 'תגיסט וונדה | Tigist Wonde',
     phone: '03-555-3456',
     category: 'education',
-    city: 'ראשון לציון | Rishon LeZion',
-    description: 'שיעורי ציור, מוסיקה אתיופית, ריקוד ועיצוב לילדים ומבוגרים. | Drawing, Ethiopian music, dance and design classes for children and adults.',
+    city: { he: 'ראשון לציון', en: 'Rishon LeZion' },
+    description: {
+      he: 'שיעורי ציור, מוסיקה אתיופית, ריקוד ועיצוב לילדים ומבוגרים.',
+      en: 'Drawing, Ethiopian music, dance and design classes for children and adults.',
+    },
+    tags: { he: ['אמנות', 'מוסיקה', 'ריקוד'], en: ['art', 'music', 'dance'] },
     featured: false,
     rating: 4.6,
     reviews: 31,
   },
   {
     id: 'biz-bridge-tutoring',
-    name: 'מרכז למידה גשר | Bridge Tutoring Center',
+    name: { he: 'מרכז למידה גשר', en: 'Bridge Tutoring Center' },
     ownerName: 'יוסף מנגיסטו | Yosef Mengistu',
     phone: '09-555-4422',
     category: 'education',
-    city: 'נתניה | Netanya',
-    description: 'שיעורים פרטיים, הכנה לבגרויות וחניכה לתלמידים מהקהילה. | Private lessons, matriculation-exam prep and mentoring for community students.',
+    city: { he: 'נתניה', en: 'Netanya' },
+    description: {
+      he: 'שיעורים פרטיים, הכנה לבגרויות וחניכה לתלמידים מהקהילה.',
+      en: 'Private lessons, matriculation-exam prep and mentoring for community students.',
+    },
+    tags: { he: ['שיעורים פרטיים', 'בגרויות', 'חינוך'], en: ['tutoring', 'matriculation', 'education'] },
     featured: false,
     rating: 4.7,
     reviews: 38,
   },
   {
     id: 'biz-wisa-beauty',
-    name: 'סטודיו יופי ויסה | Wisa Beauty Studio',
+    name: { he: 'סטודיו יופי ויסה', en: 'Wisa Beauty Studio' },
     ownerName: 'ויסה אסרס | Wisa Asres',
     phone: '04-555-3691',
     category: 'beauty',
-    city: 'חיפה | Haifa',
-    description: 'טיפולי שיער ועור מותאמים לגווני עור כהים. ניסיון מקצועי בקוסמטיקה לעור אתיופי. | Hair and skin treatments tailored for darker skin tones. Professional experience with Ethiopian-skin cosmetics.',
+    city: { he: 'חיפה', en: 'Haifa' },
+    description: {
+      he: 'טיפולי שיער ועור מותאמים לגווני עור כהים. ניסיון מקצועי בקוסמטיקה לעור אתיופי.',
+      en: 'Hair and skin treatments tailored for darker skin tones. Professional experience with Ethiopian-skin cosmetics.',
+    },
+    tags: { he: ['יופי', 'קוסמטיקה', 'עור'], en: ['beauty', 'cosmetics', 'skincare'] },
     featured: false,
     rating: 4.7,
     reviews: 62,
   },
   {
     id: 'biz-addis-digital',
-    name: 'אדיס דיגיטל | Addis Digital',
+    name: { he: 'אדיס דיגיטל', en: 'Addis Digital' },
     ownerName: 'אמנואל גברהיות | Emanuel Gebrehiwot',
     phone: '03-555-9911',
     category: 'tech',
-    city: 'תל אביב | Tel Aviv',
-    description: 'בניית אתרים, אפליקציות ושיווק דיגיטלי לעסקים קטנים בקהילה. | Website and app development plus digital marketing for small community businesses.',
+    city: { he: 'תל אביב', en: 'Tel Aviv' },
+    description: {
+      he: 'בניית אתרים, אפליקציות ושיווק דיגיטלי לעסקים קטנים בקהילה.',
+      en: 'Website and app development plus digital marketing for small community businesses.',
+    },
+    tags: { he: ['אתרים', 'אפליקציות', 'שיווק'], en: ['websites', 'apps', 'marketing'] },
     featured: true,
     rating: 4.8,
     reviews: 21,
