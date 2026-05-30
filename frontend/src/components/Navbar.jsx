@@ -29,15 +29,13 @@ export default function Navbar() {
 
   // Build link set conditional on auth state.
   // Only pages that actually exist — /about, /contact, /track are not built.
-  const baseLinks = [
-    { key: "home", to: "/" },
-    { key: "requests", to: "/requests" },
-    { key: "directory", to: "/directory" },
-    { key: "volunteers", to: "/volunteer" },
-  ];
+  // Signed-in users reach the form via the prominent "+ Submit Request" button,
+  // so the redundant "Submit Request" link is shown to guests only (their CTA).
   const links = user
     ? [
-        ...baseLinks,
+        { key: "home", to: "/" },
+        { key: "directory", to: "/directory" },
+        { key: "volunteers", to: "/volunteer" },
         ...(role === "beneficiary"
           ? [
               {
@@ -50,7 +48,12 @@ export default function Navbar() {
         { key: "chats", to: "/chats", label: t.nav.chats },
         ...(role === "admin" ? [{ key: "admin", to: "/admin" }] : []),
       ]
-    : baseLinks;
+    : [
+        { key: "home", to: "/" },
+        { key: "requests", to: "/requests" },
+        { key: "directory", to: "/directory" },
+        { key: "volunteers", to: "/volunteer" },
+      ];
 
   const handleLogout = async () => {
     await logout();
@@ -66,6 +69,9 @@ export default function Navbar() {
           alignItems: "center",
           height: "64px",
           gap: "8px",
+          // Wider than the 1120px content column so the full signed-in nav
+          // (links + lang + account chip + Sign Out + CTA) never overflows.
+          maxWidth: "1320px",
         }}
       >
         {/* LOGO */}

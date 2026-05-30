@@ -940,18 +940,18 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
   .section-padding { padding: 48px 0; }
 }
 /* Nav uses a wider breakpoint than the body — the full desktop nav (logo +
-   wordmark + 6 links + lang + 2 auth buttons) needs ≥1100px to breathe.
-   Below that, switch to the hamburger menu. */
-@media (max-width: 1099px) {
+   wordmark + links + lang + account + 2 controls) needs room to breathe.
+   Below ~1180px, switch to the hamburger menu rather than cramming. */
+@media (max-width: 1179px) {
   .hide-mobile { display: none !important; }
 }
-@media (min-width: 1100px) {
+@media (min-width: 1180px) {
   .hide-desktop { display: none !important; }
 }
-/* Account chip name only fits comfortably once the viewport is wide enough
-   to host logo + 4+ nav links + lang toggle + chip + 2 auth buttons. Below
-   1280px, collapse to just the avatar circle (still indicates signed-in). */
-@media (max-width: 1279px) {
+/* Account chip name only fits once the viewport is wide enough to host the
+   whole signed-in cluster. Below 1340px, collapse to just the avatar circle
+   (still indicates signed-in). */
+@media (max-width: 1339px) {
   .account-chip-name { display: none !important; }
 }
 
