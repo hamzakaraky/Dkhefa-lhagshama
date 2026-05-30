@@ -63,6 +63,33 @@ export function logout(): Promise<void> {
   return fbSignOut(firebaseAuth);
 }
 
+/**
+ * Ensure the signed-in user carries a role claim. Calls the idempotent backend
+ * `/api/auth/register` endpoint, which assigns the default `beneficiary` role
+ * to anyone without a privileged role and leaves admin/volunteer/businessOwner
+ * untouched. Used on login to self-heal accounts created before role assignment
+ * was wired up (or that signed in without ever registering through the app).
+ * Returns true if the call succeeded so the caller can force-refresh the token.
+ */
+export async function ensureRoleAssigned(): Promise<boolean> {
+  const user = firebaseAuth.currentUser;
+  if (!user) return false;
+  const idToken = await user.getIdToken();
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({}),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** Returns the current user's ID token (refreshed if expired). null if signed out. */
 export async function getIdToken(forceRefresh = false): Promise<string | null> {
   const user = firebaseAuth.currentUser;

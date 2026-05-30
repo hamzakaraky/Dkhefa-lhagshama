@@ -1842,6 +1842,8 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; }
 @media (prefers-reduced-motion: reduce) {
   .admin-shortcut-row:hover { transform: none; }
 }
+
+/* ═════════════════════════════════════════════════════════════
    BENEFICIARY FLOWS (UC-01) — request form, my-requests, register
    Composed from existing tokens. RTL-safe via logical properties.
 ═════════════════════════════════════════════════════════════ */

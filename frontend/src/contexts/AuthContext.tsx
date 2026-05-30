@@ -19,6 +19,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 
 import { firebaseAuth, firebaseDb } from '../lib/firebase';
 import {
+  ensureRoleAssigned,
   loginWithEmail,
   logout as fbLogout,
   registerWithEmail,
@@ -61,8 +62,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsub = onAuthStateChanged(firebaseAuth, async (u) => {
       setUser(u);
       if (u) {
-        try { setRole(await readRoleFromToken(u)); }
-        catch { setRole(null); }
+        try {
+          let nextRole = await readRoleFromToken(u);
+          // Self-heal: a signed-in user with no role can't submit requests.
+          // Assign the default `beneficiary` role, then re-read with a forced
+          // token refresh so the new claim is reflected immediately.
+          if (!nextRole) {
+            const assigned = await ensureRoleAssigned();
+            if (assigned) nextRole = await readRoleFromToken(u, /*forceRefresh*/ true);
+          }
+          setRole(nextRole);
+        } catch { setRole(null); }
       } else {
         setRole(null);
       }

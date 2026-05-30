@@ -37,9 +37,9 @@ export default function HomePage() {
           <div className="hero-grid">
             <div className="hero-mark">
               <AssetImage
-                slot="hero"
+                slot="logo"
                 rounded="var(--radius-xl)"
-                ratio="4 / 5"
+                ratio="1 / 1"
                 priority
                 shadow="var(--shadow-xl)"
                 border="1px solid rgba(255,255,255,0.6)"
