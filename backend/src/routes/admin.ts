@@ -12,7 +12,6 @@ const router = Router();
 router.use(authenticate, requireRole('admin'));
 
 const ENTITY_TYPES = ['businesses', 'organizations', 'answers'] as const;
-type EntityType = (typeof ENTITY_TYPES)[number];
 
 const actionSchema = z.object({
   entityType: z.enum(ENTITY_TYPES),
@@ -30,11 +29,13 @@ router.get('/pending', async (req: Request, res: Response): Promise<void> => {
           .where('status', '==', 'pending')
           .get()
           .then((snap) =>
-            snap.docs.map((doc) => ({
-              id: doc.id,
-              entityType,
-              ...doc.data(),
-            }))
+            snap.docs.map((doc) => {
+              // F8: drop the internal ownerId from the admin listing — the
+              // approvals UI doesn't use it, and it's an internal uid.
+              const data = doc.data();
+              delete data.ownerId;
+              return { id: doc.id, entityType, ...data };
+            })
           )
       )
     );
