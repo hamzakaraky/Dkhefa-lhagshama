@@ -47,11 +47,14 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
   const requestData = requestSnap.data() as {
     beneficiaryId: string;
     handler?: string | null;
+    assignedVolunteerId?: string | null;
   };
 
   const uid = req.user.uid;
   const isParticipant =
-    uid === requestData.beneficiaryId || uid === requestData.handler;
+    uid === requestData.beneficiaryId ||
+    uid === requestData.handler ||
+    uid === requestData.assignedVolunteerId;
 
   if (!isParticipant && req.user.role !== 'admin') {
     res.status(403).json({ error: 'forbidden' });
@@ -70,9 +73,17 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
     return;
   }
 
-  // Build participants list: beneficiary + handler (if set).
+  // Build participants list: beneficiary + handler + assigned volunteer (if set).
+  // F7: previously omitted assignedVolunteerId, which under-granted an assigned
+  // volunteer access to the chat they're meant to take part in.
   const participants = [requestData.beneficiaryId];
   if (requestData.handler) participants.push(requestData.handler);
+  if (
+    requestData.assignedVolunteerId &&
+    requestData.assignedVolunteerId !== requestData.handler
+  ) {
+    participants.push(requestData.assignedVolunteerId);
+  }
 
   const chatRef = db().collection('chats').doc();
   await chatRef.set({
