@@ -347,15 +347,36 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
       res.status(404).json({ error: 'not_found' });
       return;
     }
-    const data = snap.data() as { beneficiaryId?: string; handler?: string | null };
-    const isOwner   = data.beneficiaryId === req.user.uid;
-    const isHandler = data.handler === req.user.uid;
-    const isAdmin   = req.user.role === 'admin';
-    if (!isOwner && !isHandler && !isAdmin) {
+    const data = snap.data() as Record<string, unknown> & {
+      beneficiaryId?: string;
+      handler?: string | null;
+      assignedVolunteerId?: string | null;
+    };
+    const isOwner             = data.beneficiaryId === req.user.uid;
+    const isHandler           = data.handler === req.user.uid;
+    const isAssignedVolunteer = data.assignedVolunteerId === req.user.uid;
+    const isAdmin             = req.user.role === 'admin';
+    if (!isOwner && !isHandler && !isAssignedVolunteer && !isAdmin) {
       res.status(403).json({ error: 'forbidden' });
       return;
     }
-    res.json({ id: snap.id, ...data });
+
+    // ── Role-scoped projection (F2) ────────────────────────────────────────
+    // Firestore has no field-level projection, so strip sensitive fields here.
+    // firestore.rules restricts the direct client read of this doc to
+    // owner/admin (F2-B), so staff always arrive through this projected path.
+    //   - national ID (idNumber/idNote): owner + admin only
+    //   - internal staff notes:          staff (handler/volunteer) + admin only
+    const projected: Record<string, unknown> = { id: snap.id, ...data };
+    if (!isAdmin) {
+      if (isOwner) {
+        delete projected.notes;
+      } else {
+        delete projected.idNumber;
+        delete projected.idNote;
+      }
+    }
+    res.json(projected);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[requests.get] failed:', err);
