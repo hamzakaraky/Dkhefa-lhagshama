@@ -13,7 +13,20 @@ import {
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
 
-const STATUS_FILTERS = ['', 'pending', 'in_progress', 'resolved', 'rejected', 'closed']
+// Canonical lifecycle statuses surfaced as tabs (request-lifecycle spec). The
+// leading '' is the "all active" view; 'archived' is a pseudo-filter handled
+// via the ?archived=true query rather than a status value (Note 6).
+const STATUS_FILTERS = [
+  '',
+  'pending',
+  'in_progress',
+  'awaiting_review',
+  'closed',
+  'rejected',
+  'referred',
+] as const
+const ARCHIVED_FILTER = 'archived'
+type FilterKey = (typeof STATUS_FILTERS)[number] | typeof ARCHIVED_FILTER
 
 // Row shape returned by GET /api/admin/requests. Loose by design: only the
 // fields this list reads are declared; everything else is allowed through.
@@ -25,24 +38,41 @@ interface RequestRow {
   category?: string
   city?: string
   status?: string
+  archived?: boolean
   [key: string]: unknown
 }
 
 export default function AdminRequestsListPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
-  const [status, setStatus] = useState('')
+  const [filter, setFilter] = useState<FilterKey>('')
   const [items, setItems] = useState<RequestRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const ManageArrow = isRTL ? ChevronLeft : ChevronRight
 
+  // Resolve the human label for a filter tab. Active statuses use the canonical
+  // admin status labels; the archived tab + "all" use their dedicated keys.
+  const filterLabel = (key: FilterKey): string => {
+    if (key === '') return a.reqList.filterAll
+    if (key === ARCHIVED_FILTER) return t.lifecycle.archivedLabel
+    return (a.statusLabels as Record<string, string>)[key] || key
+  }
+
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const qs = status ? `?status=${status}` : ''
+      // The archived tab pulls the archived bucket; status tabs filter by
+      // status. The default ('') view returns active (non-archived) requests —
+      // the backend excludes archived === true unless ?archived=true is sent.
+      const qs =
+        filter === ARCHIVED_FILTER
+          ? '?archived=true'
+          : filter
+            ? `?status=${filter}`
+            : ''
       const res = await apiJson(`/api/admin/requests${qs}`) as { items?: RequestRow[] }
       setItems(res.items || [])
     } catch (err) {
@@ -50,7 +80,7 @@ export default function AdminRequestsListPage() {
     } finally {
       setLoading(false)
     }
-  }, [status, lang])
+  }, [filter, lang])
 
   useEffect(() => {
     load()
@@ -84,14 +114,17 @@ export default function AdminRequestsListPage() {
             marginBlockEnd: 'var(--sp-4)',
           }}
         >
-          {STATUS_FILTERS.map((s) => {
-            const active = status === s
+          {[...STATUS_FILTERS, ARCHIVED_FILTER].map((s) => {
+            const active = filter === s
+            // The archived tab sits apart from the active-status group: a quiet
+            // inline-start divider signals it's a separate bucket, not a status.
+            const isArchivedTab = s === ARCHIVED_FILTER
             return (
               <button
                 key={s || 'all'}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setStatus(s)}
+                onClick={() => setFilter(s as FilterKey)}
                 style={{
                   appearance: 'none',
                   cursor: 'pointer',
@@ -106,6 +139,17 @@ export default function AdminRequestsListPage() {
                   boxShadow: active ? 'var(--shadow-sm)' : 'none',
                   transition: `background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out)`,
                   WebkitTapHighlightColor: 'transparent',
+                  // Set the archived tab apart from the active-status group with
+                  // a hairline on its inline-start edge (auto-flips in RTL).
+                  ...(isArchivedTab
+                    ? {
+                        marginInlineStart: 'var(--sp-1)',
+                        borderInlineStartColor: 'var(--hair)',
+                        borderStartStartRadius: 0,
+                        borderEndStartRadius: 0,
+                        paddingInlineStart: 'var(--sp-3)',
+                      }
+                    : null),
                 }}
                 onMouseEnter={(e) => {
                   if (!active) e.currentTarget.style.background = 'var(--sky-3)'
@@ -120,7 +164,7 @@ export default function AdminRequestsListPage() {
                   e.currentTarget.style.boxShadow = active ? 'var(--shadow-sm)' : 'none'
                 }}
               >
-                {s ? (a.statusLabels as Record<string, string>)[s] : a.reqList.filterAll}
+                {filterLabel(s as FilterKey)}
               </button>
             )
           })}
@@ -233,7 +277,15 @@ export default function AdminRequestsListPage() {
                           </span>
                         </td>
                         <td data-label={a.reqList.colStatus}>
-                          <StatusBadge status={r.status ?? ''} label={(r.status ? (a.statusLabels as Record<string, string>)[r.status] : '') || r.status || ''} />
+                          <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                            <StatusBadge
+                              status={r.status ?? ''}
+                              label={(r.status ? (a.statusLabels as Record<string, string>)[r.status] : '') || r.status || ''}
+                            />
+                            {r.archived && (
+                              <StatusBadge status={ARCHIVED_FILTER} label={t.lifecycle.archivedBadge} />
+                            )}
+                          </span>
                         </td>
                         <td data-label={a.ui.actions}>
                           <Link

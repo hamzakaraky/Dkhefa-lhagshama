@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import express, { Router, type Request, type Response } from 'express';
+import { FieldValue } from 'firebase-admin/firestore';
 
 import { db, storage } from '@/lib/firebaseAdmin';
 import { writeRequestEvent } from '@/lib/requestEvents';
@@ -129,6 +130,29 @@ router.post('/requests/:requestId', authenticate, express.raw({ type: '*/*', lim
 
     // eslint-disable-next-line no-console
     console.log(`[uploads] file saved successfully: ${path}`);
+
+    // ── Persist attachment metadata (Note 1) ────────────────────────────
+    // The Storage object is otherwise invisible: nothing records that this
+    // file belongs to the request. Embed metadata on requests.attachments so
+    // the admin/volunteer doc viewer can list + re-mint signed URLs by name.
+    // arrayUnion keeps this idempotent if the same file is re-uploaded.
+    try {
+      await db().collection('requests').doc(requestId).update({
+        attachments: FieldValue.arrayUnion({
+          name: filename,
+          path,
+          type: contentType,
+          size: req.body.length,
+          uploadedBy: req.user.uid,
+        }),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    } catch (metaErr) {
+      // Non-fatal: the file is stored. Log the metadata failure but still
+      // return success so the client doesn't re-upload.
+      // eslint-disable-next-line no-console
+      console.error('[uploads.request] attachment metadata write failed:', metaErr);
+    }
 
     // ── Signed-URL expiry (F4) ──────────────────────────────────────────
     // Previously expired in the year 2500 — an effectively permanent,

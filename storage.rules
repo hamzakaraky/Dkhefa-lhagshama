@@ -15,14 +15,13 @@ service firebase.storage {
 
     // ── /requests/{requestId}/{filename} — UC-01 attachments ──────────
     match /requests/{requestId}/{filename} {
-      // Read: must be signed in, and either own the matching request doc
-      // or be an admin. The request doc lookup uses the Firestore-bridge
-      // function available in Storage rules.
-      allow read: if request.auth != null
-                  && (
-                       firestore.get(/databases/(default)/documents/requests/$(requestId)).data.beneficiaryId == request.auth.uid
-                       || request.auth.token.role == 'admin'
-                     );
+      // Read: DENIED to clients (Note 1). Request attachments include the
+      // beneficiary's national-ID scan — PII. The backend mints a short-lived
+      // signed read URL on demand (GET /api/requests/:id/attachments/:name),
+      // authorizing admin + the assigned volunteer in the endpoint. Keeping
+      // Storage client-read-denied means a leaked Storage path is never a
+      // fetchable bearer link, and reconciles the prior rule/route authz split.
+      allow read: if false;
 
       // Write: signed-in, verified-email users only (#84 / #86).
       //  - Must not be anonymous (request.auth != null already excludes

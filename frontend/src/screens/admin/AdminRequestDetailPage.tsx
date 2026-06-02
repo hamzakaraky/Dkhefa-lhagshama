@@ -13,16 +13,46 @@ import {
   UserCircle2,
   History,
   UserPlus,
-  RefreshCw,
   StickyNote,
+  CheckCircle2,
+  RotateCcw,
+  XCircle,
+  Undo2,
+  Share2,
+  Archive,
+  FileText,
+  ExternalLink,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useApp } from '@/contexts/AppContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
+import type { Attachment, RequestStatus } from '@/types'
 import AdminLayout from '@/components/admin/AdminLayout'
+import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import { StatusBadge, ErrorState } from '@/components/admin/AdminUI'
 import Reveal from '../../components/motion/Reveal'
 
-const STATUSES = ['pending', 'in_progress', 'resolved', 'rejected', 'closed']
+// ── Transition map (mirrors the backend authority in lib/requestTransitions).
+// Only legal admin moves are listed; the UI renders a control per legal move
+// from the request's current status. `referred` is handled by the dedicated
+// refer action, and `archived` is a boolean flag set via the archive endpoint.
+const ADMIN_TRANSITIONS: Record<string, RequestStatus[]> = {
+  pending: ['in_progress', 'rejected'],
+  in_progress: ['awaiting_review', 'referred', 'rejected'],
+  awaiting_review: ['closed', 'in_progress'],
+  closed: ['in_progress'],
+  referred: [],
+  rejected: [],
+}
+
+// A partner option sourced from the live answers catalog (Note 8). Titles are
+// bilingual { he, en }; we resolve to the active language for display.
+interface AnswerOption {
+  id: string
+  title?: { he?: string; en?: string } | string | null
+  sourceName?: { he?: string; en?: string } | string | null
+  sourceUrl?: string | null
+}
 
 // A single audit/timeline event on a request. `details` is genuinely dynamic
 // per event type, so it stays loose.
@@ -47,6 +77,9 @@ interface RequestDetail {
   language?: string
   preferredLanguage?: string
   events?: RequestEvent[]
+  archived?: boolean
+  attachments?: Attachment[]
+  referral?: { partnerName?: string; note?: string }
   [key: string]: unknown
 }
 
@@ -163,9 +196,20 @@ const EYEBROW: CSSProperties = {
   gap: '8px',
 }
 
+// A pending lifecycle transition awaiting confirmation. `kind` selects the
+// confirm copy + the endpoint to call; `to` is the target status (omitted for
+// archive, which hits its own endpoint).
+type TransitionKind = 'close' | 'reopen' | 'reject' | 'sendBack' | 'archive'
+interface PendingTransition {
+  kind: TransitionKind
+  to?: RequestStatus
+}
+
 export default function AdminRequestDetailPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
+  const lc = t.lifecycle
+  const { toast } = useApp()
   const router = useRouter()
   const { id } = router.query
   const BackArrow = isRTL ? ArrowRight : ArrowLeft
@@ -177,10 +221,23 @@ export default function AdminRequestDetailPage() {
   const [saving, setSaving] = useState(false)
 
   const [assignTo, setAssignTo] = useState('')
-  const [statusVal, setStatusVal] = useState('pending')
   const [note, setNote] = useState('')
   const [dismissedFormer, setDismissedFormer] = useState(false)
   const [dismissedLangWarn, setDismissedLangWarn] = useState(false)
+
+  // Lifecycle transition confirmation (Note 6).
+  const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
+
+  // Referral flow (Note 8).
+  const [referOpen, setReferOpen] = useState(false)
+  const [answers, setAnswers] = useState<AnswerOption[]>([])
+  const [answersLoaded, setAnswersLoaded] = useState(false)
+  const [referAnswerId, setReferAnswerId] = useState('')
+  const [referNote, setReferNote] = useState('')
+  const [referring, setReferring] = useState(false)
+
+  // Document viewer (Note 1): tracks which attachment is being opened.
+  const [openingDoc, setOpeningDoc] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -192,7 +249,6 @@ export default function AdminRequestDetailPage() {
         apiJson('/api/admin/volunteers') as Promise<{ active?: ActiveVolunteer[] }>,
       ])
       setRequest(reqData)
-      setStatusVal(reqData.status || 'pending')
       setAssignTo(reqData.assignedVolunteerId || '')
       setVolunteers((volData && volData.active) || [])
     } catch {
@@ -241,25 +297,170 @@ export default function AdminRequestDetailPage() {
   const handleAssign = () => {
     if (assignTo) post('assign', { volunteerId: assignTo })
   }
-  // #92 — surface forward-only / concurrent-update failures clearly.
-  const handleStatus = () => {
-    if (!statusVal) return
-    post('status', { status: statusVal }, (status, payload) => {
-      if (status === 409) {
-        // invalid_transition (backward move) vs concurrent_update (stale write)
-        return payload && payload.error === 'invalid_transition'
-          ? a.reqDetail.statusBackwardError
-          : a.reqDetail.statusConflictError
-      }
-      return a.reqDetail.statusGenericError
-    })
-  }
   const handleNote = async () => {
     const trimmed = note.trim()
     if (!trimmed) return
     const ok = await post('note', { note: trimmed })
     if (ok) setNote('')
   }
+
+  // ── Lifecycle transitions (Note 6) ─────────────────────────────────────
+  // Confirm copy + success/error toasts per transition kind, all bilingual.
+  const TRANSITION_COPY: Record<
+    TransitionKind,
+    { confirm: string; success: string; error: string; variant: 'default' | 'danger' }
+  > = {
+    close:    { confirm: lc.actions.closeConfirm,    success: lc.actions.closeSuccess,    error: lc.actions.closeError,    variant: 'default' },
+    reopen:   { confirm: lc.actions.reopenConfirm,   success: lc.actions.reopenSuccess,   error: lc.actions.reopenError,   variant: 'default' },
+    reject:   { confirm: lc.actions.rejectConfirm,   success: lc.actions.rejectSuccess,   error: lc.actions.rejectError,   variant: 'danger'  },
+    sendBack: { confirm: lc.actions.sendBackConfirm, success: lc.actions.sendBackSuccess, error: lc.actions.sendBackError, variant: 'default' },
+    archive:  { confirm: lc.actions.archiveConfirm,  success: lc.actions.archiveSuccess,  error: lc.actions.archiveError,  variant: 'default' },
+  }
+
+  // Execute a confirmed transition. `archive` posts to its own endpoint; the
+  // rest post to /status with { to }. A 409/422 means the move is illegal per
+  // the backend transition map — surface the dedicated message.
+  const runTransition = async (pt: PendingTransition) => {
+    const copy = TRANSITION_COPY[pt.kind]
+    setSaving(true)
+    setError(null)
+    try {
+      const res =
+        pt.kind === 'archive'
+          ? await apiFetch(`/api/admin/requests/${id}/archive`, { method: 'POST', body: JSON.stringify({}) })
+          : await apiFetch(`/api/admin/requests/${id}/status`, {
+              method: 'POST',
+              body: JSON.stringify({ to: pt.to }),
+            })
+      if (!res.ok) {
+        const msg = res.status === 409 || res.status === 422 ? lc.actions.illegalTransition : copy.error
+        setError(msg)
+        toast(msg, 'error')
+        return
+      }
+      await load()
+      toast(copy.success, 'success')
+    } catch {
+      setError(copy.error)
+      toast(copy.error, 'error')
+    } finally {
+      setSaving(false)
+      setPendingTransition(null)
+    }
+  }
+
+  // ── Referral (Note 8) ──────────────────────────────────────────────────
+  // Lazy-load the live answers catalog the first time the refer dialog opens.
+  const openReferDialog = useCallback(async () => {
+    setReferOpen(true)
+    if (answersLoaded) return
+    try {
+      const res = (await apiJson('/api/answers')) as { items?: AnswerOption[] }
+      setAnswers(res.items || [])
+    } catch {
+      setAnswers([])
+    } finally {
+      setAnswersLoaded(true)
+    }
+  }, [answersLoaded])
+
+  const resolveBilingual = useCallback(
+    (v: AnswerOption['title']): string => {
+      if (!v) return ''
+      if (typeof v === 'string') return v
+      return (lang === 'he' ? v.he : v.en) || v.he || v.en || ''
+    },
+    [lang],
+  )
+
+  const submitReferral = async () => {
+    if (!referAnswerId) return
+    setReferring(true)
+    setError(null)
+    try {
+      const res = await apiFetch(`/api/admin/requests/${id}/refer`, {
+        method: 'POST',
+        body: JSON.stringify({ answerId: referAnswerId, note: referNote.trim() || undefined }),
+      })
+      if (!res.ok) {
+        const msg = res.status === 409 || res.status === 422 ? lc.actions.illegalTransition : lc.referral.error
+        setError(msg)
+        toast(msg, 'error')
+        return
+      }
+      await load()
+      toast(lc.referral.success, 'success')
+      setReferOpen(false)
+      setReferAnswerId('')
+      setReferNote('')
+    } catch {
+      setError(lc.referral.error)
+      toast(lc.referral.error, 'error')
+    } finally {
+      setReferring(false)
+    }
+  }
+
+  // ── Document viewer (Note 1) ───────────────────────────────────────────
+  // Re-mints a short-lived signed URL via the backend and opens it in a new
+  // tab. Storage paths are never exposed to the client as fetchable URLs.
+  const viewDoc = async (name: string) => {
+    setOpeningDoc(name)
+    try {
+      const res = await apiFetch(
+        `/api/requests/${id}/attachments/${encodeURIComponent(name)}`,
+        { method: 'GET' },
+      )
+      if (!res.ok) {
+        toast(lc.docs.viewError, 'error')
+        return
+      }
+      const data = (await res.json()) as { url?: string }
+      if (data.url) {
+        window.open(data.url, '_blank', 'noopener,noreferrer')
+      } else {
+        toast(lc.docs.viewError, 'error')
+      }
+    } catch {
+      toast(lc.docs.viewError, 'error')
+    } finally {
+      setOpeningDoc(null)
+    }
+  }
+
+  // Map the request's current status to the legal admin transition controls
+  // (Note 6). Each control carries its label, icon, the pending-transition it
+  // triggers, and whether it's destructive.
+  const transitionControls = useMemo(() => {
+    const current = request?.status || ''
+    const allowed = ADMIN_TRANSITIONS[current] || []
+    const controls: {
+      key: TransitionKind
+      label: string
+      Icon: LucideIcon
+      pt: PendingTransition
+      danger?: boolean
+    }[] = []
+    if (current === 'awaiting_review' && allowed.includes('closed')) {
+      controls.push({ key: 'close', label: lc.actions.close, Icon: CheckCircle2, pt: { kind: 'close', to: 'closed' } })
+    }
+    if (current === 'awaiting_review' && allowed.includes('in_progress')) {
+      controls.push({ key: 'sendBack', label: lc.actions.sendBack, Icon: Undo2, pt: { kind: 'sendBack', to: 'in_progress' } })
+    }
+    if (current === 'closed' && allowed.includes('in_progress')) {
+      controls.push({ key: 'reopen', label: lc.actions.reopen, Icon: RotateCcw, pt: { kind: 'reopen', to: 'in_progress' } })
+    }
+    if (allowed.includes('rejected')) {
+      controls.push({ key: 'reject', label: lc.actions.reject, Icon: XCircle, pt: { kind: 'reject', to: 'rejected' }, danger: true })
+    }
+    return controls
+  }, [request, lc.actions])
+
+  // Refer is offered only while the request is in progress (Note 8). Archive is
+  // offered for terminal states (closed/referred) that aren't archived yet.
+  const canRefer = request?.status === 'in_progress'
+  const canArchive =
+    !request?.archived && (request?.status === 'closed' || request?.status === 'referred')
 
   const EMPTY = '·' // middle dot placeholder for missing values
 
@@ -411,10 +612,15 @@ export default function AdminRequestDetailPage() {
                     {fullName || request.id}
                   </h2>
                 </div>
-                <StatusBadge
-                  status={request.status ?? ''}
-                  label={(request.status ? (a.statusLabels as Record<string, string>)[request.status] : '') || request.status || ''}
-                />
+                <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                  <StatusBadge
+                    status={request.status ?? ''}
+                    label={(request.status ? (a.statusLabels as Record<string, string>)[request.status] : '') || request.status || ''}
+                  />
+                  {request.archived && (
+                    <StatusBadge status="archived" label={lc.archivedBadge} />
+                  )}
+                </span>
               </div>
 
               <p
@@ -453,6 +659,33 @@ export default function AdminRequestDetailPage() {
                   )}
                 </MetaCell>
               </dl>
+
+              {/* Referral panel (Note 8) — shown once the request was referred */}
+              {request.referral && request.referral.partnerName && (
+                <div
+                  className="admin-referral-panel"
+                  style={{
+                    margin: 'var(--sp-5) 0 0',
+                    padding: 'var(--sp-4)',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--hair)',
+                    background: 'var(--sky-3)',
+                  }}
+                >
+                  <span style={{ ...EYEBROW, color: 'var(--ember)' }}>
+                    <Share2 size={14} aria-hidden="true" />
+                    {lc.actions.refer}
+                  </span>
+                  <p style={{ margin: 'var(--sp-2) 0 0', fontWeight: 600, color: 'var(--ink)' }}>
+                    {lc.referral.timelineTitle(request.referral.partnerName)}
+                  </p>
+                  {request.referral.note && (
+                    <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-700)', lineHeight: 1.5 }}>
+                      {request.referral.note}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Timeline */}
               <div
@@ -658,6 +891,8 @@ export default function AdminRequestDetailPage() {
                 </button>
               </div>
 
+              {/* ── Lifecycle transitions (Note 6 + 8) — only legal moves from
+                  the current status are shown. Refer + archive sit alongside. ── */}
               <div
                 className="field"
                 style={{
@@ -666,34 +901,102 @@ export default function AdminRequestDetailPage() {
                   borderBlockStart: '1px solid var(--hair)',
                 }}
               >
-                <label
+                <span
                   className="form-label"
-                  htmlFor="status"
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', marginBlockEnd: 'var(--sp-2)' }}
                 >
-                  <RefreshCw size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+                  <Share2 size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
                   {a.reqDetail.changeStatus}
-                </label>
-                <select
-                  id="status"
-                  className="form-select"
-                  value={statusVal}
-                  onChange={(e) => setStatusVal(e.target.value)}
+                </span>
+
+                {transitionControls.length === 0 && !canRefer && !canArchive ? (
+                  <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                    {EMPTY}
+                  </p>
+                ) : (
+                  <div className="admin-lifecycle-actions" role="group" aria-label={a.reqDetail.changeStatus}>
+                    {transitionControls.map((c) => (
+                      <button
+                        key={c.key}
+                        type="button"
+                        className={`btn admin-side-btn ${c.danger ? 'btn-danger' : 'btn-outline'}`}
+                        disabled={saving}
+                        onClick={() => setPendingTransition(c.pt)}
+                      >
+                        <c.Icon size={15} aria-hidden="true" />
+                        {c.label}
+                      </button>
+                    ))}
+                    {canRefer && (
+                      <button
+                        type="button"
+                        className="btn btn-outline admin-side-btn"
+                        disabled={saving}
+                        onClick={openReferDialog}
+                      >
+                        <Share2 size={15} aria-hidden="true" />
+                        {lc.actions.refer}
+                      </button>
+                    )}
+                    {canArchive && (
+                      <button
+                        type="button"
+                        className="btn btn-outline admin-side-btn"
+                        disabled={saving}
+                        onClick={() => setPendingTransition({ kind: 'archive' })}
+                      >
+                        <Archive size={15} aria-hidden="true" />
+                        {lc.actions.archive}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Documents (Note 1) — list attachments; each opens a freshly
+                  minted short-lived signed URL in a new tab. ── */}
+              <div
+                className="field"
+                style={{
+                  marginBlockStart: 'var(--sp-5)',
+                  paddingBlockStart: 'var(--sp-5)',
+                  borderBlockStart: '1px solid var(--hair)',
+                }}
+              >
+                <span
+                  className="form-label"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', marginBlockEnd: 'var(--sp-2)' }}
                 >
-                  {STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {(a.statusLabels as Record<string, string>)[s]}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="btn btn-outline admin-side-btn"
-                  disabled={saving}
-                  onClick={handleStatus}
-                >
-                  {a.reqDetail.updateStatus}
-                </button>
+                  <FileText size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+                  {lc.docs.heading}
+                </span>
+
+                {request.attachments && request.attachments.length > 0 ? (
+                  <ul className="admin-doc-list">
+                    {request.attachments.map((doc) => {
+                      const busy = openingDoc === doc.name
+                      return (
+                        <li key={doc.name} className="admin-doc-item">
+                          <FileText size={16} aria-hidden="true" className="admin-doc-icon" />
+                          <span className="admin-doc-name" title={doc.name}>{doc.name}</span>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm admin-doc-view"
+                            disabled={busy}
+                            onClick={() => viewDoc(doc.name)}
+                          >
+                            {busy ? lc.docs.opening : lc.docs.view}
+                            {!busy && <ExternalLink size={14} aria-hidden="true" />}
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : (
+                  <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                    {lc.docs.empty}
+                  </p>
+                )}
               </div>
 
               <div
@@ -732,6 +1035,110 @@ export default function AdminRequestDetailPage() {
             </aside>
           </div>
         </Reveal>
+      )}
+
+      {/* ── Transition confirmation (Note 6) ── */}
+      {pendingTransition && (
+        <ConfirmDialog
+          open
+          title={
+            transitionControls.find((c) => c.key === pendingTransition.kind)?.label ||
+            (pendingTransition.kind === 'archive' ? lc.actions.archive : lc.actions.refer)
+          }
+          message={TRANSITION_COPY[pendingTransition.kind].confirm}
+          confirmLabel={t.common.confirm}
+          cancelLabel={t.common.cancel}
+          variant={TRANSITION_COPY[pendingTransition.kind].variant}
+          busy={saving}
+          onConfirm={() => runTransition(pendingTransition)}
+          onCancel={() => setPendingTransition(null)}
+        />
+      )}
+
+      {/* ── Refer to partner dialog (Note 8) — picker over the answers catalog
+          + optional note. Reuses the branded confirm surface for consistency. ── */}
+      {referOpen && (
+        <div
+          className="confirm-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget && !referring) setReferOpen(false)
+          }}
+        >
+          <div
+            className="confirm-box"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="refer-title"
+          >
+            <span className="confirm-icon confirm-icon--default" aria-hidden="true">
+              <Share2 size={22} />
+            </span>
+            <h2 id="refer-title" className="confirm-title">{lc.referral.dialogTitle}</h2>
+
+            <div className="field" style={{ textAlign: 'start' }}>
+              <label className="form-label" htmlFor="refer-partner">
+                {lc.referral.choosePartner}
+              </label>
+              {!answersLoaded ? (
+                <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                  {a.ui.loading}
+                </p>
+              ) : answers.length === 0 ? (
+                <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                  {lc.referral.noPartners}
+                </p>
+              ) : (
+                <select
+                  id="refer-partner"
+                  className="form-select"
+                  value={referAnswerId}
+                  onChange={(e) => setReferAnswerId(e.target.value)}
+                >
+                  <option value="">{lc.referral.partnerPH}</option>
+                  {answers.map((ans) => (
+                    <option key={ans.id} value={ans.id}>
+                      {resolveBilingual(ans.title) || resolveBilingual(ans.sourceName) || ans.id}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <div className="field" style={{ textAlign: 'start', marginBlockStart: 'var(--sp-3)' }}>
+              <label className="form-label" htmlFor="refer-note">
+                {lc.referral.noteLabel}
+              </label>
+              <textarea
+                id="refer-note"
+                className="form-textarea"
+                rows={3}
+                value={referNote}
+                onChange={(e) => setReferNote(e.target.value)}
+                placeholder={lc.referral.notePH}
+              />
+            </div>
+
+            <div className="confirm-actions">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => setReferOpen(false)}
+                disabled={referring}
+              >
+                {t.common.cancel}
+              </button>
+              <button
+                type="button"
+                className={`btn btn-primary${referring ? ' is-loading' : ''}`}
+                onClick={submitReferral}
+                disabled={referring || !referAnswerId}
+                aria-busy={referring || undefined}
+              >
+                {referring ? lc.referral.submitting : lc.referral.submit}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </AdminLayout>
   )

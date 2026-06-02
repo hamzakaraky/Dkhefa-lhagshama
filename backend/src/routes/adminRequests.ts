@@ -21,6 +21,7 @@ import { authenticate, requireRole } from '@/middleware/auth';
 import { writeAuditLog } from '@/lib/audit';
 import { writeRequestEvent } from '@/lib/requestEvents';
 import { REQUEST_STATUSES, type RequestStatus } from '@/routes/requests';
+import { canTransition, canArchive } from '@/lib/requestTransitions';
 import { ensureChatForRequest } from '@/lib/chatOnAssign';
 
 const router = Router();
@@ -30,7 +31,8 @@ router.use(authenticate, requireRole('admin'));
 // Optional query params: status, category, urgency, limit (default 50)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { status, category, urgency, limit: limitStr } = req.query as Record<string, string | undefined>;
+    const { status, category, urgency, archived, limit: limitStr } =
+      req.query as Record<string, string | undefined>;
     const limit = Math.min(parseInt(limitStr ?? '50', 10) || 50, 200);
 
     let query = db().collection('requests').orderBy('createdAt', 'desc').limit(limit) as
@@ -46,8 +48,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       query = query.where('urgency', '==', urgency);
     }
 
+    // Archived filter (Note 6). Default active view EXCLUDES archived requests;
+    // pass ?archived=true to see only the archive, or ?archived=all for both.
+    // Archived is filtered in-memory (post-fetch) so we never need a composite
+    // index combining archived with status/category/urgency + createdAt.
+    const archivedMode = archived ?? 'false';
+
     const snap = await query.get();
-    const items = snap.docs.map((d) => {
+    const items = snap.docs
+      .filter((d) => {
+        if (archivedMode === 'all') return true;
+        const isArchived = d.data().archived === true;
+        return archivedMode === 'true' ? isArchived : !isArchived;
+      })
+      .map((d) => {
       const data = d.data();
       return {
         id: d.id,
@@ -60,11 +74,14 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         category:             data.category,
         urgency:              data.urgency,
         status:               data.status,
+        archived:             data.archived === true,
         description:          data.description,
         assignedVolunteerId:  data.assignedVolunteerId ?? null,
         handler:              data.handler ?? null,
         deadline:             data.deadline ?? null,
         notes:                data.notes ?? '',
+        referral:             data.referral ?? null,
+        attachments:          data.attachments ?? [],
         createdAt:            data.createdAt?.toDate?.()?.toISOString?.() ?? null,
         updatedAt:            data.updatedAt?.toDate?.()?.toISOString?.() ?? null,
         assignedAt:           data.assignedAt?.toDate?.()?.toISOString?.() ?? null,
@@ -110,9 +127,23 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       })
       .sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''));
 
+    // Serialize the referral's server timestamp to ISO if present (Note 8).
+    const referral = data.referral
+      ? {
+          ...data.referral,
+          referredAt:
+            data.referral.referredAt?.toDate?.()?.toISOString?.() ??
+            data.referral.referredAt ??
+            null,
+        }
+      : null;
+
     res.json({
       id: snap.id,
       ...data,
+      archived: data.archived === true,
+      attachments: data.attachments ?? [],
+      referral,
       createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
       updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() ?? null,
       assignedAt: data.assignedAt?.toDate?.()?.toISOString?.() ?? null,
@@ -192,39 +223,26 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
 });
 
 // ── POST /api/admin/requests/:id/status ──────────────────────────────────
-// Body: { status: RequestStatus }
+// Body: { to: RequestStatus }
 // Fires 'status_changed' event (visibility 'all').
 //
-// #92 — Forward-only, race-safe status transition.
-// The status lifecycle is forward-only: a request may only move to a status
-// later in (or equal to) REQUEST_STATUSES, never backwards. To stay safe under
-// concurrent admin edits, the read-check-write is wrapped in a Firestore
-// transaction: if another admin changed the status between our read and write,
-// the transaction's optimistic concurrency makes the commit fail and we surface
-// a 409 instead of silently clobbering their change.
-const statusSchema = z.object({
-  status: z.enum(REQUEST_STATUSES),
-});
-
-/** Index of a status in the canonical forward-only lifecycle. -1 if unknown. */
-function statusRank(status: string | null | undefined): number {
-  if (!status) return -1;
-  return REQUEST_STATUSES.indexOf(status as RequestStatus);
-}
-
-/**
- * A move is allowed only if the target sits at the same position or later in
- * the forward-only lifecycle. Equal is allowed (idempotent no-op re-save);
- * anything earlier is a backward transition and rejected.
- */
-function isForwardTransition(from: string | null | undefined, to: RequestStatus): boolean {
-  const fromRank = statusRank(from);
-  const toRank = statusRank(to);
-  if (toRank === -1) return false;
-  // Unknown/missing current status: allow setting any valid status.
-  if (fromRank === -1) return true;
-  return toRank >= fromRank;
-}
+// Note 6 — transition-map-validated, race-safe status change. The lifecycle is
+// an explicit transition map (lib/requestTransitions), not forward-only:
+// admins may close (awaiting_review→closed), send back (awaiting_review→
+// in_progress), reopen (closed→in_progress), reject, or start (pending→
+// in_progress). Illegal moves return 409. The read-check-write runs in a
+// Firestore transaction so concurrent admin edits can't clobber each other.
+//
+// `to` is the contract field; `status` is accepted as a legacy alias.
+const statusSchema = z
+  .object({
+    to: z.enum(REQUEST_STATUSES).optional(),
+    status: z.enum(REQUEST_STATUSES).optional(),
+  })
+  .refine((d) => Boolean(d.to ?? d.status), {
+    message: 'to is required',
+    path: ['to'],
+  });
 
 /** Thrown inside the transaction to bail out with a specific HTTP status. */
 class TransitionError extends Error {
@@ -245,7 +263,7 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  const { status } = parsed.data;
+  const to = (parsed.data.to ?? parsed.data.status) as RequestStatus;
   const requestId = req.params.id;
   const actorId = req.user!.uid;
   const ref = db().collection('requests').doc(requestId);
@@ -264,15 +282,17 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
 
       prevStatus = (snap.data()!.status as string) ?? null;
 
-      if (!isForwardTransition(prevStatus, status)) {
+      // Admin transitions are validated against the canonical map. Admins are
+      // exempt from the assignment requirement (isAssigned: true).
+      if (!canTransition(prevStatus, to, { role: 'admin', isAssigned: true })) {
         throw new TransitionError(409, 'invalid_transition', {
           from: prevStatus,
-          to: status,
+          to,
         });
       }
 
       tx.update(ref, {
-        status,
+        status: to,
         updatedAt: FieldValue.serverTimestamp(),
       });
     });
@@ -300,7 +320,7 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
       type: 'status_changed',
       actorId,
       visibility: 'all',
-      details: { from: prevStatus, to: status },
+      details: { from: prevStatus, to },
     });
 
     await writeAuditLog({
@@ -308,7 +328,7 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
       action: 'request.status_change',
       entityType: 'requests',
       entityId: requestId,
-      details: { from: prevStatus, to: status },
+      details: { from: prevStatus, to },
     });
   } catch (err) {
     // The status change itself succeeded; log the bookkeeping failure but still
@@ -316,7 +336,176 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
     console.error('[adminRequests] POST /:id/status side-effects:', err);
   }
 
-  res.json({ ok: true });
+  res.json({ ok: true, status: to });
+});
+
+// ── POST /api/admin/requests/:id/refer ────────────────────────────────────
+// Body: { answerId: string, note?: string }
+// Refers the request to a partner from the live `answers` catalog (Note 8).
+// Resolves partnerName from the answer, sets the `referral` field, moves the
+// status to `referred` (terminal, counts as helped), and sets archived=true.
+// Validated against the transition map (in_progress → referred, admin).
+const referSchema = z.object({
+  answerId: z.string().trim().min(1).max(200),
+  note: z.string().trim().max(2000).optional(),
+});
+
+router.post('/:id/refer', async (req: Request, res: Response): Promise<void> => {
+  const parsed = referSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: 'invalid_input', details: parsed.error.flatten() });
+    return;
+  }
+
+  const { answerId, note } = parsed.data;
+  const requestId = req.params.id;
+  const actorId = req.user!.uid;
+  const ref = db().collection('requests').doc(requestId);
+
+  let prevStatus: string | null = null;
+  let partnerName = '';
+
+  try {
+    // Resolve the partner from the answers catalog up front (outside the txn).
+    const answerSnap = await db().collection('answers').doc(answerId).get();
+    if (!answerSnap.exists) {
+      res.status(404).json({ error: 'partner_not_found' });
+      return;
+    }
+    const answer = answerSnap.data() as {
+      title?: { he?: string; en?: string } | string;
+      sourceName?: string;
+    };
+    // `title` is bilingual { he, en } on answers; fall back across shapes.
+    if (typeof answer.title === 'string') {
+      partnerName = answer.title;
+    } else {
+      partnerName = answer.title?.he ?? answer.title?.en ?? answer.sourceName ?? '';
+    }
+
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw new TransitionError(404, 'not_found');
+      }
+      prevStatus = (snap.data()!.status as string) ?? null;
+
+      if (!canTransition(prevStatus, 'referred', { role: 'admin', isAssigned: true })) {
+        throw new TransitionError(409, 'invalid_transition', {
+          from: prevStatus,
+          to: 'referred',
+        });
+      }
+
+      tx.update(ref, {
+        status: 'referred',
+        archived: true,
+        referral: {
+          answerId,
+          partnerName,
+          note: note ?? '',
+          referredAt: FieldValue.serverTimestamp(),
+          referredBy: actorId,
+        },
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (err) {
+    if (err instanceof TransitionError) {
+      res.status(err.httpStatus).json({ error: err.code, ...err.extra });
+      return;
+    }
+    const code = (err as { code?: number }).code;
+    if (code === 10) {
+      res.status(409).json({ error: 'concurrent_update' });
+      return;
+    }
+    console.error('[adminRequests] POST /:id/refer:', err);
+    res.status(500).json({ error: 'internal_error' });
+    return;
+  }
+
+  try {
+    await writeRequestEvent({
+      requestId,
+      type: 'status_changed',
+      actorId,
+      visibility: 'all',
+      details: { from: prevStatus, to: 'referred', kind: 'referred', answerId, partnerName, note: note ?? '' },
+    });
+    await writeAuditLog({
+      actorId,
+      action: 'request.refer',
+      entityType: 'requests',
+      entityId: requestId,
+      details: { answerId, partnerName },
+    });
+  } catch (err) {
+    console.error('[adminRequests] POST /:id/refer side-effects:', err);
+  }
+
+  res.json({ ok: true, status: 'referred', referral: { answerId, partnerName, note: note ?? '' } });
+});
+
+// ── POST /api/admin/requests/:id/archive ──────────────────────────────────
+// Sets archived=true. Only allowed when the request is `closed` or `referred`
+// (Note 6). Archived requests stay queryable for stats but drop out of the
+// default active list.
+router.post('/:id/archive', async (req: Request, res: Response): Promise<void> => {
+  const requestId = req.params.id;
+  const actorId = req.user!.uid;
+  const ref = db().collection('requests').doc(requestId);
+
+  try {
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw new TransitionError(404, 'not_found');
+      }
+      const status = (snap.data()!.status as string) ?? null;
+      if (!canArchive(status)) {
+        throw new TransitionError(409, 'invalid_archive', { status });
+      }
+      tx.update(ref, {
+        archived: true,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (err) {
+    if (err instanceof TransitionError) {
+      res.status(err.httpStatus).json({ error: err.code, ...err.extra });
+      return;
+    }
+    const code = (err as { code?: number }).code;
+    if (code === 10) {
+      res.status(409).json({ error: 'concurrent_update' });
+      return;
+    }
+    console.error('[adminRequests] POST /:id/archive:', err);
+    res.status(500).json({ error: 'internal_error' });
+    return;
+  }
+
+  try {
+    await writeRequestEvent({
+      requestId,
+      type: 'status_changed',
+      actorId,
+      visibility: 'internal',
+      details: { kind: 'archived', archived: true },
+    });
+    await writeAuditLog({
+      actorId,
+      action: 'request.archive',
+      entityType: 'requests',
+      entityId: requestId,
+      details: { archived: true },
+    });
+  } catch (err) {
+    console.error('[adminRequests] POST /:id/archive side-effects:', err);
+  }
+
+  res.json({ ok: true, archived: true });
 });
 
 // ── POST /api/admin/requests/:id/note ────────────────────────────────────

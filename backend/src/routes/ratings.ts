@@ -3,7 +3,8 @@
  *
  * POST /api/ratings
  *   Authenticated. Only the request's beneficiary may rate, and only once the
- *   request is `resolved`. A rating is stored in the `ratings` collection (one
+ *   request is `closed` (Note 6 — `resolved` retired). A rating is stored in
+ *   the `ratings` collection (one
  *   per request — the requestId is the doc id, so re-submitting overwrites the
  *   previous score). When the request has an assigned volunteer we maintain a
  *   running aggregate (count + sum + average) on `volunteers/{uid}`.
@@ -75,11 +76,12 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       return;
     }
 
-    // Gate 2 — the request must be resolved.
-    if (request.status !== 'resolved') {
+    // Gate 2 — the request must be closed (Note 6: `resolved` is retired; the
+    // rating prompt now keys off `closed`).
+    if (request.status !== 'closed') {
       res.status(409).json({
-        error: 'request_not_resolved',
-        detail: 'a request can only be rated once it is resolved',
+        error: 'request_not_closed',
+        detail: 'a request can only be rated once it is closed',
       });
       return;
     }

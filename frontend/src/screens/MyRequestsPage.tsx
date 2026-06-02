@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import { useEffect, useState, useCallback } from "react";
 import { CheckCircle, ChevronDown, ChevronUp, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus } from "lucide-react";
 
-import StatusBadge from "@/components/data-display/StatusBadge";
 import RatingForm from "@/components/forms/RatingForm";
 import Reveal from "../components/motion/Reveal";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,7 +10,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { apiJson } from "../lib/apiClient";
 import { formatDate, truncate } from "../utils/helpers";
 import type { CSSProperties, ReactNode } from "react";
-import type { CaughtError, TNode } from "@/types";
+import type { CaughtError, TNode, Referral } from "@/types";
 
 // `t` is the bilingual translation table — consumed via dynamic key lookups
 // (`t.myRequests.categories[cat]`, `tl.types[ev.type]`), so use the loose
@@ -29,6 +28,12 @@ interface RequestRecord {
   createdAt?: string;
   deadline?: string | null;
   attachmentPaths?: string[];
+  /** Embedded attachment metadata (Note 1) — fall back to count when present. */
+  attachments?: { name: string }[];
+  /** Archived flag — archived requests are grouped as "past" (Note 6). */
+  archived?: boolean;
+  /** Partner referral, set when status === 'referred' (Note 8). */
+  referral?: Referral;
 }
 interface TimelineEvent {
   id?: string | number;
@@ -45,6 +50,38 @@ const labelStyle: CSSProperties = {
   textTransform: "uppercase",
   color: "var(--gray-500)",
 };
+
+// ── Lifecycle status pill (Notes 6, 8) ───────────────────────
+// Renders the canonical request statuses with the bilingual lifecycle
+// status-label keys (incl. awaiting_review / closed / rejected / referred).
+// Colour comes from existing editorial tokens only — no new colours.
+const STATUS_TONE: Record<string, { bg: string; fg: string }> = {
+  pending:         { bg: "var(--sky-2)",      fg: "var(--ink-2)" },
+  in_progress:     { bg: "var(--warning-soft)", fg: "var(--warning)" },
+  awaiting_review: { bg: "var(--ember-soft)", fg: "var(--ember-700)" },
+  closed:          { bg: "var(--success-soft)", fg: "var(--success)" },
+  rejected:        { bg: "var(--danger-soft)", fg: "var(--danger)" },
+  referred:        { bg: "var(--ember-soft)", fg: "var(--ember-700)" },
+};
+
+function LifecycleStatusPill({ status, t }: { status: string; t: Translations }) {
+  const label = t.lifecycle.statusLabels[status] || status;
+  const tone = STATUS_TONE[status] || STATUS_TONE.pending;
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      padding: "3px 10px",
+      borderRadius: "999px",
+      fontSize: "12px",
+      fontWeight: 600,
+      background: tone.bg,
+      color: tone.fg,
+    }}>
+      {label}
+    </span>
+  );
+}
 
 // ── Deadline pill (#68) ───────────────────────────────────────
 function DeadlinePill({ deadline, t }: { deadline?: string | null; t: Translations }) {
@@ -130,6 +167,44 @@ function RequestTimeline({ requestId, t }: { requestId: string; t: Translations 
   );
 }
 
+// ── Referral panel (Note 8) ───────────────────────────────────
+// When a request is `referred`, surface the partner + contact to the
+// beneficiary as a timeline event. Partner name + optional note + contact
+// come from `request.referral`; all copy via the lifecycle.referral keys.
+function ReferralPanel({ referral, t }: { referral: Referral; t: Translations }) {
+  const rf = t.lifecycle.referral;
+  const partner = referral.partnerName || "";
+  const contact = [
+    (referral as { phone?: string }).phone,
+    (referral as { website?: string }).website,
+    (referral as { email?: string }).email,
+  ].filter(Boolean) as string[];
+
+  return (
+    <div className="referral-panel" role="group" aria-label={rf.timelineTitle(partner)}>
+      <div className="referral-panel-head">
+        <span className="referral-panel-dot" aria-hidden="true" />
+        <div className="referral-panel-title">{rf.timelineTitle(partner)}</div>
+      </div>
+      {referral.referredAt && (
+        <div className="referral-panel-time">{formatDate(referral.referredAt, t.lang)}</div>
+      )}
+      <p className="referral-panel-line">{rf.contactLine}</p>
+      {referral.note && <p className="referral-panel-note">{referral.note}</p>}
+      {contact.length > 0 && (
+        <div className="referral-panel-contact">
+          <div style={labelStyle}>{rf.contactLabel}</div>
+          <ul className="referral-panel-contact-list">
+            {contact.map((c) => (
+              <li key={c}>{c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Rate-your-experience card (#80) ───────────────────────────
 function RateExperienceCard({ requestId, t }: { requestId: string; t: Translations }) {
   const r = t.ratings;
@@ -157,7 +232,13 @@ function RateExperienceCard({ requestId, t }: { requestId: string; t: Translatio
       });
       setDone(true);
     } catch (err) {
-      setError((err as CaughtError)?.detail?.error === "request_not_resolved" ? r.errorNotResolved : r.error);
+      // Rating is only allowed once the request is `closed` (Note 6 — the
+      // trigger moved off the retired `resolved` status). Accept either
+      // backend error code so the "can only rate handled requests" message
+      // shows regardless of the backend's exact wording.
+      const code = (err as CaughtError)?.detail?.error;
+      const notReady = code === "request_not_resolved" || code === "request_not_closed";
+      setError(notReady ? r.errorNotResolved : r.error);
     } finally {
       setSubmitting(false);
     }
@@ -229,11 +310,17 @@ function RequestCard({ item, t, lang, expandedId, onToggle }: {
   const categoryLabel = (cat: string) => t.myRequests.categories[cat] || cat;
   const urgencyLabel  = (urg: string) => t.myRequests.urgencies[urg]  || urg;
   const tbl = t.myRequests.table;
-  const attachments = Array.isArray(item.attachmentPaths) ? item.attachmentPaths.length : 0;
+  const attachments = Array.isArray(item.attachments)
+    ? item.attachments.length
+    : Array.isArray(item.attachmentPaths)
+      ? item.attachmentPaths.length
+      : 0;
   const panelId = `req-panel-${item.id}`;
+  const isArchived = item.archived === true;
 
   return (
     <div
+      className={isArchived ? "myreq-card myreq-card-archived" : "myreq-card"}
       style={{
         background: "var(--white)",
         border: `1px solid ${isExpanded ? "var(--ember-soft)" : "var(--hair)"}`,
@@ -284,7 +371,10 @@ function RequestCard({ item, t, lang, expandedId, onToggle }: {
             }}>
               {item.id}
             </span>
-            <StatusBadge status={item.status} />
+            <LifecycleStatusPill status={item.status} t={t} />
+            {isArchived && (
+              <span className="myreq-archived-badge">{t.lifecycle.archivedBadge}</span>
+            )}
           </div>
           <span
             aria-hidden="true"
@@ -354,7 +444,10 @@ function RequestCard({ item, t, lang, expandedId, onToggle }: {
         >
           <div style={{ paddingBlockStart: "20px" }}>
             <RequestTimeline requestId={item.id} t={t} />
-            {item.status === "resolved" && (
+            {item.status === "referred" && item.referral && (
+              <ReferralPanel referral={item.referral} t={t} />
+            )}
+            {item.status === "closed" && (
               <RateExperienceCard requestId={item.id} t={t} />
             )}
           </div>
@@ -417,6 +510,11 @@ export default function MyRequestsPage() {
   const handleToggle = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
+
+  // Active vs. archived split — archived requests stay visible to their owner
+  // but are grouped/de-emphasized as "past" rather than hidden (Note 6).
+  const activeItems = items.filter((it) => it.archived !== true);
+  const archivedItems = items.filter((it) => it.archived === true);
 
   return (
     <>
@@ -512,13 +610,13 @@ export default function MyRequestsPage() {
           </Reveal>
         ) : (
           <>
-            {/* Count summary line */}
+            {/* Active requests — archived ones are grouped separately below */}
             <div style={{ ...labelStyle, marginBlockEnd: "18px" }}>
-              {items.length} · {t.myRequests.title}
+              {activeItems.length} · {t.myRequests.title}
             </div>
 
             <div style={{ display: "grid", gap: "16px" }}>
-              {items.map((item, i) => (
+              {activeItems.map((item, i) => (
                 <Reveal key={item.id} delay={Math.min(i * 0.05, 0.3)}>
                   <RequestCard
                     item={item}
@@ -530,6 +628,28 @@ export default function MyRequestsPage() {
                 </Reveal>
               ))}
             </div>
+
+            {/* Past / archived requests — de-emphasized, not hidden (Note 6) */}
+            {archivedItems.length > 0 && (
+              <section className="myreq-archived-group" aria-label={t.lifecycle.archivedLabel}>
+                <h2 className="myreq-archived-heading" style={labelStyle}>
+                  {t.lifecycle.archivedLabel}
+                </h2>
+                <div style={{ display: "grid", gap: "16px" }}>
+                  {archivedItems.map((item, i) => (
+                    <Reveal key={item.id} delay={Math.min(i * 0.05, 0.3)}>
+                      <RequestCard
+                        item={item}
+                        t={t}
+                        lang={lang}
+                        expandedId={expandedId}
+                        onToggle={handleToggle}
+                      />
+                    </Reveal>
+                  ))}
+                </div>
+              </section>
+            )}
           </>
         )}
       </div>

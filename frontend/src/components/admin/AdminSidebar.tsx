@@ -6,6 +6,7 @@ import {
   HeartHandshake,
   Users,
   CheckSquare,
+  BarChart3,
   Home,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -24,6 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/volunteers', key: 'volunteers', icon: HeartHandshake },
   { href: '/admin/users', key: 'users', icon: Users },
   { href: '/admin/approvals', key: 'approvals', icon: CheckSquare },
+  { href: '/admin/insights', key: 'insights', icon: BarChart3 },
 ]
 
 function isActive(pathname: string, item: NavItem) {

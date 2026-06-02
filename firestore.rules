@@ -34,6 +34,9 @@ service cloud.firestore {
         resource.data.beneficiaryId == request.auth.uid
         || isAdmin()
       );
+      // Note 6/8: status, referral and archived are lifecycle fields written
+      // ONLY through Express (Admin SDK) — done/status/refer/archive endpoints.
+      // No client write carve-out: the client SDK never mutates a request.
       allow create, update, delete: if false;
     }
 

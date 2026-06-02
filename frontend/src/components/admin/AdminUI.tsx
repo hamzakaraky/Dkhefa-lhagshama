@@ -89,12 +89,14 @@ export function ErrorState({ message, onRetry, retryLabel }: ErrorStateProps) {
   )
 }
 
+// Canonical request lifecycle statuses (Note 6 — `resolved` retired).
 const STATUS_TONE: Record<string, string> = {
   pending: 'badge-amber',
   in_progress: 'badge-blue',
-  resolved: 'badge-green',
-  closed: 'badge-gray',
+  awaiting_review: 'badge-amber',
+  closed: 'badge-green',
   rejected: 'badge-red',
+  referred: 'badge-ember',
   active: 'badge-green',
   inactive: 'badge-gray',
   admin: 'badge-ember',

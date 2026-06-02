@@ -20,20 +20,17 @@ import { db } from '@/lib/firebaseAdmin';
 import { writeAuditLog } from '@/lib/audit';
 import { writeRequestEvent } from '@/lib/requestEvents';
 import { authenticate } from '@/middleware/auth';
+import { canTransition, REQUEST_STATUSES, type RequestStatus } from '@/lib/requestTransitions';
+import { mintSignedReadUrl, SIGNED_URL_TTL_MS } from '@/lib/signedUrl';
 
 const router = Router();
 
-// ── Status lifecycle (#64) ──────────────────────────────────────────────────
-// Forward-only ordering is enforced by the admin endpoints (#92); this is the
-// canonical set of states. Exported so admin/edge-case streams reuse it.
-export const REQUEST_STATUSES = [
-  'pending',
-  'in_progress',
-  'resolved',
-  'rejected',
-  'closed',
-] as const;
-export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+// ── Status lifecycle (Note 6) ───────────────────────────────────────────────
+// The canonical status enum + transition map now live in
+// `@/lib/requestTransitions`. Re-exported here for the many existing importers
+// (adminRequests, adminStats) so nothing breaks while they migrate.
+export { REQUEST_STATUSES };
+export type { RequestStatus };
 
 // ── Schema ────────────────────────────────────────────────────────────────
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -100,6 +97,18 @@ const createRequestSchema = z
   });
 
 type CreateRequestInput = z.infer<typeof createRequestSchema>;
+
+/** Thrown inside a transaction to bail out with a specific HTTP status. */
+class TransitionError extends Error {
+  constructor(
+    public readonly httpStatus: number,
+    public readonly code: string,
+    public readonly extra: Record<string, unknown> = {},
+  ) {
+    super(code);
+    this.name = 'TransitionError';
+  }
+}
 
 // ── POST /api/requests ────────────────────────────────────────────────────
 router.post('/', authenticate, async (req: Request, res: Response) => {
@@ -242,14 +251,27 @@ router.get('/mine', authenticate, async (req: Request, res: Response) => {
 
     const items = snap.docs.map((d) => {
       const data = d.data();
+      // Beneficiary-facing referral view (Note 8): partner name + note + when.
+      const referral = data.referral
+        ? {
+            partnerName: data.referral.partnerName ?? '',
+            note: data.referral.note ?? '',
+            referredAt:
+              data.referral.referredAt?.toDate?.()?.toISOString?.() ??
+              data.referral.referredAt ??
+              null,
+          }
+        : null;
       return {
         id: d.id,
         category:        data.category,
         urgency:         data.urgency,
         status:          data.status,
+        archived:        data.archived === true,
         description:     data.description,
         deadline:        data.deadline ?? null,
         attachmentPaths: data.attachmentPaths ?? [],
+        referral,
         // Firestore timestamps -> ISO strings for the client
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
         updatedAt: data.updatedAt?.toDate?.()?.toISOString?.() ?? null,
@@ -263,6 +285,176 @@ router.get('/mine', authenticate, async (req: Request, res: Response) => {
     res.status(500).json({ error: 'internal' });
   }
 });
+
+// ── POST /api/requests/:id/done ──────────────────────────────────────────
+// Volunteer-scoped "mark as done" (Note 6). ASSIGNED-HANDLER ONLY: the caller
+// must be the request's assignedVolunteerId or handler (admins also allowed).
+// Valid only for the transition in_progress → awaiting_review. Writes a
+// timestamped requestEvent and returns the updated request.
+router.post('/:id/done', authenticate, async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: 'not_authenticated' });
+    return;
+  }
+
+  const requestId = req.params.id;
+  const actorId = req.user.uid;
+  const ref = db().collection('requests').doc(requestId);
+
+  let prevStatus: string | null = null;
+
+  try {
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) {
+        throw new TransitionError(404, 'not_found');
+      }
+      const data = snap.data() as {
+        status?: string;
+        handler?: string | null;
+        assignedVolunteerId?: string | null;
+      };
+
+      const isAdmin = req.user!.role === 'admin';
+      const isAssigned =
+        data.assignedVolunteerId === actorId || data.handler === actorId;
+
+      // Assigned-handler gate: non-admin callers must own the request.
+      if (!isAdmin && !isAssigned) {
+        throw new TransitionError(403, 'forbidden');
+      }
+
+      prevStatus = data.status ?? null;
+
+      // The volunteer's only legal move is in_progress → awaiting_review.
+      const allowed = canTransition(prevStatus, 'awaiting_review', {
+        role: isAdmin ? 'admin' : 'volunteer',
+        isAssigned,
+      });
+      if (!allowed) {
+        throw new TransitionError(409, 'invalid_transition', {
+          from: prevStatus,
+          to: 'awaiting_review',
+        });
+      }
+
+      tx.update(ref, {
+        status: 'awaiting_review',
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    });
+  } catch (err) {
+    if (err instanceof TransitionError) {
+      res.status(err.httpStatus).json({ error: err.code, ...err.extra });
+      return;
+    }
+    const code = (err as { code?: number }).code;
+    if (code === 10) {
+      res.status(409).json({ error: 'concurrent_update' });
+      return;
+    }
+    // eslint-disable-next-line no-console
+    console.error('[requests.done] failed:', err);
+    res.status(500).json({ error: 'internal' });
+    return;
+  }
+
+  // Side effects after the commit. Bookkeeping failures don't fail the response.
+  try {
+    await writeRequestEvent({
+      requestId,
+      type: 'status_changed',
+      actorId,
+      visibility: 'all',
+      details: { from: prevStatus, to: 'awaiting_review', kind: 'done' },
+    });
+    await writeAuditLog({
+      actorId,
+      action: 'request.done',
+      entityType: 'requests',
+      entityId: requestId,
+      details: { from: prevStatus, to: 'awaiting_review' },
+    });
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[requests.done] side-effects:', err);
+  }
+
+  // Return the updated request.
+  try {
+    const updated = await ref.get();
+    const data = updated.data() ?? {};
+    res.json({
+      id: updated.id,
+      ...data,
+      createdAt: (data.createdAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? null,
+      updatedAt: (data.updatedAt as { toDate?: () => Date })?.toDate?.()?.toISOString?.() ?? null,
+    });
+  } catch {
+    res.json({ id: requestId, status: 'awaiting_review' });
+  }
+});
+
+// ── GET /api/requests/:id/attachments/:name ──────────────────────────────
+// Re-mint a short-lived signed read URL for a single attachment (Note 1).
+// Authorization: admin OR the assigned volunteer/handler of the request (403
+// otherwise). The owning beneficiary is intentionally NOT granted here — doc
+// viewing is for staff reviewing the case. 404 if `name` isn't an attachment
+// of this request. Storage stays client-read denied; only this endpoint hands
+// out (short-lived) links.
+router.get(
+  '/:id/attachments/:name',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    if (!req.user) {
+      res.status(401).json({ error: 'not_authenticated' });
+      return;
+    }
+
+    const requestId = req.params.id;
+    const name = req.params.name;
+
+    try {
+      const snap = await db().collection('requests').doc(requestId).get();
+      if (!snap.exists) {
+        res.status(404).json({ error: 'not_found' });
+        return;
+      }
+      const data = snap.data() as {
+        handler?: string | null;
+        assignedVolunteerId?: string | null;
+        attachments?: Array<{ name?: string; path?: string }>;
+      };
+
+      const isAdmin = req.user.role === 'admin';
+      const isAssigned =
+        data.assignedVolunteerId === req.user.uid || data.handler === req.user.uid;
+      if (!isAdmin && !isAssigned) {
+        res.status(403).json({ error: 'forbidden' });
+        return;
+      }
+
+      const match = (data.attachments ?? []).find((a) => a?.name === name);
+      if (!match?.path) {
+        res.status(404).json({ error: 'attachment_not_found' });
+        return;
+      }
+
+      const url = await mintSignedReadUrl(match.path);
+      if (!url) {
+        res.status(404).json({ error: 'attachment_not_found' });
+        return;
+      }
+
+      const expiresAt = new Date(Date.now() + SIGNED_URL_TTL_MS).toISOString();
+      res.json({ url, expiresAt });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[requests.attachments.view] failed:', err);
+      res.status(500).json({ error: 'internal' });
+    }
+  },
+);
 
 // ── GET /api/requests/:id/events ────────────────────────────────────────
 // Returns the timeline events for a single request (#68).

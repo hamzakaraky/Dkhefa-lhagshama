@@ -328,6 +328,7 @@ export const translations = {
         volunteers: 'מתנדבים',
         users:      'משתמשים',
         approvals:  'תור אישורים',
+        insights:   'תובנות',
         backToSite: 'חזרה לאתר',
       },
       ui: {
@@ -349,11 +350,13 @@ export const translations = {
         },
       },
       statusLabels: {
-        pending:     'ממתין',
-        in_progress: 'בטיפול',
-        resolved:    'נפתר',
-        rejected:    'נדחה',
-        closed:      'סגור',
+        pending:         'ממתין',
+        in_progress:     'בטיפול',
+        awaiting_review: 'ממתין לבדיקה',
+        closed:          'סגור',
+        rejected:        'נדחה',
+        referred:        'הופנה',
+        archived:        'בארכיון',
       },
       volStatus: {
         pending:  'ממתין',
@@ -490,6 +493,107 @@ export const translations = {
         byCity:      'בקשות לפי עיר',
         trend:       'מגמת בקשות — 6 חודשים אחרונים',
       },
+    },
+
+    // ── REQUEST LIFECYCLE (Notes 1,6,7,8) ─────────────────────
+    lifecycle: {
+      // Canonical status enum labels (Note 6). 'resolved' is retired.
+      statusLabels: {
+        pending:         'ממתין',
+        in_progress:     'בטיפול',
+        awaiting_review: 'ממתין לבדיקה',
+        closed:          'סגור',
+        rejected:        'נדחה',
+        referred:        'הופנה',
+      },
+      archivedLabel: 'בארכיון',
+      archivedBadge: 'בארכיון',
+
+      // Lifecycle action labels + confirmations + toasts (Note 6)
+      actions: {
+        markDone:        'סמן כבוצע',
+        markDoneConfirm: 'לסמן את הבקשה כבוצעה ולהעבירה לבדיקת מנהל?',
+        markDoneSuccess: 'הבקשה סומנה כבוצעה והועברה לבדיקה.',
+        markDoneError:   'סימון הבקשה כבוצעה נכשל. נסה/י שוב.',
+
+        close:           'סגירת בקשה',
+        closeConfirm:    'לסגור את הבקשה? הפונה יוכל לדרג את הטיפול.',
+        closeSuccess:    'הבקשה נסגרה.',
+        closeError:      'סגירת הבקשה נכשלה. נסה/י שוב.',
+
+        reopen:          'פתיחה מחדש',
+        reopenConfirm:   'לפתוח מחדש את הבקשה ולהחזירה לטיפול?',
+        reopenSuccess:   'הבקשה נפתחה מחדש.',
+        reopenError:     'פתיחת הבקשה מחדש נכשלה. נסה/י שוב.',
+
+        reject:          'דחיית בקשה',
+        rejectConfirm:   'לדחות את הבקשה? לא ניתן יהיה להמשיך בטיפול.',
+        rejectSuccess:   'הבקשה נדחתה.',
+        rejectError:     'דחיית הבקשה נכשלה. נסה/י שוב.',
+
+        sendBack:        'החזרה לטיפול',
+        sendBackConfirm: 'להחזיר את הבקשה לטיפול המתנדב?',
+        sendBackSuccess: 'הבקשה הוחזרה לטיפול.',
+        sendBackError:   'החזרת הבקשה לטיפול נכשלה. נסה/י שוב.',
+
+        refer:           'הפניה לשותף',
+        archive:         'העברה לארכיון',
+        archiveConfirm:  'להעביר את הבקשה לארכיון?',
+        archiveSuccess:  'הבקשה הועברה לארכיון.',
+        archiveError:    'העברת הבקשה לארכיון נכשלה. נסה/י שוב.',
+
+        illegalTransition: 'לא ניתן לבצע את שינוי הסטטוס הזה.',
+      },
+
+      // Referral UI (Note 8)
+      referral: {
+        dialogTitle:  'הפניה לארגון שותף',
+        choosePartner:'בחר/י ארגון שותף',
+        partnerPH:    'בחר/י ארגון מהמדריך…',
+        noteLabel:    'הערה להפניה (אופציונלי)',
+        notePH:       'הוסף/י פרטים שיעזרו לפונה בהמשך…',
+        submit:       'אישור הפניה',
+        submitting:   'מפנה…',
+        success:      'הבקשה הופנתה לארגון השותף.',
+        error:        'ההפניה נכשלה. נסה/י שוב.',
+        noPartners:   'אין ארגונים שותפים זמינים להפניה.',
+        // Beneficiary-facing timeline event
+        timelineTitle: (partner: string) => `הופנית לארגון ${partner}`,
+        contactLine:   'אפשר ליצור קשר ישירות עם הארגון לקבלת המשך טיפול.',
+        contactLabel:  'פרטי יצירת קשר',
+      },
+
+      // Document viewer — admin/assigned volunteer (Note 1)
+      docs: {
+        heading:    'מסמכים',
+        attachments:'קבצים מצורפים',
+        view:       'צפייה',
+        opening:    'פותח…',
+        empty:      'לא צורפו מסמכים לבקשה זו.',
+        viewError:  'פתיחת המסמך נכשלה. נסה/י שוב.',
+        uploadedBy: 'הועלה על ידי',
+      },
+    },
+
+    // ── ADMIN INSIGHTS (Note 7) ───────────────────────────────
+    insights: {
+      pageTitle:    'תובנות',
+      pageSubtitle: 'מבט-על על מגמות הבקשות והפעילות',
+      empty:        'אין עדיין מספיק נתונים להצגת תובנות.',
+      loadError:    'טעינת התובנות נכשלה.',
+      charts: {
+        overTime:        'בקשות לאורך זמן',
+        byCategory:      'בקשות לפי קטגוריה',
+        byStatus:        'בקשות לפי סטטוס',
+        avgResolution:   'זמן טיפול ממוצע',
+        volunteerWorkload:'עומס מתנדבים',
+      },
+      axis: {
+        count:   'מספר בקשות',
+        days:    'ימים',
+        noData:  'אין נתונים',
+      },
+      avgResolutionDays: (days: number) => days === 1 ? 'יום אחד' : `${days} ימים`,
     },
 
     // ── TRACK REQUEST ─────────────────────────────────────────
@@ -1200,6 +1304,7 @@ export const translations = {
         volunteers: 'Volunteers',
         users:      'Users',
         approvals:  'Approval queue',
+        insights:   'Insights',
         backToSite: 'Back to site',
       },
       ui: {
@@ -1221,11 +1326,13 @@ export const translations = {
         },
       },
       statusLabels: {
-        pending:     'Pending',
-        in_progress: 'In progress',
-        resolved:    'Resolved',
-        rejected:    'Rejected',
-        closed:      'Closed',
+        pending:         'Pending',
+        in_progress:     'In progress',
+        awaiting_review: 'Awaiting review',
+        closed:          'Closed',
+        rejected:        'Rejected',
+        referred:        'Referred',
+        archived:        'Archived',
       },
       volStatus: {
         pending:  'Pending',
@@ -1362,6 +1469,107 @@ export const translations = {
         byCity:      'Requests by City',
         trend:       'Request Trend — Last 6 Months',
       },
+    },
+
+    // ── REQUEST LIFECYCLE (Notes 1,6,7,8) ─────────────────────
+    lifecycle: {
+      // Canonical status enum labels (Note 6). 'resolved' is retired.
+      statusLabels: {
+        pending:         'Pending',
+        in_progress:     'In progress',
+        awaiting_review: 'Awaiting review',
+        closed:          'Closed',
+        rejected:        'Rejected',
+        referred:        'Referred',
+      },
+      archivedLabel: 'Archived',
+      archivedBadge: 'Archived',
+
+      // Lifecycle action labels + confirmations + toasts (Note 6)
+      actions: {
+        markDone:        'Mark as done',
+        markDoneConfirm: 'Mark this request as done and send it for admin review?',
+        markDoneSuccess: 'Request marked as done and sent for review.',
+        markDoneError:   'Could not mark the request as done. Please try again.',
+
+        close:           'Close request',
+        closeConfirm:    'Close this request? The beneficiary will be able to rate the support.',
+        closeSuccess:    'Request closed.',
+        closeError:      'Could not close the request. Please try again.',
+
+        reopen:          'Reopen',
+        reopenConfirm:   'Reopen this request and return it to in-progress?',
+        reopenSuccess:   'Request reopened.',
+        reopenError:     'Could not reopen the request. Please try again.',
+
+        reject:          'Reject request',
+        rejectConfirm:   'Reject this request? It cannot continue to be handled.',
+        rejectSuccess:   'Request rejected.',
+        rejectError:     'Could not reject the request. Please try again.',
+
+        sendBack:        'Send back',
+        sendBackConfirm: 'Send this request back to the volunteer to keep working on it?',
+        sendBackSuccess: 'Request sent back for handling.',
+        sendBackError:   'Could not send the request back. Please try again.',
+
+        refer:           'Refer to partner',
+        archive:         'Archive',
+        archiveConfirm:  'Move this request to the archive?',
+        archiveSuccess:  'Request archived.',
+        archiveError:    'Could not archive the request. Please try again.',
+
+        illegalTransition: 'This status change is not allowed.',
+      },
+
+      // Referral UI (Note 8)
+      referral: {
+        dialogTitle:  'Refer to a partner organization',
+        choosePartner:'Choose a partner',
+        partnerPH:    'Pick an organization from the directory…',
+        noteLabel:    'Referral note (optional)',
+        notePH:       'Add details that will help the beneficiary follow up…',
+        submit:       'Confirm referral',
+        submitting:   'Referring…',
+        success:      'The request was referred to the partner organization.',
+        error:        'Referral failed. Please try again.',
+        noPartners:   'No partner organizations are available to refer to.',
+        // Beneficiary-facing timeline event
+        timelineTitle: (partner: string) => `We've referred you to ${partner}`,
+        contactLine:   'You can reach out to the organization directly to continue.',
+        contactLabel:  'Contact details',
+      },
+
+      // Document viewer — admin/assigned volunteer (Note 1)
+      docs: {
+        heading:    'Documents',
+        attachments:'Attachments',
+        view:       'View',
+        opening:    'Opening…',
+        empty:      'No documents were attached to this request.',
+        viewError:  'Could not open the document. Please try again.',
+        uploadedBy: 'Uploaded by',
+      },
+    },
+
+    // ── ADMIN INSIGHTS (Note 7) ───────────────────────────────
+    insights: {
+      pageTitle:    'Insights',
+      pageSubtitle: 'An overview of request trends and activity',
+      empty:        'There is not enough data yet to show insights.',
+      loadError:    'Could not load insights.',
+      charts: {
+        overTime:         'Requests over time',
+        byCategory:       'Requests by category',
+        byStatus:         'Requests by status',
+        avgResolution:    'Average resolution time',
+        volunteerWorkload:'Volunteer workload',
+      },
+      axis: {
+        count:   'Requests',
+        days:    'Days',
+        noData:  'No data',
+      },
+      avgResolutionDays: (days: number) => days === 1 ? '1 day' : `${days} days`,
     },
 
     track: {

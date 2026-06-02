@@ -7,13 +7,14 @@
  *   GET /api/admin/stats
  *     {
  *       openRequests, inProgressRequests, resolvedRequests, totalRequests,
- *       helped,                      // alias of resolvedRequests (UI label)
+ *       helped,                      // closed + referred (people we helped)
  *       activeVolunteers, pendingVolunteers,
  *       totalUsers
  *     }
  *
- * Status vocabulary mirrors REQUEST_STATUSES in routes/requests.ts:
- *   pending | in_progress | resolved | rejected | closed
+ * Status vocabulary mirrors REQUEST_STATUSES in lib/requestTransitions.ts:
+ *   pending | in_progress | awaiting_review | closed | rejected | referred
+ * (Note 6 — legacy `resolved` is retired; `helped` = closed + referred.)
  */
 import { Router, type Request, type Response } from 'express';
 
@@ -45,7 +46,8 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     const [
       openRequests,
       inProgressRequests,
-      resolvedRequests,
+      closedRequests,
+      referredRequests,
       totalRequests,
       activeVolunteers,
       pendingVolunteers,
@@ -53,19 +55,28 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     ] = await Promise.all([
       count('requests', 'status', '==', 'pending'),
       count('requests', 'status', '==', 'in_progress'),
-      count('requests', 'status', '==', 'resolved'),
+      count('requests', 'status', '==', 'closed'),
+      count('requests', 'status', '==', 'referred'),
       count('requests'),
       count('volunteers', 'active', '==', true),
       count('volunteerApplications', 'status', '==', 'pending'),
       count('users'),
     ]);
 
+    // "Helped" = requests we brought to a positive close, plus those referred
+    // to a partner (Note 6/8 — both count as helped).
+    const helped = closedRequests + referredRequests;
+
     res.json({
       openRequests,
       inProgressRequests,
-      resolvedRequests,
+      // `resolvedRequests` kept as a back-compat alias (= closed) so the
+      // existing dashboard card key doesn't silently render 0.
+      resolvedRequests: closedRequests,
+      closedRequests,
+      referredRequests,
       totalRequests,
-      helped: resolvedRequests,
+      helped,
       activeVolunteers,
       pendingVolunteers,
       totalUsers,

@@ -74,3 +74,109 @@
 .timeline-title { font-size: 13.5px; font-weight: 600; color: var(--ink); }
 
 .timeline-time { font-size: 12px; color: var(--gray-500); margin-block-start: 2px; }
+
+/* ── Archived ("past") requests group (Note 6) ─────────────────
+   Archived requests stay visible to the owner but are de-emphasized
+   and grouped below the active ones rather than hidden. */
+.myreq-archived-group {
+  margin-block-start: clamp(32px, 5vw, 48px);
+  padding-block-start: clamp(24px, 4vw, 32px);
+  border-block-start: 1px solid var(--hair);
+}
+
+.myreq-archived-heading {
+  margin: 0 0 18px;
+}
+
+/* De-emphasize archived cards (lower contrast, no shadow lift). */
+.myreq-card-archived {
+  opacity: 0.78;
+}
+
+.myreq-card-archived:hover,
+.myreq-card-archived:focus-within {
+  opacity: 1;
+}
+
+.myreq-archived-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--sky-2);
+  color: var(--gray-600);
+}
+
+/* ── Referral panel (Note 8) — beneficiary sees partner + contact ── */
+.referral-panel {
+  margin-block-start: 20px;
+  padding: 18px 20px;
+  background: linear-gradient(180deg, var(--white), var(--ember-soft) 420%);
+  border: 1px solid var(--ember-soft);
+  border-inline-start: 3px solid var(--ember);
+  border-radius: var(--radius-lg);
+}
+
+.referral-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.referral-panel-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ember);
+  flex-shrink: 0;
+}
+
+.referral-panel-title {
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.referral-panel-time {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-block-start: 4px;
+  margin-inline-start: 22px;
+}
+
+.referral-panel-line {
+  margin-block: 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.referral-panel-note {
+  margin-block: 10px 0;
+  padding: 10px 14px;
+  background: var(--sky-3);
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.referral-panel-contact {
+  margin-block-start: 14px;
+}
+
+.referral-panel-contact-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}

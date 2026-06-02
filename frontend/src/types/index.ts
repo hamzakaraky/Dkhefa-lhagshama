@@ -54,12 +54,31 @@ export type Area =
   | 'housing'
   | string;
 
-/** Lifecycle status of a beneficiary request. */
+/**
+ * Canonical lifecycle status of a beneficiary request (request-lifecycle spec).
+ *
+ * Authority is the backend transition map; these are the only states the
+ * server persists:
+ * - `pending`         — submitted, awaiting admin triage
+ * - `in_progress`     — assigned to a volunteer / being worked
+ * - `awaiting_review` — volunteer marked done, awaiting admin close
+ * - `closed`          — completed (keys the beneficiary rating prompt)
+ * - `rejected`        — declined by admin
+ * - `referred`        — handed to a partner from the `answers` catalog
+ *                       (terminal; counts as helped, sets `archived = true`)
+ *
+ * NOTE: the legacy `resolved` status is **retired** — the rating prompt now
+ * keys off `closed`. The `| string` tail is an intentional, pragmatic escape
+ * hatch kept so stale mock data and in-flight consumer screens keep compiling
+ * while they are reconciled to the canonical literals in parallel phases.
+ */
 export type RequestStatus =
   | 'pending'
-  | 'review'
-  | 'approved'
-  | 'completed'
+  | 'in_progress'
+  | 'awaiting_review'
+  | 'closed'
+  | 'rejected'
+  | 'referred'
   | string;
 
 export type Urgency = 'low' | 'medium' | 'high' | string;
@@ -125,6 +144,45 @@ export interface Volunteer {
   assignedTo?: string | null;
 }
 
+/**
+ * A referral of a request to a partner in the live `answers` catalog (Note 8).
+ * Set server-side by `POST /api/admin/requests/:id/refer`; the request then
+ * moves to `referred` (terminal, archived). The beneficiary sees
+ * `partnerName` (+ contact) as a timeline event.
+ */
+export interface Referral {
+  /** Id of the chosen `answers` catalog entry (the partner). */
+  answerId: string;
+  /** Resolved display name of the partner (snapshotted from the answer). */
+  partnerName: string;
+  /** Optional free-text note from the admin to the beneficiary. */
+  note?: string;
+  /** ISO timestamp the referral was made (server-stamped). */
+  referredAt?: string;
+  /** Uid of the admin who made the referral. */
+  referredBy?: string;
+}
+
+/**
+ * Metadata for a file attached to a request, embedded on the request itself
+ * (no separate `attachments` collection — Note 1). Populated by the upload
+ * route; `path` is a Storage path (`requests/{id}/{file}`), never a public URL
+ * — the backend mints short-lived signed URLs via
+ * `GET /api/requests/:id/attachments/:name` for admin + the assigned volunteer.
+ */
+export interface Attachment {
+  /** File name; also the lookup key for the signed-URL endpoint. */
+  name: string;
+  /** Firebase Storage path (not a fetchable URL). */
+  path: string;
+  /** MIME type. */
+  type: string;
+  /** Size in bytes. */
+  size: number;
+  /** Uid of the uploader. */
+  uploadedBy?: string;
+}
+
 /** A beneficiary assistance request (UC-01). */
 export interface Request {
   id: string;
@@ -144,6 +202,16 @@ export interface Request {
   handlerEn?: string | null;
   notes?: string;
   idUploaded?: boolean;
+  /**
+   * Archived flag (default false). Separate from `status` so archived requests
+   * stay queryable for stats; active lists exclude `archived === true`.
+   * `referred` requests are archived (count as helped).
+   */
+  archived?: boolean;
+  /** Partner referral, set when `status === 'referred'` (Note 8). */
+  referral?: Referral;
+  /** Embedded file-attachment metadata (Note 1). */
+  attachments?: Attachment[];
 }
 
 /** A platform user / account (admin user management). */
@@ -229,6 +297,24 @@ export interface Message {
   text: string;
   createdAt?: string;
   mine?: boolean;
+}
+
+/**
+ * Aggregated admin insights payload (Note 7), returned by
+ * `GET /api/admin/insights` and consumed by the recharts dashboard. Computed
+ * on request from `requests` + `requestEvents` (per-transition timestamps).
+ */
+export interface InsightsData {
+  /** Requests created per day. */
+  overTime: { date: string; count: number }[];
+  /** Request counts grouped by category. */
+  byCategory: { category: string; count: number }[];
+  /** Request counts grouped by current status. */
+  byStatus: { status: string; count: number }[];
+  /** Mean days from creation to `closed`; `null` when nothing has closed. */
+  avgResolutionDays: number | null;
+  /** Per-volunteer handled-request counts. */
+  perVolunteer: { uid: string; name: string; count: number }[];
 }
 
 /** A chat conversation thread (UC-04). */

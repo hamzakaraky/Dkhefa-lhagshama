@@ -109,3 +109,63 @@
   flex-shrink: 0;
   margin-block-end: 22px; /* aligns avatar with the bubble, clearing the timestamp line */
 }
+
+/* ── Note 6 — linked-request lifecycle strip ──────────────────────────
+   A slim band between the panel header and the message feed. Surfaces the
+   linked request's status and, for the assigned volunteer/handler, the
+   "Mark as done" action. Logical properties keep it RTL-correct. */
+.chat-lifecycle-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding-inline: var(--sp-5);
+  padding-block: 10px;
+  border-block-end: 1px solid var(--hair);
+  background: var(--paper);
+}
+
+.chat-lifecycle-strip__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.chat-lifecycle-strip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ember);
+  flex-shrink: 0;
+}
+
+.chat-lifecycle-strip__label {
+  font-size: var(--fs-sm);
+  color: var(--gray-600);
+  letter-spacing: 0.01em;
+}
+
+.chat-lifecycle-strip__action {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-lifecycle-strip__spin {
+  animation: chat-lifecycle-spin 0.8s linear infinite;
+}
+
+@keyframes chat-lifecycle-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-lifecycle-strip__spin {
+    animation: none;
+  }
+}

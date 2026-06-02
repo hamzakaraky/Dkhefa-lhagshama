@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
+import { doc, getDoc } from "firebase/firestore";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,19 +12,37 @@ import {
   AlertCircle,
   ShieldOff,
   Send,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
+import { useApp } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { firebaseDb } from "../lib/firebase";
 import { apiFetch } from "../lib/apiClient";
 import { useMessages } from "../hooks/useMessages";
 import Reveal from "../components/motion/Reveal";
+import type { RequestStatus } from "../types";
 
 /** A chat participant as returned by GET /api/chats/:id/participants. */
 interface ChatParticipant {
   uid: string;
   displayName: string | null;
   avatarUrl: string | null;
+}
+
+/**
+ * Note 6 — minimal projection of the request linked to this chat, used only to
+ * drive the volunteer's "Mark as done" control. The chat document carries a
+ * `requestId`; we read the request once (lightweight) to learn its status and
+ * who is handling it. Status/lifecycle writes stay server-only.
+ */
+interface LinkedRequest {
+  id: string;
+  status: RequestStatus;
+  handler?: string | null;
+  assignedVolunteerId?: string | null;
 }
 
 /**
@@ -41,8 +60,10 @@ function toInitials(label: string | undefined | null): string {
 
 export default function ChatWindowPage() {
   const { t, lang, isRTL } = useLanguage();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, hasRole } = useAuth();
+  const { toast } = useApp();
   const c = t.chat;
+  const lc = t.lifecycle;
   const router = useRouter();
   const { id: chatId } = router.query;
 
@@ -82,6 +103,93 @@ export default function ChatWindowPage() {
       cancelled = true;
     };
   }, [listenChatId]);
+
+  // ── Note 6 — linked request (status + assigned handler) ────────────────
+  // Read the chat's `requestId` once (the chat doc is participant-readable per
+  // firestore.rules), then fetch the request through Express to learn its
+  // status and who's assigned. This powers the assigned volunteer's
+  // "Mark as done" control without touching message fetching or auth.
+  const [linkedRequest, setLinkedRequest] = useState<LinkedRequest | null>(null);
+  const [markingDone, setMarkingDone] = useState(false);
+
+  useEffect(() => {
+    if (!listenChatId) {
+      setLinkedRequest(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const chatSnap = await getDoc(doc(firebaseDb, "chats", listenChatId));
+        const requestId = chatSnap.exists()
+          ? (chatSnap.data()?.requestId as string | undefined)
+          : undefined;
+        if (cancelled || !requestId) return;
+
+        const res = await apiFetch(`/api/requests/${requestId}`);
+        if (!res.ok) return; // 403/other — silently skip the lifecycle control
+        const data = (await res.json()) as Partial<LinkedRequest> & { id?: string };
+        if (cancelled || typeof data?.id !== "string" || typeof data.status !== "string") return;
+        setLinkedRequest({
+          id: data.id,
+          status: data.status,
+          handler: data.handler ?? null,
+          assignedVolunteerId: data.assignedVolunteerId ?? null,
+        });
+      } catch {
+        // Network/permission error — leave the control hidden; chat still works.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [listenChatId]);
+
+  // Guard: show "Mark as done" only when the signed-in user is the request's
+  // assigned volunteer/handler (admin is a superset of volunteer via hasRole)
+  // and the request is currently `in_progress`. Lifecycle writes are
+  // server-only; this only gates the control's visibility.
+  const isAssignedHandler =
+    !!linkedRequest &&
+    !!user &&
+    (linkedRequest.assignedVolunteerId === user.uid || linkedRequest.handler === user.uid);
+  const canMarkDone =
+    !!linkedRequest &&
+    hasRole("volunteer") &&
+    isAssignedHandler &&
+    linkedRequest.status === "in_progress";
+
+  async function handleMarkDone() {
+    if (!linkedRequest || markingDone || !canMarkDone) return;
+    if (typeof window !== "undefined" && !window.confirm(lc.actions.markDoneConfirm)) return;
+
+    const prevStatus = linkedRequest.status;
+    setMarkingDone(true);
+    // Optimistic: reflect the new `awaiting_review` status immediately, which
+    // also hides the button (canMarkDone requires `in_progress`).
+    setLinkedRequest((r) => (r ? { ...r, status: "awaiting_review" } : r));
+
+    try {
+      const res = await apiFetch(`/api/requests/${linkedRequest.id}/done`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        setLinkedRequest((r) => (r ? { ...r, status: prevStatus } : r));
+        toast(lc.actions.markDoneError, "error");
+        return;
+      }
+      const updated = (await res.json().catch(() => null)) as Partial<LinkedRequest> | null;
+      if (updated && typeof updated.status === "string") {
+        setLinkedRequest((r) => (r ? { ...r, status: updated.status as RequestStatus } : r));
+      }
+      toast(lc.actions.markDoneSuccess, "success");
+    } catch {
+      setLinkedRequest((r) => (r ? { ...r, status: prevStatus } : r));
+      toast(lc.actions.markDoneError, "error");
+    } finally {
+      setMarkingDone(false);
+    }
+  }
 
   // The "other" participant (everyone who isn't the signed-in user) — used to
   // headline the conversation with a human name + face.
@@ -410,6 +518,41 @@ export default function ChatWindowPage() {
                 </p>
               </div>
             </div>
+
+            {/* ── Note 6 — linked-request lifecycle strip (volunteer) ──────
+                Shows the request status; the assigned volunteer/handler gets a
+                "Mark as done" button while it's in progress. */}
+            {linkedRequest && (
+              <div
+                className="chat-lifecycle-strip"
+                style={{ direction: isRtl ? "rtl" : "ltr" }}
+              >
+                <span className="chat-lifecycle-strip__status">
+                  <span className="chat-lifecycle-strip__dot" aria-hidden="true" />
+                  <span className="chat-lifecycle-strip__label">
+                    {lc.statusLabels[
+                      linkedRequest.status as keyof typeof lc.statusLabels
+                    ] ?? linkedRequest.status}
+                  </span>
+                </span>
+                {canMarkDone && (
+                  <button
+                    type="button"
+                    className="btn btn-ember btn-sm chat-lifecycle-strip__action"
+                    onClick={handleMarkDone}
+                    disabled={markingDone}
+                    aria-busy={markingDone}
+                  >
+                    {markingDone ? (
+                      <Loader2 size={15} className="chat-lifecycle-strip__spin" aria-hidden="true" />
+                    ) : (
+                      <CheckCircle2 size={15} aria-hidden="true" />
+                    )}
+                    {lc.actions.markDone}
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Message feed */}
             <div

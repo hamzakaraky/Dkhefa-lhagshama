@@ -17,6 +17,7 @@ import adminVolunteersRouter from '@/routes/adminVolunteers';
 import adminRequestsRouter from '@/routes/adminRequests';
 import adminUsersRouter from '@/routes/adminUsers';
 import adminStatsRouter from '@/routes/adminStats';
+import adminInsightsRouter from '@/routes/adminInsights';
 import answersRouter from '@/routes/answers';
 import authRouter from '@/routes/auth';
 import businessesRouter from '@/routes/businesses';
@@ -112,6 +113,7 @@ app.use('/api/admin/volunteers', authWriteLimiter, adminVolunteersRouter);
 app.use('/api/admin/requests',   authWriteLimiter, adminRequestsRouter);
 app.use('/api/admin/users',      authWriteLimiter, adminUsersRouter);
 app.use('/api/admin/stats',      authWriteLimiter, adminStatsRouter);
+app.use('/api/admin/insights',   authWriteLimiter, adminInsightsRouter);
 app.use('/api/admin',      authWriteLimiter, adminRouter);
 app.use('/api/volunteers', authWriteLimiter, volunteersRouter);
 

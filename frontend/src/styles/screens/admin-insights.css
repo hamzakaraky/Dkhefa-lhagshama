@@ -1,0 +1,126 @@
+/* admin-insights.css — styles for the Admin Insights screen (Note 7).
+   Editorial design system: ink/cream/sky/ember tokens, Frank Ruhl Libre
+   serif titles, hairline borders, soft paper cards. RTL-safe (logical
+   properties throughout; charts render LTR internally via dir="ltr"). */
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-5);
+}
+
+/* A card that should span the full grid width (time series, workload). */
+.insights-card--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .insights-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .insights-card--wide {
+    grid-column: auto;
+  }
+}
+
+.insights-card {
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(16px, 2.4vw, 24px);
+  min-width: 0;
+}
+
+.insights-card-title {
+  margin: 0 0 var(--sp-4);
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-weight: 400;
+  font-size: var(--fs-h3);
+  line-height: 1.2;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+/* The chart wrapper is forced LTR so recharts' SVG measurement and the
+   time axis read correctly; the card chrome + titles still follow the
+   document direction. */
+.insights-chart {
+  width: 100%;
+}
+
+/* ── Average-resolution stat card ───────────────────────────────── */
+.insights-card--stat {
+  display: flex;
+  flex-direction: column;
+}
+
+.insights-stat {
+  margin: auto 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.insights-stat-value {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2.4rem, 1.8rem + 3vw, 3.6rem);
+  line-height: 1;
+  color: var(--ember);
+}
+
+.insights-stat-unit {
+  font-size: var(--fs-lede);
+  color: var(--ink-2);
+}
+
+/* ── Empty / no-data per-chart fallback ─────────────────────────── */
+.insights-nodata {
+  margin: var(--sp-5) 0;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+/* ── Tooltip ────────────────────────────────────────────────────── */
+.insights-tooltip {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--ink);
+  color: var(--white);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  font-size: var(--fs-sm);
+}
+
+.insights-tooltip-label {
+  font-size: var(--fs-xs);
+  opacity: 0.78;
+}
+
+.insights-tooltip-value {
+  font-weight: 600;
+}
+
+.insights-tooltip-unit {
+  font-weight: 400;
+  opacity: 0.78;
+}
+
+/* ── Loading skeletons ──────────────────────────────────────────── */
+.insights-skeleton-title {
+  width: 40%;
+  height: 1.25rem;
+  margin-block-end: var(--sp-4);
+}
+
+.insights-skeleton-chart {
+  display: block;
+  width: 100%;
+  height: 220px;
+  border-radius: var(--radius);
+}
