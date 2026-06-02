@@ -35,19 +35,22 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3001'
 
 /**
  * Upload the chosen volunteer avatar via the backend (Admin SDK writes to
- * Storage `avatars/{uid}` and sets `users/{uid}.photoURL`). Uses a raw fetch +
- * FormData so the browser sets the multipart boundary itself — `apiFetch`
- * forces a JSON Content-Type, which would corrupt the multipart body.
+ * Storage `avatars/{uid}` and sets `users/{uid}.photoURL`). The backend reads
+ * the RAW image bytes (`express.raw`) with the image MIME in `Content-Type` —
+ * same pattern as the existing request-file upload (`lib/storage.ts`). We send
+ * the File directly as the body (NOT FormData/multipart, which the raw parser
+ * would treat as a non-image and reject with 415).
  * The photo is OPTIONAL: callers must catch failures and continue.
  */
 async function uploadAvatar(file: File): Promise<void> {
   const idToken = await getIdToken()
-  const form = new FormData()
-  form.append('avatar', file)
   const res = await fetch(`${API_BASE}/api/profile/avatar`, {
     method: 'POST',
-    headers: idToken ? { Authorization: `Bearer ${idToken}` } : undefined,
-    body: form,
+    headers: {
+      'Content-Type': file.type || 'application/octet-stream',
+      ...(idToken ? { Authorization: `Bearer ${idToken}` } : {}),
+    },
+    body: file,
   })
   if (!res.ok) throw new Error(`avatar_upload_failed_${res.status}`)
 }
