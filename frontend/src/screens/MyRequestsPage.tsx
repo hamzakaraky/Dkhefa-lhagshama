@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback } from "react";
-import { CheckCircle, ChevronDown, ChevronUp, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronUp, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus, Sparkles, ExternalLink, X } from "lucide-react";
 
 import RatingForm from "@/components/forms/RatingForm";
 import Reveal from "../components/motion/Reveal";
@@ -10,7 +10,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 import { apiJson } from "../lib/apiClient";
 import { formatDate, truncate } from "../utils/helpers";
 import type { CSSProperties, ReactNode } from "react";
-import type { CaughtError, TNode, Referral } from "@/types";
+import type { CaughtError, TNode, Referral, Suggestion } from "@/types";
 
 // `t` is the bilingual translation table — consumed via dynamic key lookups
 // (`t.myRequests.categories[cat]`, `tl.types[ev.type]`), so use the loose
@@ -457,6 +457,123 @@ function RequestCard({ item, t, lang, expandedId, onToggle }: {
   );
 }
 
+// ── Suggest-alternatives card (UC-01 A1, simple If-Then) ──────
+// After a beneficiary submits (?new=<id>), surface up to 3 approved community
+// answers in the SAME category. Bilingual text fields may be a `{ he, en }`
+// object or a plain string — render the active-language value, falling back to
+// whichever exists. Dismissible; renders nothing when there are no matches.
+function pickLangValue(
+  value: Suggestion["title"],
+  lang: string,
+): string {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value[lang as "he" | "en"] || value.he || value.en || "";
+}
+
+function SuggestCard({ items, lang, t, onDismiss }: {
+  items: Suggestion[];
+  lang: string;
+  t: Translations;
+  onDismiss: () => void;
+}) {
+  const s = t.myRequests.suggest;
+  return (
+    <div
+      className="card"
+      style={{
+        position: "relative",
+        marginBlockEnd: "28px",
+        padding: "24px 26px",
+        background: "linear-gradient(180deg, var(--white), var(--ember-soft) 420%)",
+        border: "1px solid var(--ember-soft)",
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-xs)",
+      }}
+    >
+      <button
+        type="button"
+        onClick={onDismiss}
+        aria-label={s.dismiss}
+        title={s.dismiss}
+        style={{
+          appearance: "none",
+          position: "absolute",
+          insetBlockStart: "14px",
+          insetInlineEnd: "14px",
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 30,
+          height: 30,
+          padding: 0,
+          border: "none",
+          borderRadius: "50%",
+          background: "var(--sky-3)",
+          color: "var(--gray-500)",
+          cursor: "pointer",
+        }}
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBlockEnd: "4px" }}>
+        <Sparkles size={16} color="var(--ember)" aria-hidden="true" />
+        <span style={{ ...labelStyle, color: "var(--ember)" }}>{s.heading}</span>
+      </div>
+      <p style={{ fontSize: "13.5px", color: "var(--gray-600)", lineHeight: 1.6, maxWidth: "56ch", marginBlockEnd: "16px" }}>
+        {s.subtitle}
+      </p>
+
+      <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: "10px" }}>
+        {items.slice(0, 3).map((item) => {
+          const title = pickLangValue(item.title, lang) || pickLangValue(item.sourceName, lang);
+          const source = pickLangValue(item.sourceName, lang);
+          return (
+            <li
+              key={item.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "14px",
+                flexWrap: "wrap",
+                padding: "12px 14px",
+                background: "var(--white)",
+                border: "1px solid var(--hair)",
+                borderRadius: "var(--radius-sm)",
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: "14px", fontWeight: 600, color: "var(--ink)" }}>
+                  {title || "—"}
+                </div>
+                {source && source !== title && (
+                  <div style={{ fontSize: "12.5px", color: "var(--gray-500)", marginBlockStart: "2px" }}>
+                    {source}
+                  </div>
+                )}
+              </div>
+              {item.sourceUrl && (
+                <a
+                  href={item.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ghost btn-sm"
+                  style={{ flexShrink: 0, gap: "6px" }}
+                >
+                  {s.open}
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────
 export default function MyRequestsPage() {
   const { t: tRaw, lang } = useLanguage();
@@ -468,6 +585,11 @@ export default function MyRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Suggest-alternatives (UC-01 A1) — community answers in the new request's
+  // category. Dismissible; only shown when there's at least one match.
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestDismissed, setSuggestDismissed] = useState(false);
 
   // #94 — detect ?new=<id> and show success banner
   const newId = (typeof router.query.new === "string" ? router.query.new : null) || null;
@@ -507,6 +629,22 @@ export default function MyRequestsPage() {
     return () => { alive = false; };
   }, [authLoading, user, router, newId]);
 
+  // After the requests load, if we arrived via ?new=<id>, look up that
+  // request's category and fetch up to 3 approved community answers in the
+  // same category (public endpoint). Dismissal is handled locally below.
+  useEffect(() => {
+    if (!newId || items.length === 0) return;
+    const fresh = items.find((it) => it.id === newId);
+    const category = fresh?.category;
+    if (!category) return;
+
+    let alive = true;
+    apiJson<{ items?: Suggestion[] }>(`/api/suggestions?category=${encodeURIComponent(category)}`)
+      .then((data) => { if (alive) setSuggestions(Array.isArray(data.items) ? data.items : []); })
+      .catch(() => { if (alive) setSuggestions([]); });
+    return () => { alive = false; };
+  }, [newId, items]);
+
   const handleToggle = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
@@ -538,6 +676,18 @@ export default function MyRequestsPage() {
       </section>
 
       <div className="page-container" style={{ maxWidth: "960px", padding: "clamp(32px, 5vw, 56px) 1.5rem 80px" }}>
+
+        {/* UC-01 A1 — suggest-alternatives card (dismissible, top of page) */}
+        {!suggestDismissed && suggestions.length > 0 && (
+          <Reveal>
+            <SuggestCard
+              items={suggestions}
+              lang={lang}
+              t={t}
+              onDismiss={() => setSuggestDismissed(true)}
+            />
+          </Reveal>
+        )}
 
         {/* #94 — New-request success banner */}
         {newId && !loading && (

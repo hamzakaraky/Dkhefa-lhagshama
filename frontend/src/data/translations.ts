@@ -126,6 +126,11 @@ export const translations = {
 
     // ── REQUEST FORM ──────────────────────────────────────────
     request: {
+      // Volunteer on-behalf submission (UC-01 A2)
+      onBehalf: {
+        banner:     'את/ה ממלא/ת בקשה בשם בן/בת קהילה. מלא/י את פרטיו/ה למטה.',
+        step1Title: 'פרטי המוטב',
+      },
       // Note 3 — compact inline header (eyebrow + title + lede)
       inlineHeader: {
         eyebrow: 'בקשת סיוע',
@@ -311,6 +316,8 @@ export const translations = {
 
     // ── ADMIN ─────────────────────────────────────────────────
     admin: {
+      // Submitted-on-behalf badge (UC-01 A2)
+      onBehalf:   'הוגשה בשם מוטב',
       title:      'לוח ניהול',
       dashboard:  'סקירה כללית',
       requests:   'בקשות',
@@ -876,6 +883,13 @@ export const translations = {
 
     // ── MY REQUESTS (UC-01-e) ─────────────────────────────────
     myRequests: {
+      // Suggest-alternatives (UC-01 A1)
+      suggest: {
+        heading:  'מומלץ עבורך',
+        subtitle: 'בהתבסס על הבקשה שלך, ייתכן שגם המשאבים הקהילתיים האלה יעזרו.',
+        open:     'פתח/י',
+        dismiss:  'סגור/י',
+      },
       // Note 3 — compact inline header (eyebrow + title + lede)
       inlineHeader: {
         eyebrow: 'האזור האישי',
@@ -1105,6 +1119,11 @@ export const translations = {
     },
 
     request: {
+      // Volunteer on-behalf submission (UC-01 A2)
+      onBehalf: {
+        banner:     "You're submitting on behalf of a community member. Enter their details below.",
+        step1Title: "Beneficiary's details",
+      },
       // Note 3 — compact inline header (eyebrow + title + lede)
       inlineHeader: {
         eyebrow: 'Support request',
@@ -1287,6 +1306,8 @@ export const translations = {
     },
 
     admin: {
+      // Submitted-on-behalf badge (UC-01 A2)
+      onBehalf:   'Submitted on behalf',
       title:      'Admin Dashboard',
       dashboard:  'Overview',
       requests:   'Requests',
@@ -1844,6 +1865,13 @@ export const translations = {
 
     // ── MY REQUESTS (UC-01-e) ─────────────────────────────────
     myRequests: {
+      // Suggest-alternatives (UC-01 A1)
+      suggest: {
+        heading:  'Suggested for you',
+        subtitle: 'Based on your request, these community resources may also help.',
+        open:     'Open',
+        dismiss:  'Dismiss',
+      },
       // Note 3 — compact inline header (eyebrow + title + lede)
       inlineHeader: {
         eyebrow: 'Your space',

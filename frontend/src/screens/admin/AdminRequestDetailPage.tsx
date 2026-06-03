@@ -80,6 +80,9 @@ interface RequestDetail {
   archived?: boolean
   attachments?: Attachment[]
   referral?: { partnerName?: string; note?: string }
+  onBehalf?: boolean
+  submittedBy?: string
+  submittedByRole?: string
   [key: string]: unknown
 }
 
@@ -619,6 +622,12 @@ export default function AdminRequestDetailPage() {
                   />
                   {request.archived && (
                     <StatusBadge status="archived" label={lc.archivedBadge} />
+                  )}
+                  {(request.onBehalf === true || request.submittedByRole === 'volunteer') && (
+                    <StatusBadge
+                      status="onBehalf"
+                      label={request.submittedBy ? `${a.onBehalf} · ${request.submittedBy}` : a.onBehalf}
+                    />
                   )}
                 </span>
               </div>

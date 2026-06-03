@@ -142,6 +142,10 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       id: snap.id,
       ...data,
       archived: data.archived === true,
+      // Volunteer-on-behalf provenance (UC-01 A2) for the admin UI badge.
+      onBehalf: data.onBehalf === true,
+      submittedBy: data.submittedBy ?? null,
+      submittedByRole: data.submittedByRole ?? null,
       attachments: data.attachments ?? [],
       referral,
       createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,

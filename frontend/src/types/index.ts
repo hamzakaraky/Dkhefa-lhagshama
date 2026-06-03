@@ -212,6 +212,34 @@ export interface Request {
   referral?: Referral;
   /** Embedded file-attachment metadata (Note 1). */
   attachments?: Attachment[];
+  /**
+   * True when a volunteer/admin submitted this request on behalf of a
+   * low-digital-literacy beneficiary who has no account (UC-01 A2).
+   */
+  onBehalf?: boolean;
+  /** Uid of the account that actually submitted the request. */
+  submittedBy?: string;
+  /** Role of the submitting account (e.g. `volunteer`) at submit time. */
+  submittedByRole?: string;
+}
+
+/**
+ * A community "answer" surfaced as a suggestion after a beneficiary submits
+ * (UC-01 A1, simple If-Then). Mirrors the `answers` API item shape but kept
+ * permissive: bilingual text fields may arrive as a `{ he, en }` object or a
+ * plain string, so consumers render the active-language value.
+ */
+export interface Suggestion {
+  id: string;
+  title?: string | { he?: string; en?: string } | null;
+  body?: string | { he?: string; en?: string } | null;
+  category?: string | null;
+  region?: string | { he?: string; en?: string } | null;
+  audience?: string | { he?: string; en?: string } | null;
+  sourceName?: string | { he?: string; en?: string } | null;
+  sourceUrl?: string | null;
+  acceptsInAppRequest?: boolean;
+  createdAt?: string | null;
 }
 
 /** A platform user / account (admin user management). */

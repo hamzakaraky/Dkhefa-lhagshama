@@ -25,6 +25,7 @@ import chatsRouter from '@/routes/chats';
 import profileRouter from '@/routes/profile';
 import ratingsRouter from '@/routes/ratings';
 import requestsRouter from '@/routes/requests';
+import suggestionsRouter from '@/routes/suggestions';
 import uploadsRouter from '@/routes/uploads';
 import usersRouter from '@/routes/users';
 import volunteersRouter from '@/routes/volunteers';
@@ -105,6 +106,7 @@ app.use('/api/users',      authWriteLimiter, usersRouter);
 app.use('/api/ratings',    authWriteLimiter, ratingsRouter); // #80
 app.use('/api/businesses', businessesRouter);
 app.use('/api/answers',    answersRouter);
+app.use('/api/suggestions', suggestionsRouter); // UC-01 A1: public, no limiter
 // Admin sub-routers (Stream 4: #73 #74 #75 #76 #77). Each enforces
 // authenticate + requireRole('admin') internally. Mount BEFORE the generic
 // adminRouter so /api/admin/{volunteers,requests,users,stats} resolve to their

@@ -78,6 +78,10 @@ const createRequestSchema = z
     // Optional Storage paths under requests/{requestId}/...
     attachmentPaths: z.array(z.string().min(1)).max(20).optional().default([]),
 
+    // Volunteer-on-behalf flag (UC-01 A2). Persisted only when the caller is a
+    // volunteer; ignored for beneficiaries (see docRef.create below).
+    onBehalf: z.boolean().optional().default(false),
+
     // Volunteer-on-behalf alt flow (UC-01 A2). Full UX deferred; schema scaffolded.
     onBehalfOf: z
       .object({
@@ -152,6 +156,7 @@ router.post('/', authenticate, async (req: Request, res: Response) => {
       beneficiaryId,
       submittedBy: req.user.uid,             // who actually pressed submit
       submittedByRole: role,                 // 'beneficiary' or 'volunteer'
+      onBehalf: role === 'volunteer' ? input.onBehalf === true : false,
 
       // Personal info snapshot at submit time
       firstName: input.firstName,

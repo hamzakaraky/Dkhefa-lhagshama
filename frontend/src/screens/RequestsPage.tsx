@@ -264,6 +264,7 @@ export default function RequestsPage() {
         consent:   true,
         deadline:  values.deadline || undefined,
         attachmentPaths: [idPath, supportPath].filter(Boolean),
+        onBehalf:  role === 'volunteer',
       }
       const res = await apiFetch('/api/requests', {
         method: 'POST',
@@ -399,6 +400,14 @@ export default function RequestsPage() {
           </div>
         )}
 
+        {/* FEATURE 1 — volunteer on-behalf banner */}
+        {role === 'volunteer' && (
+          <div className="form-banner form-banner-info" style={{ marginBlockEnd:'var(--sp-5)' }}>
+            <Users size={16} />
+            <span style={{ flex:1, fontWeight:500 }}>{rq.onBehalf.banner}</span>
+          </div>
+        )}
+
         <Reveal>
         <div className="card" style={{ overflow:'hidden', boxShadow:'var(--shadow-lg)' }}>
           <div className="card-body" style={{ padding:'clamp(24px, 4vw, 40px)' }}>
@@ -415,7 +424,7 @@ export default function RequestsPage() {
                   fontFamily:'Frank Ruhl Libre, Georgia, serif',
                   fontSize:'var(--fs-h3)', fontWeight:400, color:'var(--ink)',
                   lineHeight:1.2, letterSpacing:'-0.01em', margin:0,
-                }}>{rq.step1.title}</h3>
+                }}>{role === 'volunteer' ? rq.onBehalf.step1Title : rq.step1.title}</h3>
               </div>
               {/* #67 — auto-fill button */}
               <button
