@@ -94,10 +94,17 @@ See `docs/patterns.md` (lands when UC-01 is complete) for a copy-pasteable patte
 | UC | Route prefix | Owner |
 |---|---|---|
 | UC-01 Submit Request | `/api/requests` | Muhammad Marmash |
+| UC-01 Suggest Alternatives | `/api/suggestions` | Muhammad Marmash |
 | UC-02 Community Answers | `/api/answers` | Hamza karaky |
 | UC-03 Businesses Directory | `/api/businesses` | Hamza karaky |
 | UC-04 Internal Chat | `/api/chats` | Mhammad siag |
 | UC-05 Admin Approval | `/api/admin` | Abdullah |
+
+Notable endpoints:
+
+- `POST /api/requests` accepts an optional `onBehalf` flag for **volunteer on-behalf submission** — a volunteer submits for a low-digital-literacy beneficiary; the request records `onBehalf=true` plus `submittedBy`, and the volunteer becomes its steward.
+- `GET /api/suggestions?category=` is **public** and returns up to 3 approved answers in the same category (the UC-01 "suggest alternatives" If-Then rule — not AI).
+- Request `status` is a 6-state snake_case enum: `pending`, `in_progress`, `awaiting_review`, `closed`, `rejected`, `referred` (the last two terminal; `referred` sets `archived=true`).
 
 ## Environment variables
 
