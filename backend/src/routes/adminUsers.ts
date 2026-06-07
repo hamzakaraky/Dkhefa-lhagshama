@@ -27,6 +27,31 @@ router.use(authenticate, requireRole('admin'));
 
 const ROLES: Role[] = ['beneficiary', 'businessOwner', 'volunteer', 'admin'];
 
+/**
+ * Returns true if the target user is an admin (req 23 — admin accounts are
+ * protected). Checks BOTH the Firebase Auth custom claim (source of truth)
+ * and the users/{uid}.role mirror; either being 'admin' counts as admin.
+ */
+async function isTargetAdmin(uid: string): Promise<boolean> {
+  let claimRole: string | null = null;
+  try {
+    const userRecord = await adminAuth().getUser(uid);
+    claimRole = (userRecord.customClaims?.role as string | undefined) ?? null;
+  } catch {
+    // No Auth record (or lookup failed) — fall back to the Firestore mirror.
+  }
+
+  let mirrorRole: string | null = null;
+  try {
+    const snap = await db().collection('users').doc(uid).get();
+    mirrorRole = snap.exists ? ((snap.data()!.role as string | undefined) ?? null) : null;
+  } catch {
+    // ignore — treat as no mirror role.
+  }
+
+  return claimRole === 'admin' || mirrorRole === 'admin';
+}
+
 // ── GET /api/admin/users ──────────────────────────────────────────────────
 // Reads from the users/{uid} Firestore collection (mirrored from Auth).
 // Query params: role, limit (default 50)
@@ -80,6 +105,19 @@ router.post('/:uid/promote', async (req: Request, res: Response): Promise<void> 
   const actorId = req.user!.uid;
 
   try {
+    // req 23 — never strip admin off an admin target via this endpoint, and
+    // never let an admin demote themselves. (Granting/keeping admin is fine.)
+    if (role !== 'admin') {
+      if (targetUid === actorId) {
+        res.status(403).json({ error: 'cannot_modify_self' });
+        return;
+      }
+      if (await isTargetAdmin(targetUid)) {
+        res.status(403).json({ error: 'cannot_modify_admin' });
+        return;
+      }
+    }
+
     const userRef = db().collection('users').doc(targetUid);
     const userSnap = await userRef.get();
 
@@ -120,6 +158,17 @@ router.post('/:uid/demote', async (req: Request, res: Response): Promise<void> =
   const actorId = req.user!.uid;
 
   try {
+    // req 23 — an admin account can never be demoted, nor can an admin demote
+    // their own account.
+    if (targetUid === actorId) {
+      res.status(403).json({ error: 'cannot_modify_self' });
+      return;
+    }
+    if (await isTargetAdmin(targetUid)) {
+      res.status(403).json({ error: 'cannot_modify_admin' });
+      return;
+    }
+
     const userRef = db().collection('users').doc(targetUid);
     const userSnap = await userRef.get();
     const prevRole = userSnap.exists ? (userSnap.data()!.role ?? null) : null;
@@ -157,6 +206,17 @@ router.post('/:uid/disable', async (req: Request, res: Response): Promise<void> 
   const actorId = req.user!.uid;
 
   try {
+    // req 23 — an admin account can never be disabled, nor can an admin disable
+    // their own account.
+    if (targetUid === actorId) {
+      res.status(403).json({ error: 'cannot_modify_self' });
+      return;
+    }
+    if (await isTargetAdmin(targetUid)) {
+      res.status(403).json({ error: 'cannot_modify_admin' });
+      return;
+    }
+
     await db()
       .collection('users')
       .doc(targetUid)

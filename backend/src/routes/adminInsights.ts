@@ -29,8 +29,22 @@ interface RequestDoc {
   status?: string;
   assignedVolunteerId?: string | null;
   handler?: string | null;
+  age?: number | null; // beneficiary age captured at submit (req 24)
   createdAt?: { toDate?: () => Date };
 }
+
+// Age buckets for the insights breakdown (req 24). Order matters for display.
+const AGE_BUCKETS: Array<{ label: string; min: number; max: number }> = [
+  { label: '0-17', min: 0, max: 17 },
+  { label: '18-25', min: 18, max: 25 },
+  { label: '26-40', min: 26, max: 40 },
+  { label: '41-60', min: 41, max: 60 },
+  { label: '60+', min: 61, max: Infinity },
+];
+
+// Accept only sane ages; ignore null/0/out-of-range values (req 24).
+const MIN_VALID_AGE = 1;
+const MAX_VALID_AGE = 120;
 
 function toDate(ts: { toDate?: () => Date } | undefined | null): Date | null {
   const d = ts?.toDate?.();
@@ -52,9 +66,16 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     const byStatusMap = new Map<string, number>();
     const perVolunteerMap = new Map<string, number>();
     const createdAtById = new Map<string, Date>();
+    const validAges: number[] = []; // beneficiary ages for ageStats (req 24)
 
     for (const doc of reqSnap.docs) {
       const data = doc.data() as RequestDoc;
+
+      // Age insights (req 24): only count finite, in-range ages.
+      const age = typeof data.age === 'number' ? data.age : null;
+      if (age !== null && Number.isFinite(age) && age >= MIN_VALID_AGE && age <= MAX_VALID_AGE) {
+        validAges.push(age);
+      }
 
       const created = toDate(data.createdAt);
       if (created) {
@@ -147,7 +168,18 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       .map(([uid, count]) => ({ uid, name: nameByUid.get(uid) ?? uid, count }))
       .sort((a, b) => b.count - a.count);
 
-    res.json({ overTime, byCategory, byStatus, avgResolutionDays, perVolunteer });
+    // 4) ageStats (req 24): average age + fixed-range buckets over valid ages.
+    const averageAge =
+      validAges.length > 0
+        ? Number((validAges.reduce((a, b) => a + b, 0) / validAges.length).toFixed(1))
+        : null;
+    const ageBuckets = AGE_BUCKETS.map((b) => ({
+      label: b.label,
+      count: validAges.filter((a) => a >= b.min && a <= b.max).length,
+    }));
+    const ageStats = { averageAge, buckets: ageBuckets };
+
+    res.json({ overTime, byCategory, byStatus, avgResolutionDays, perVolunteer, ageStats });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[adminInsights] GET /:', err);
