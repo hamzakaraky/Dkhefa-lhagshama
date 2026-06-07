@@ -406,14 +406,19 @@
 }
 
 /* The photograph fills the whole section behind the copy. */
-.hero-bg-image {
+/* NOTE: AssetImage injects its `.asset-image-shell { position: relative }`
+   styles into <head> at runtime — AFTER home.css loads — so an equal-specificity
+   `.hero-bg-image` rule loses the cascade and the shell stays position:relative
+   with 0 height (no aspect-ratio), collapsing the photo behind the scrim. We
+   scope under `.hero-bg` to win on specificity (0,2,0 > 0,1,0) regardless of
+   insertion order, forcing the shell to fill the hero. */
+.hero-bg .hero-bg-image {
   position: absolute;
   inset: 0;
   z-index: 0;
   inline-size: 100%;
   block-size: 100%;
-  /* AssetImage normally reserves space via aspect-ratio; override so it
-     stretches to fill the section instead. object-fit:cover keeps focus. */
+  /* Stretch to fill the section instead of reserving aspect-ratio space. */
   aspect-ratio: auto !important;
 }
 
