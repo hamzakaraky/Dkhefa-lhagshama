@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useRouter } from 'next/router'
-import { ArrowLeft, ArrowRight, Star, Check, HeartHandshake } from 'lucide-react'
+import { ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, Star, Check, HeartHandshake } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
 import { useLanguage } from '../contexts/LanguageContext'
 import { mockStories, mockStats, mockNGOs } from '../data/mockData'
@@ -16,11 +16,20 @@ const useNavigate = () => {
   return (to: string) => router.push(to)
 }
 
+const SERVICE_ICONS: Record<string, ReactNode> = {
+  education:  <GraduationCap size={30} />,
+  employment: <Briefcase size={30} />,
+  legal:      <Scale size={30} />,
+  social:     <Users size={30} />,
+}
+
 export default function HomePage() {
   const { t, isRTL, lang } = useLanguage()
   const navigate = useNavigate()
   const reduce = useReducedMotion()
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight
+
+  const serviceEntries = Object.entries(t.services.items)
 
   // Success-stories gallery: one panel is the highlight at a time.
   const [activeStory, setActiveStory] = useState(0)
@@ -90,6 +99,30 @@ export default function HomePage() {
                 </div>
               ))}
             </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* ── AREAS OF ACTIVITY — four evenly-weighted icon explainers ────────── */}
+      <section id="services-section" className="section-padding" style={{ background: 'var(--paper)' }}>
+        <div className="page-container">
+          <Reveal>
+            <header style={{ maxWidth: '46rem', margin: '0 auto 48px', textAlign: 'center' }}>
+              <h2 className="section-display-bold">{t.services.title}</h2>
+              <p className="section-lede" style={{ margin: '12px auto 0' }}>{t.services.subtitle}</p>
+            </header>
+          </Reveal>
+
+          <div className="areas-grid">
+            {serviceEntries.map(([key, svc], i) => (
+              <Reveal key={key} delay={i * 0.08}>
+                <button type="button" className="area-item" onClick={() => navigate('/requests')}>
+                  <span className="area-icon">{SERVICE_ICONS[key]}</span>
+                  <h3 className="area-title">{svc.title}</h3>
+                  <p className="area-desc">{svc.desc}</p>
+                </button>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>

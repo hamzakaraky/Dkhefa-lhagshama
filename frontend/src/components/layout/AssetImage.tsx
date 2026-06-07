@@ -133,8 +133,9 @@ export default function AssetImage({
         ...style,
       }}
     >
-      {/* Skeleton while real artwork is loading */}
-      {hasArt && !loaded && <div className="asset-image-skeleton" aria-hidden="true" />}
+      {/* Skeleton while real artwork is loading (skipped for priority/hero,
+          which renders visible immediately to avoid a flash). */}
+      {hasArt && !loaded && !priority && <div className="asset-image-skeleton" aria-hidden="true" />}
 
       {hasArt ? (
         <img
@@ -143,7 +144,12 @@ export default function AssetImage({
           alt={altText}
           loading={priority ? 'eager' : 'lazy'}
           decoding="async"
-          className={`asset-image-img${loaded ? ' is-loaded' : ''}`}
+          // Priority (above-the-fold, e.g. the hero) images render visible
+          // immediately. Their eager load can fire its `load` event before React
+          // attaches `onLoad`, leaving `loaded` stuck false → the image paints
+          // then hides (opacity:0). Forcing `is-loaded` for priority avoids that
+          // flash-then-disappear; non-priority images keep the fade-in on load.
+          className={`asset-image-img${loaded || priority ? ' is-loaded' : ''}`}
           onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
         />
