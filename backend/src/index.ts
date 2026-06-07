@@ -111,12 +111,18 @@ app.use('/api/suggestions', suggestionsRouter); // UC-01 A1: public, no limiter
 // authenticate + requireRole('admin') internally. Mount BEFORE the generic
 // adminRouter so /api/admin/{volunteers,requests,users,stats} resolve to their
 // dedicated routers; adminRouter keeps /api/admin/pending|approve|reject|etc.
-app.use('/api/admin/volunteers', authWriteLimiter, adminVolunteersRouter);
-app.use('/api/admin/requests',   authWriteLimiter, adminRequestsRouter);
-app.use('/api/admin/users',      authWriteLimiter, adminUsersRouter);
-app.use('/api/admin/stats',      authWriteLimiter, adminStatsRouter);
-app.use('/api/admin/insights',   authWriteLimiter, adminInsightsRouter);
-app.use('/api/admin',      authWriteLimiter, adminRouter);
+//
+// NOTE: admin routes are deliberately NOT behind the strict authWriteLimiter
+// (30 req/15 min). The admin dashboard fires several GETs per page load, and an
+// authenticated admin should never be throttled during normal use. They still
+// pass through the app-wide globalLimiter (300 req/15 min) as a coarse abuse
+// backstop, and every route enforces requireRole('admin') internally.
+app.use('/api/admin/volunteers', adminVolunteersRouter);
+app.use('/api/admin/requests',   adminRequestsRouter);
+app.use('/api/admin/users',      adminUsersRouter);
+app.use('/api/admin/stats',      adminStatsRouter);
+app.use('/api/admin/insights',   adminInsightsRouter);
+app.use('/api/admin',      adminRouter);
 app.use('/api/volunteers', authWriteLimiter, volunteersRouter);
 
 // Catch-all 404
