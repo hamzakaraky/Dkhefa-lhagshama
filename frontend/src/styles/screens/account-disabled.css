@@ -1,47 +1,109 @@
-/* Auto-split from globals.css — do not edit class names. */
+/* Auto-split from globals.css. Do not edit class names. */
 
-/* ── #87 Account-disabled page + #91/#95 admin detail edge-case UI ───────── */
+/* ── #87 Account-disabled page ───────────────────────────────────────────
+   Calm status/contact-support state shown after AuthContext detects a
+   disabled account, signs the user out, and redirects here. Presentation
+   lives here (the screen ships only structure + tokens). Brand tokens only;
+   no gradients, no glass. RTL via logical properties. */
 
-.disabled-card {
-  text-align: center;
+.disabled-main {
+  min-height: calc(100vh - var(--nav-h));
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  padding-block: clamp(48px, 9vw, 96px);
+  padding-inline: clamp(20px, 5vw, 40px);
 }
 
+.disabled-card {
+  position: relative;
+  width: 100%;
+  max-width: 34rem;
+  text-align: center;
+  padding-block: clamp(40px, 6vw, 56px);
+  padding-inline: clamp(24px, 5vw, 48px);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--hair);
+  background: var(--white);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+/* Solid ember hairline along the top edge (no gradient). */
+.disabled-card::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 3px;
+  background: var(--ember);
+}
+
+/* Icon medallion: shield set in a tinted disc with a soft sky halo. */
 .disabled-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 20px;
+  display: inline-grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  margin-block-end: var(--sp-5);
   border-radius: 50%;
-  background: var(--cream);
-  color: var(--ink-2);
-  border: 1px solid var(--line);
+  color: var(--ember);
+  background: var(--ember-soft);
+  box-shadow: 0 0 0 8px var(--sky-3);
+}
+
+.disabled-title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-display);
+  font-weight: 400;
+  line-height: 1.14;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 var(--sp-4);
+  text-wrap: balance;
 }
 
 .disabled-lead {
-  margin-bottom: 24px;
+  font-size: var(--fs-lede);
+  line-height: 1.65;
+  color: var(--gray-600);
+  margin: 0 auto;
+  max-width: 28rem;
+  text-wrap: pretty;
 }
 
+/* Contact row: quiet surface that lifts on hover/focus (CSS, so keyboard
+   focus gets the same affordance). The address renders LTR in both locales. */
 .disabled-contact {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 28px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: var(--cream);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  justify-content: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  margin-block-start: var(--sp-6);
+  padding-block: var(--sp-3);
+  padding-inline: var(--sp-5);
+  border-radius: var(--radius);
+  border: 1px solid var(--hair);
+  background: var(--paper);
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
   font-weight: 600;
-  font-size: 14px;
   text-decoration: none;
-  transition: background-color .18s ease, border-color .18s ease;
+  direction: ltr;
+  transition: background-color var(--dur-2) var(--ease-out),
+              border-color var(--dur-2) var(--ease-out),
+              box-shadow var(--dur-2) var(--ease-out),
+              transform var(--dur-1) var(--ease-out);
 }
 
-.disabled-contact:hover {
-  background: var(--paper);
-  border-color: var(--ember);
+/* Hover lift only on real pointers (tap = false hover on touch). */
+@media (hover: hover) and (pointer: fine) {
+  .disabled-contact:hover {
+    background: var(--sky-3);
+    border-color: var(--ember);
+    box-shadow: var(--shadow-sm);
+  }
 }
 
 .disabled-contact:focus-visible {
@@ -49,13 +111,54 @@
   box-shadow: var(--ring);
 }
 
-.disabled-home {
+/* Press feedback: the link is a real tap target. */
+.disabled-contact:active {
+  transform: scale(0.99);
+}
+
+.disabled-contact-icon {
+  color: var(--ember);
+  flex: none;
+}
+
+/* Divider before the primary action. */
+.disabled-divider {
   display: block;
-  width: 100%;
+  height: 1px;
+  background: var(--hair);
+  margin: var(--sp-6) auto;
+  max-width: 12rem;
+}
+
+.disabled-home {
+  text-decoration: none;
+}
+
+/* Arrow nudges toward its travel direction on hover/focus of the button. */
+.disabled-home-arrow {
+  transition: transform var(--dur-2) var(--ease-out);
+}
+
+.disabled-home:hover .disabled-home-arrow,
+.disabled-home:focus-visible .disabled-home-arrow {
+  transform: translateX(-3px);
+}
+
+[dir='rtl'] .disabled-home:hover .disabled-home-arrow,
+[dir='rtl'] .disabled-home:focus-visible .disabled-home-arrow {
+  transform: translateX(3px);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .disabled-contact {
+  .disabled-contact,
+  .disabled-home-arrow {
     transition: none;
+  }
+  .disabled-contact:active,
+  .disabled-home:hover .disabled-home-arrow,
+  .disabled-home:focus-visible .disabled-home-arrow,
+  [dir='rtl'] .disabled-home:hover .disabled-home-arrow,
+  [dir='rtl'] .disabled-home:focus-visible .disabled-home-arrow {
+    transform: none;
   }
 }
