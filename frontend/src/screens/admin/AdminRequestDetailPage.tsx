@@ -758,6 +758,8 @@ export default function AdminRequestDetailPage() {
                             type="button"
                             className="btn btn-primary btn-sm admin-claim-assign"
                             disabled={saving || busyClaim}
+                            aria-busy={busyClaim || undefined}
+                            aria-label={`${a.claims.assign}: ${claim.volunteerName || claim.volunteerId}`}
                             onClick={() => handleAssignClaim(claim.volunteerId)}
                           >
                             {busyClaim ? a.claims.assigning : a.claims.assign}
@@ -873,6 +875,7 @@ export default function AdminRequestDetailPage() {
                               fontSize: 'var(--fs-sm)',
                               whiteSpace: 'nowrap',
                               fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+                              fontVariantNumeric: 'tabular-nums',
                             }}
                           >
                             {fmt(ev.createdAt)}
@@ -967,6 +970,7 @@ export default function AdminRequestDetailPage() {
                   type="button"
                   className="btn btn-primary admin-side-btn"
                   disabled={saving || !assignTo}
+                  aria-busy={saving || undefined}
                   onClick={handleAssign}
                 >
                   {a.reqDetail.assignBtn}
@@ -1065,6 +1069,8 @@ export default function AdminRequestDetailPage() {
                             type="button"
                             className="btn btn-ghost btn-sm admin-doc-view"
                             disabled={busy}
+                            aria-busy={busy || undefined}
+                            aria-label={`${lc.docs.view}: ${doc.name}`}
                             onClick={() => viewDoc(doc.name)}
                           >
                             {busy ? lc.docs.opening : lc.docs.view}

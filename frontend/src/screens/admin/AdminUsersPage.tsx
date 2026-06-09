@@ -116,6 +116,7 @@ export default function AdminUsersPage() {
       {!loading && !error && items.length > 0 && (
         <Reveal>
           <div
+            className="admin-user-stats"
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -171,46 +172,22 @@ export default function AdminUsersPage() {
                     // cannot_modify_admin); this is the matching UI guard.
                     const isProtected = role === 'admin'
                     return (
-                      <tr key={u.uid} style={busy ? { opacity: 0.55, transition: 'opacity var(--dur-2) var(--ease-out)' } : undefined}>
+                      <tr
+                        key={u.uid}
+                        aria-busy={busy || undefined}
+                        style={{ opacity: busy ? 0.55 : 1, transition: 'opacity var(--dur-2) var(--ease-out)' }}
+                      >
                         <td data-label={a.userMgmt.colName}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--sp-3)', minWidth: 0, flex: 1, maxWidth: '100%' }}>
+                          <span className="admin-user-cell">
                             <span
                               aria-hidden="true"
-                              style={{
-                                flex: '0 0 auto',
-                                width: 38,
-                                height: 38,
-                                borderRadius: '50%',
-                                display: 'grid',
-                                placeItems: 'center',
-                                background: role === 'admin' ? 'var(--ember-soft)' : 'var(--sky-3)',
-                                color: role === 'admin' ? 'var(--ember-700)' : 'var(--ink-2)',
-                                border: '1px solid var(--hair)',
-                                fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                                fontSize: '0.72rem',
-                                fontWeight: 600,
-                                letterSpacing: '0.02em',
-                              }}
+                              className={role === 'admin' ? 'admin-user-avatar is-admin' : 'admin-user-avatar'}
                             >
                               {initials(name)}
                             </span>
-                            <span style={{ display: 'inline-flex', flexDirection: 'column', minWidth: 0, textAlign: 'start' }}>
-                              <span style={{ fontWeight: 600, color: 'var(--ink)', lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                {name}
-                              </span>
-                              {sub && (
-                                <span
-                                  style={{
-                                    fontSize: 'var(--fs-xs)',
-                                    color: 'var(--gray-500)',
-                                    lineHeight: 1.3,
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                  }}
-                                >
-                                  {sub}
-                                </span>
-                              )}
+                            <span className="admin-user-identity">
+                              <span className="admin-user-name">{name}</span>
+                              {sub && <span className="admin-user-sub">{sub}</span>}
                             </span>
                           </span>
                         </td>
@@ -218,25 +195,8 @@ export default function AdminUsersPage() {
                           <StatusBadge status={role} label={(a.roleLabels as Record<string, string>)[role] || role} />
                         </td>
                         <td data-label={a.userMgmt.colState}>
-                          <span
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 'var(--sp-2)',
-                              color: u.disabled ? 'var(--gray-500)' : 'var(--success)',
-                              fontWeight: 500,
-                            }}
-                          >
-                            <span
-                              aria-hidden="true"
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: '50%',
-                                flex: '0 0 auto',
-                                background: u.disabled ? 'var(--gray-400)' : 'var(--success)',
-                              }}
-                            />
+                          <span className={u.disabled ? 'admin-user-state is-disabled' : 'admin-user-state'}>
+                            <span aria-hidden="true" className="admin-user-state-dot" />
                             {u.disabled ? a.userMgmt.stateDisabled : a.userMgmt.stateActive}
                           </span>
                         </td>
@@ -256,7 +216,7 @@ export default function AdminUsersPage() {
                                 value={role}
                                 disabled={busy}
                                 onChange={(e) => changeRole(u.uid, e.target.value)}
-                                aria-label={a.userMgmt.colRole}
+                                aria-label={`${a.userMgmt.colRole}: ${name}`}
                               >
                                 {ROLES.map((r) => (
                                   <option key={r} value={r}>
@@ -269,7 +229,7 @@ export default function AdminUsersPage() {
                                 className="btn btn-ghost btn-sm"
                                 disabled={busy}
                                 onClick={() => toggleDisabled(u.uid, u.disabled)}
-                                aria-label={`${u.disabled ? a.userMgmt.enable : a.userMgmt.disable} — ${name}`}
+                                aria-label={`${u.disabled ? a.userMgmt.enable : a.userMgmt.disable}: ${name}`}
                               >
                                 {u.disabled
                                   ? <UserCheck size={14} aria-hidden="true" />

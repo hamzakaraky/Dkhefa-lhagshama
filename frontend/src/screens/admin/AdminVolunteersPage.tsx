@@ -118,14 +118,7 @@ export default function AdminVolunteersPage() {
     <AdminLayout title={a.vol.title} subtitle={a.vol.subtitle}>
       {/* ── Summary band: live counts for each queue (sole home for the counts) ── */}
       <Reveal>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: 'var(--sp-4)',
-            marginBlockEnd: 'var(--sp-6)',
-          }}
-        >
+        <div className="admin-vol-summary">
           <StatCard
             label={a.vol.filterPending}
             value={data.pending.length}
@@ -146,48 +139,26 @@ export default function AdminVolunteersPage() {
       {/* ── Category permission requests (req 15) ───────────────────────────── */}
       {data.categoryRequests.length > 0 && (
         <Reveal>
-          <div
-            style={{
-              background: 'var(--white)',
-              border: '1px solid var(--hair)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-xs)',
-              padding: 'var(--sp-4)',
-              marginBlockEnd: 'var(--sp-5)',
-            }}
-          >
-            <h2 style={{ fontSize: 'var(--fs-h3)', color: 'var(--ink)', marginBlockEnd: 'var(--sp-1)' }}>
-              {a.catReq.heading}
-            </h2>
-            <p style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-sm)', marginBlockEnd: 'var(--sp-3)' }}>
-              {a.catReq.subtitle}
-            </p>
-            <div style={{ display: 'grid', gap: 'var(--sp-2)' }}>
+          <div className="admin-vol-catreq">
+            <h2 className="admin-vol-catreq-title">{a.catReq.heading}</h2>
+            <p className="admin-vol-catreq-sub">{a.catReq.subtitle}</p>
+            <div className="admin-vol-catreq-list">
               {data.categoryRequests.map((c) => {
                 const key = `${c.uid}:${c.category}`
+                const who = c.fullName || c.uid
                 return (
-                  <div
-                    key={key}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: 'var(--sp-3)',
-                      padding: 'var(--sp-3)',
-                      border: '1px solid var(--hair)',
-                      borderRadius: 'var(--radius)',
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{c.fullName || c.uid}</span>
+                  <div key={key} className="admin-vol-catreq-item">
+                    <span className="admin-vol-catreq-name">{who}</span>
                     <span className="badge badge-ember">{c.category}</span>
                     {c.note && (
-                      <span style={{ color: 'var(--gray-600)', fontSize: 'var(--fs-sm)' }}>“{c.note}”</span>
+                      <span className="admin-vol-catreq-note">“{c.note}”</span>
                     )}
-                    <div className="admin-row-actions" style={{ marginInlineStart: 'auto' }}>
+                    <div className="admin-row-actions admin-vol-catreq-actions">
                       <button
                         type="button"
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm admin-vol-action"
                         disabled={busyCat === key}
+                        aria-label={`${a.vol.approve}: ${who}, ${c.category}`}
                         onClick={() => actCategory(c.uid, c.category, 'approve')}
                       >
                         <Check size={15} aria-hidden="true" />
@@ -195,8 +166,9 @@ export default function AdminVolunteersPage() {
                       </button>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm"
+                        className="btn btn-ghost btn-sm admin-vol-action"
                         disabled={busyCat === key}
+                        aria-label={`${a.vol.reject}: ${who}, ${c.category}`}
                         onClick={() => actCategory(c.uid, c.category, 'reject')}
                       >
                         <X size={15} aria-hidden="true" />
@@ -235,6 +207,8 @@ export default function AdminVolunteersPage() {
           <button
             type="button"
             role="tab"
+            id="admin-vol-tab-pending"
+            aria-controls="admin-vol-panel"
             aria-selected={tab === 'pending'}
             className={`admin-filter-tab${tab === 'pending' ? ' is-active' : ''}`}
             onClick={() => setTab('pending')}
@@ -244,6 +218,8 @@ export default function AdminVolunteersPage() {
           <button
             type="button"
             role="tab"
+            id="admin-vol-tab-active"
+            aria-controls="admin-vol-panel"
             aria-selected={tab === 'active'}
             className={`admin-filter-tab${tab === 'active' ? ' is-active' : ''}`}
             onClick={() => setTab('active')}
@@ -255,123 +231,105 @@ export default function AdminVolunteersPage() {
 
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
 
-      {loading ? (
-        <TableSkeleton rows={5} cols={4} />
-      ) : rows.length === 0 ? (
-        <Reveal>
-          <EmptyState icon={HeartHandshake} title={a.vol.empty} message={a.vol.emptyHint} />
-        </Reveal>
-      ) : (
-        <Reveal>
-          <div className="admin-table-wrap">
-            <table className="admin-data-table">
-              <thead>
-                <tr>
-                  <th>{a.vol.colName}</th>
-                  <th>{a.vol.colEmail}</th>
-                  <th>{a.vol.colStatus}</th>
-                  <th className="admin-table-actions-col">{a.ui.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((v) => {
-                  const name = v.fullName || v.uid
-                  return (
-                    <tr key={v.id}>
-                      <td data-label={a.vol.colName}>
-                        <span
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 'var(--sp-3)',
-                            minWidth: 0,
-                          }}
+      <div
+        id="admin-vol-panel"
+        role="tabpanel"
+        aria-labelledby={tab === 'active' ? 'admin-vol-tab-active' : 'admin-vol-tab-pending'}
+      >
+        {loading ? (
+          <TableSkeleton rows={5} cols={4} />
+        ) : rows.length === 0 ? (
+          <Reveal>
+            <EmptyState icon={HeartHandshake} title={a.vol.empty} message={a.vol.emptyHint} />
+          </Reveal>
+        ) : (
+          <Reveal>
+            <div className="admin-table-wrap">
+              <table className="admin-data-table">
+                <thead>
+                  <tr>
+                    <th>{a.vol.colName}</th>
+                    <th>{a.vol.colEmail}</th>
+                    <th>{a.vol.colStatus}</th>
+                    <th className="admin-table-actions-col">{a.ui.actions}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((v) => {
+                    const name = v.fullName || v.uid
+                    return (
+                      <tr key={v.id}>
+                        <td data-label={a.vol.colName}>
+                          <span className="admin-vol-identity">
+                            <span className="admin-vol-avatar" aria-hidden="true">
+                              {initials(name)}
+                            </span>
+                            <span className="admin-vol-name">{name}</span>
+                          </span>
+                        </td>
+                        <td
+                          data-label={a.vol.colEmail}
+                          className={`admin-vol-email${v.email ? '' : ' admin-vol-email--empty'}`}
                         >
-                          <span
-                            aria-hidden="true"
-                            style={{
-                              flex: '0 0 auto',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              width: '34px',
-                              height: '34px',
-                              borderRadius: '50%',
-                              background: 'var(--sky-3)',
-                              color: 'var(--ink-2)',
-                              fontSize: 'var(--fs-xs)',
-                              fontWeight: 700,
-                              letterSpacing: '0.02em',
-                              border: '1px solid var(--hair)',
-                            }}
-                          >
-                            {initials(name)}
-                          </span>
-                          <span
-                            style={{
-                              fontWeight: 600,
-                              color: 'var(--ink)',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {name}
-                          </span>
-                        </span>
-                      </td>
-                      <td data-label={a.vol.colEmail} style={{ color: 'var(--gray-600)' }}>
-                        {v.email || '·'}
-                      </td>
-                      <td data-label={a.vol.colStatus}>
-                        <StatusBadge
-                          status={tab === 'active' ? 'active' : 'pending'}
-                          label={tab === 'active' ? a.volStatus.active : a.volStatus.pending}
-                        />
-                      </td>
-                      <td data-label={a.ui.actions}>
-                        <div className="admin-row-actions">
-                          {tab === 'pending' ? (
-                            <>
+                          {v.email || '-'}
+                        </td>
+                        <td data-label={a.vol.colStatus}>
+                          <StatusBadge
+                            status={tab === 'active' ? 'active' : 'pending'}
+                            label={tab === 'active' ? a.volStatus.active : a.volStatus.pending}
+                          />
+                        </td>
+                        <td data-label={a.ui.actions}>
+                          <div className="admin-row-actions">
+                            {tab === 'pending' ? (
+                              <>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm admin-vol-action"
+                                  disabled={busyId === v.id}
+                                  aria-label={`${a.vol.approve}: ${name}`}
+                                  onClick={() => act(v.id, 'approve')}
+                                >
+                                  <Check size={15} aria-hidden="true" />
+                                  {a.vol.approve}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm admin-vol-action"
+                                  disabled={busyId === v.id}
+                                  aria-label={`${a.vol.reject}: ${name}`}
+                                  onClick={() => act(v.id, 'reject')}
+                                >
+                                  <X size={15} aria-hidden="true" />
+                                  {a.vol.reject}
+                                </button>
+                              </>
+                            ) : (
                               <button
                                 type="button"
-                                className="btn btn-primary btn-sm"
+                                className="btn btn-danger btn-sm admin-vol-action"
                                 disabled={busyId === v.id}
-                                onClick={() => act(v.id, 'approve')}
+                                aria-label={`${a.vol.deactivate}: ${name}`}
+                                onClick={() => {
+                                  if (window.confirm(`${a.vol.deactivate}: ${name}`)) {
+                                    act(v.uid, 'deactivate')
+                                  }
+                                }}
                               >
-                                <Check size={15} aria-hidden="true" />
-                                {a.vol.approve}
+                                {a.vol.deactivate}
                               </button>
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-sm"
-                                disabled={busyId === v.id}
-                                onClick={() => act(v.id, 'reject')}
-                              >
-                                <X size={15} aria-hidden="true" />
-                                {a.vol.reject}
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-sm"
-                              disabled={busyId === v.id}
-                              onClick={() => act(v.uid, 'deactivate')}
-                            >
-                              {a.vol.deactivate}
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Reveal>
-      )}
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Reveal>
+        )}
+      </div>
     </AdminLayout>
   )
 }

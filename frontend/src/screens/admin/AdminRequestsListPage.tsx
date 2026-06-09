@@ -86,7 +86,7 @@ export default function AdminRequestsListPage() {
     setError(null)
     try {
       // The archived tab pulls the archived bucket; status tabs filter by
-      // status. The default ('') view returns active (non-archived) requests —
+      // status. The default ('') view returns active (non-archived) requests:
       // the backend excludes archived === true unless ?archived=true is sent.
       const qs =
         filter === ARCHIVED_FILTER
@@ -112,7 +112,7 @@ export default function AdminRequestsListPage() {
   const visibleItems = claimsOnly ? items.filter((r) => r.hasClaims) : items
 
   // Live result summary: "N results" reusing the column/empty vocabulary the
-  // page already ships — no new translation keys introduced.
+  // page already ships (no new translation keys introduced).
   const resultSummary = (() => {
     const n = visibleItems.length
     if (lang === 'he') return `${n} ${n === 1 ? 'בקשה' : 'בקשות'}`
@@ -144,72 +144,29 @@ export default function AdminRequestsListPage() {
         }}
       />
       <Reveal>
-        {/* ── Filter bar — a segmented control that reads as one cohesive unit ── */}
-        <div
-          role="group"
-          aria-label={a.reqList.title}
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            alignItems: 'center',
-            gap: 'var(--sp-2)',
-            padding: 'var(--sp-2)',
-            background: 'var(--white)',
-            border: '1px solid var(--hair)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)',
-            marginBlockEnd: 'var(--sp-4)',
-          }}
-        >
+        {/* Filter bar: a segmented control that reads as one cohesive unit.
+            Hover/focus/active are all CSS-driven (.admin-reqlist-tab) so touch
+            devices skip the hover fill and reduced-motion is honoured. */}
+        <div role="group" aria-label={a.reqList.title} className="admin-reqlist-filters">
           {[...STATUS_FILTERS, ARCHIVED_FILTER].map((s) => {
             const active = filter === s
             // The archived tab sits apart from the active-status group: a quiet
-            // inline-start divider signals it's a separate bucket, not a status.
+            // inline-start hairline signals it is a separate bucket, not a status.
             const isArchivedTab = s === ARCHIVED_FILTER
+            const tabClass = [
+              'admin-reqlist-tab',
+              active ? 'is-active' : '',
+              isArchivedTab ? 'admin-reqlist-tab--archived' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
             return (
               <button
                 key={s || 'all'}
                 type="button"
                 aria-pressed={active}
                 onClick={() => setFilter(s as FilterKey)}
-                style={{
-                  appearance: 'none',
-                  cursor: 'pointer',
-                  border: '1px solid transparent',
-                  borderRadius: 'var(--radius)',
-                  padding: '8px 16px',
-                  fontSize: 'var(--fs-sm)',
-                  fontWeight: active ? 600 : 500,
-                  lineHeight: 1.2,
-                  color: active ? 'var(--white)' : 'var(--gray-600)',
-                  background: active ? 'var(--ember)' : 'transparent',
-                  boxShadow: active ? 'var(--shadow-sm)' : 'none',
-                  transition: `background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out)`,
-                  WebkitTapHighlightColor: 'transparent',
-                  // Set the archived tab apart from the active-status group with
-                  // a hairline on its inline-start edge (auto-flips in RTL).
-                  ...(isArchivedTab
-                    ? {
-                        marginInlineStart: 'var(--sp-1)',
-                        borderInlineStartColor: 'var(--hair)',
-                        borderStartStartRadius: 0,
-                        borderEndStartRadius: 0,
-                        paddingInlineStart: 'var(--sp-3)',
-                      }
-                    : null),
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) e.currentTarget.style.background = 'var(--sky-3)'
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) e.currentTarget.style.background = 'transparent'
-                }}
-                onFocus={(e) => {
-                  e.currentTarget.style.boxShadow = active ? 'var(--shadow-sm), var(--ring)' : 'var(--ring)'
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.boxShadow = active ? 'var(--shadow-sm)' : 'none'
-                }}
+                className={tabClass}
               >
                 {filterLabel(s as FilterKey)}
               </button>
@@ -228,61 +185,20 @@ export default function AdminRequestsListPage() {
         </Reveal>
       ) : (
         <Reveal delay={0.05}>
-          {/* ── Section header — echoes the home page's eyebrow → micro-heading
-              rhythm and aligns its start edge to the table card below ── */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              gap: 'var(--sp-2)',
-              marginBlock: 'var(--sp-5) var(--sp-4)',
-            }}
-          >
-            <h2
-              style={{
-                fontFamily: '"Frank Ruhl Libre", Georgia, serif',
-                fontSize: 'var(--fs-h3)',
-                fontWeight: 600,
-                color: 'var(--ink)',
-                margin: 0,
-                lineHeight: 1.2,
-                textAlign: 'start',
-              }}
-            >
-              {a.reqList.title}
-            </h2>
-            <p
-              aria-live="polite"
-              style={{
-                fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                fontSize: 'var(--fs-xs)',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--gray-500)',
-                margin: 0,
-                textAlign: 'start',
-              }}
-            >
+          {/* Section header: serif title + live mono result count, baseline
+              aligned, start edge matching the table card below. */}
+          <div className="admin-reqlist-head">
+            <h2 className="admin-reqlist-title">{a.reqList.title}</h2>
+            <p aria-live="polite" className="admin-reqlist-count">
               {resultSummary}
             </p>
           </div>
 
-          {/* ── Data table — a single editorial card. The card itself owns the
-              frame (hairline + radius-lg + shadow) and the horizontal scroll;
-              the inner .admin-table-wrap has its globals.css chrome (border,
-              radius, shadow, paper bg, 72vh cap) neutralized inline so only one
-              confident object renders with no nested-corner artifact. ── */}
-          <div
-            style={{
-              background: 'var(--white)',
-              border: '1px solid var(--hair)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow)',
-              overflowX: 'auto',
-              overflowY: 'hidden',
-            }}
-          >
+          {/* Data table: a single editorial card that owns the frame and the
+              horizontal scroll. The inner .admin-table-wrap globals.css chrome
+              (border, radius, shadow, paper bg, height cap) is neutralised
+              inline so only one confident object renders, no nested corners. */}
+          <div className="admin-reqlist-table-card">
             <div
               className="admin-table-wrap"
               style={{
@@ -316,17 +232,13 @@ export default function AdminRequestsListPage() {
                     return (
                       <tr key={r.id}>
                         <td data-label={a.reqList.colTitle}>
-                          <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
-                            <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{primary}</span>
+                          <span className="admin-reqlist-cell">
+                            <span className="admin-reqlist-primary">{primary}</span>
                             {isAdminTask && (
                               <StatusBadge status="admin" label={a.taskForm.badge} />
                             )}
                             {r.hasClaims && (
-                              <span
-                                className="badge badge-ember"
-                                title={a.claims.badge}
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                              >
+                              <span className="badge badge-ember admin-reqlist-claims" title={a.claims.badge}>
                                 <HandHeart size={12} aria-hidden="true" />
                                 {a.claims.badge}
                               </span>
@@ -334,17 +246,17 @@ export default function AdminRequestsListPage() {
                           </span>
                         </td>
                         <td data-label={a.reqList.colCategory}>
-                          <span style={{ color: r.category ? 'var(--gray-600)' : 'var(--gray-400)' }}>
+                          <span className={r.category ? 'admin-reqlist-meta' : 'admin-reqlist-meta--empty'}>
                             {r.category || '·'}
                           </span>
                         </td>
                         <td data-label={a.reqList.colCity}>
-                          <span style={{ color: r.city ? 'var(--gray-600)' : 'var(--gray-400)' }}>
+                          <span className={r.city ? 'admin-reqlist-meta' : 'admin-reqlist-meta--empty'}>
                             {r.city || '·'}
                           </span>
                         </td>
                         <td data-label={a.reqList.colStatus}>
-                          <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                          <span className="admin-reqlist-cell">
                             <StatusBadge
                               status={r.status ?? ''}
                               label={(r.status ? (a.statusLabels as Record<string, string>)[r.status] : '') || r.status || ''}
@@ -357,8 +269,7 @@ export default function AdminRequestsListPage() {
                         <td data-label={a.ui.actions}>
                           <Link
                             href={`/admin/requests/${r.id}`}
-                            className="btn btn-ghost btn-sm"
-                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                            className="btn btn-ghost btn-sm admin-reqlist-manage"
                           >
                             {a.reqList.manage}
                             <ManageArrow size={15} aria-hidden="true" />

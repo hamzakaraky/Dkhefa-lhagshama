@@ -160,6 +160,13 @@
 
 .admin-back-link:hover { color: var(--ember); }
 
+.admin-back-link:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+  color: var(--ember);
+}
+
 /* ── Gate states ── */
 
 .admin-gate-msg { padding: 4rem 2rem; text-align: center; color: var(--gray-500); }
@@ -242,7 +249,14 @@
   justify-content: flex-end;
 }
 
-.admin-inline-select { width: auto; min-width: 120px; padding: 6px 10px; font-size: 13px; }
+.admin-inline-select {
+  width: auto;
+  min-width: 120px;
+  min-block-size: 36px;        /* roomier tap target than the 30px default */
+  padding-block: 7px;
+  padding-inline: 10px;
+  font-size: 13px;
+}
 
 /* ── Filter tabs ── */
 
@@ -351,22 +365,127 @@
 
 .admin-timeline-time { color: var(--gray-500); font-size: 0.8rem; white-space: nowrap; }
 
-/* ── Approval cards ── */
+/* ── Approval queue (UC-05) ──
+   Selectors here are approvals-only (not shared with sibling admin pages).
+   All inline layout for AdminApprovalsPage lives here so RTL logical
+   properties stay centralised. */
 
-.admin-approval-list { display: flex; flex-direction: column; gap: 0.85rem; }
-
-.admin-approval-card {
+/* Queue summary strip: framing count of work ahead. */
+.admin-approvals-summary {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-  padding: 1.1rem 1.25rem;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  margin-block-end: var(--sp-5);
+  border: 1px solid var(--hair);
+  box-shadow: var(--shadow-sm);
 }
 
-.admin-approval-info { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; min-width: 0; }
+.admin-approvals-summary-icon,
+.admin-approval-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: var(--radius);
+  color: var(--ember);
+  background: var(--ember-soft);
+}
 
-.admin-approval-name { font-size: 1rem; font-weight: 700; color: var(--ink); margin: 0; }
+.admin-approvals-summary-icon { inline-size: 44px; block-size: 44px; }
+
+.admin-approvals-summary-body { min-inline-size: 0; }
+
+.admin-approvals-eyebrow {
+  display: block;
+  margin-block-end: 4px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+
+.admin-approvals-count {
+  margin: 0;
+  font-size: var(--fs-body);
+  color: var(--gray-600);
+  line-height: 1.4;
+  text-align: start;
+  /* Counts in the sentence stay column-stable as the queue drains. */
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-approval-list { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+/* One queued entity: identity on the start side, actions on the end. */
+.admin-approval-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--hair);
+  box-shadow: var(--shadow-sm);
+  transition: opacity var(--dur-2) var(--ease-out);
+}
+
+.admin-approval-card.is-busy { opacity: 0.6; }
+
+.admin-approval-info {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+}
+
+/* Per-entity glyph chip: tone is set inline via custom props so each entity
+   keeps its own fg/bg without a class explosion. */
+.admin-approval-glyph {
+  inline-size: 42px;
+  block-size: 42px;
+  color: var(--approval-glyph-fg, var(--ember));
+  background: var(--approval-glyph-bg, var(--ember-soft));
+}
+
+.admin-approval-text { min-inline-size: 0; }
+
+.admin-approval-name {
+  margin: 6px 0 0;
+  font-size: var(--fs-h3);
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  text-align: start;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* Live count inside a filter tab: column-stable digits so the tab width
+   does not jitter as the queue drains. Approvals-scoped; does not touch the
+   shared .admin-filter-tab used by the volunteers page. */
+.admin-approval-tab-count { font-variant-numeric: tabular-nums; }
+
+/* Queue action buttons (approve / request-changes / reject). Scoped so the
+   shared .btn-sm used elsewhere is untouched. A comfortable tap target and
+   no double-tap-zoom delay on touch; focus state inherited from .btn. */
+.admin-approval-action {
+  min-block-size: 40px;
+  touch-action: manipulation;
+}
+
+/* The danger (reject) action keeps the ghost button shape but reads as
+   destructive; hover deepens to the pressed danger tone. */
+.admin-approval-reject { color: var(--danger); }
+.admin-approval-reject:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+
+/* "Show all items" reset inside the filter-scoped empty state — sits in the
+   empty-state message slot, so give it a little top breathing room. */
+.admin-approval-clear-filter { margin-block-start: var(--sp-2); }
 
 .skeleton-stat { height: 2rem; width: 60%; }
 
@@ -432,26 +551,26 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-block-end: 16px;
   padding: 12px 14px;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
   line-height: 1.45;
 }
 
 .admin-notice svg {
   flex: none;
-  margin-top: 2px;
+  margin-block-start: 2px;
 }
 
 .admin-notice-warn {
-  background: #fff6e9;
-  color: #8a5a00;
-  border: 1px solid #f5dca6;
+  background: var(--warning-soft);
+  color: var(--warning);
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--warning-soft));
 }
 
 .admin-notice-warn .admin-notice-action {
-  color: #8a5a00;
+  color: var(--warning);
 }
 
 .admin-notice-action {
@@ -721,6 +840,16 @@
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-sm);
   background: var(--paper);
+  transition:
+    border-color var(--dur-2) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .admin-doc-item:hover {
+    border-color: color-mix(in srgb, var(--ember) 35%, var(--gray-200));
+    background: var(--sky-3);
+  }
 }
 
 .admin-doc-icon { flex: 0 0 auto; color: var(--ink-2); }
@@ -938,6 +1067,16 @@
   border: 1px solid var(--hair);
   border-radius: var(--radius);
   background: var(--paper);
+  transition:
+    border-color var(--dur-2) var(--ease-out),
+    background-color var(--dur-2) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .admin-claim-item:hover {
+    border-color: color-mix(in srgb, var(--ember) 35%, var(--hair));
+    background: var(--sky-3);
+  }
 }
 
 .admin-claim-body { flex: 1; min-width: 0; text-align: start; }
@@ -957,6 +1096,7 @@
   font-size: var(--fs-xs);
   color: var(--gray-500);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .admin-claim-assign { flex: 0 0 auto; }
@@ -974,3 +1114,377 @@
 }
 
 .admin-protected svg { flex: 0 0 auto; }
+
+/* ── Users management (route /admin/users) ─────────────────────────────────
+   Users-only selectors: the roster identity cell, avatar, and state pill.
+   Sibling admin tables (volunteers, requests-list) do NOT use .admin-user-*,
+   so these are scoped to this page and safe to evolve here. Replaces the
+   inline-style noise that previously lived in AdminUsersPage.tsx.            */
+
+.admin-user-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-user-avatar {
+  flex: 0 0 auto;
+  inline-size: 38px;
+  block-size: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sky-3);
+  color: var(--ink-2);
+  border: 1px solid var(--hair);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-user-avatar.is-admin {
+  background: var(--ember-soft);
+  color: var(--ember-700);
+}
+
+.admin-user-identity {
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: start;
+}
+
+.admin-user-name {
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-user-sub {
+  font-size: var(--fs-xs);
+  color: var(--gray-500);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-user-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 500;
+  color: var(--success);
+}
+
+.admin-user-state.is-disabled { color: var(--gray-500); }
+
+.admin-user-state-dot {
+  flex: 0 0 auto;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--success);
+}
+
+.admin-user-state.is-disabled .admin-user-state-dot {
+  background: var(--gray-400);
+  /* Color is not the only differentiator: disabled dot is hollow (ring),
+     active dot is filled, so state reads without relying on hue.          */
+  background: transparent;
+  box-shadow: inset 0 0 0 2px var(--gray-400);
+}
+
+/* Keep summary-strip counts from reflowing as digits change. */
+.admin-user-stats { font-variant-numeric: tabular-nums; }
+
+/* ── Requests list (route /admin/requests) ─────────────────────────────────
+   Selectors here are requests-list-only: not shared with sibling admin pages.
+   The page builds its own filter control (the shared .admin-filter-tab styles
+   used by approvals/volunteers are intentionally NOT reused), so all of its
+   inline layout lives here to keep RTL logical properties centralised. */
+
+/* Filter segmented control: one cohesive surface holding the status tabs. */
+.admin-reqlist-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2);
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-block-end: var(--sp-4);
+}
+
+/* One status tab. Hover/focus live in CSS (no inline JS handlers) so touch
+   devices skip the hover fill and reduced-motion is honoured below. */
+.admin-reqlist-tab {
+  appearance: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  min-block-size: 40px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--gray-600);
+  background: transparent;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    background var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .admin-reqlist-tab:hover { background: var(--sky-3); }
+}
+
+/* Tactile press feedback: a clicked-often control confirms the tap. The
+   scale snaps back fast (--dur-1) and collapses instantly under
+   reduced-motion (transition removed below). */
+.admin-reqlist-tab:active { transform: scale(0.97); }
+
+.admin-reqlist-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.admin-reqlist-tab.is-active {
+  font-weight: 600;
+  color: var(--white);
+  background: var(--ember);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-reqlist-tab.is-active:focus-visible {
+  box-shadow: var(--shadow-sm), var(--ring);
+}
+
+@media (hover: hover) {
+  .admin-reqlist-tab.is-active:hover { background: var(--ember); }
+}
+
+/* The archived tab sits apart from the active-status group: a quiet hairline
+   on its inline-start edge marks it as a separate bucket, not a status.
+   Logical properties auto-flip in RTL. */
+.admin-reqlist-tab--archived {
+  margin-inline-start: var(--sp-1);
+  border-inline-start-color: var(--hair);
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  padding-inline-start: var(--sp-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-reqlist-tab { transition: none; }
+  .admin-reqlist-tab:active { transform: none; }
+}
+
+/* Section header: serif title + mono result count, baseline-aligned. */
+.admin-reqlist-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sp-2);
+  margin-block: var(--sp-5) var(--sp-4);
+}
+
+.admin-reqlist-title {
+  margin: 0;
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ink);
+  text-align: start;
+  text-wrap: balance;
+}
+
+.admin-reqlist-count {
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  text-align: start;
+  /* Count stays column-stable as the list grows or shrinks. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table card: owns the frame (hairline + radius + shadow) and the horizontal
+   scroll. The inner .admin-table-wrap (globals.css chrome) is neutralised in
+   the markup so only one confident object renders with no nested corners. */
+.admin-reqlist-table-card {
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Primary cell label (beneficiary name / task title). Long titles wrap
+   inside the cell rather than forcing the table to overflow. */
+.admin-reqlist-primary {
+  font-weight: 600;
+  color: var(--ink);
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Cell with metadata that may wrap (name + badges, status + archived flag). */
+.admin-reqlist-cell {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  align-items: center;
+}
+
+/* Empty metadata placeholder (category / city not set). */
+.admin-reqlist-meta { color: var(--gray-600); }
+.admin-reqlist-meta--empty { color: var(--gray-400); }
+
+/* Per-row claims flag: an interested-volunteer marker on the request. */
+.admin-reqlist-claims {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Manage action keeps the shared ghost-button shape; just aligns its icon. */
+.admin-reqlist-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+/* ── Volunteers management (route /admin/volunteers) ───────────────────────
+   Volunteers-only selectors: the summary band, the category-permission
+   request panel, the roster identity cell, and the row action sizing.
+   Sibling admin tables (users, requests-list) do NOT use .admin-vol-*, so
+   these are scoped to this page and safe to evolve here. Replaces the
+   inline-style noise that previously lived in AdminVolunteersPage.tsx.
+   Logical properties throughout so the layout mirrors cleanly under RTL.    */
+
+/* Summary band: the live count cards for each queue. */
+.admin-vol-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-4);
+  margin-block-end: var(--sp-6);
+}
+
+/* Category-permission request panel (req 15): a quiet card grouping the
+   pending field-access requests above the main roster. */
+.admin-vol-catreq {
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  padding: var(--sp-4);
+  margin-block-end: var(--sp-5);
+}
+
+.admin-vol-catreq-title {
+  font-size: var(--fs-h3);
+  color: var(--ink);
+  margin-block-end: var(--sp-1);
+}
+
+.admin-vol-catreq-sub {
+  color: var(--gray-600);
+  font-size: var(--fs-sm);
+  margin-block-end: var(--sp-3);
+}
+
+.admin-vol-catreq-list {
+  display: grid;
+  gap: var(--sp-2);
+}
+
+/* One request row. Hover tint signals the whole row is an actionable unit;
+   colour-only change, no transform, so nothing shifts under the pointer. */
+.admin-vol-catreq-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  transition: background-color var(--dur-1) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .admin-vol-catreq-item:hover { background: var(--sky-3); }
+}
+
+.admin-vol-catreq-name { font-weight: 600; color: var(--ink); }
+
+.admin-vol-catreq-note {
+  color: var(--gray-600);
+  font-size: var(--fs-sm);
+}
+
+/* Push the action cluster to the row end (mirrors under RTL). */
+.admin-vol-catreq-actions { margin-inline-start: auto; }
+
+/* Roster identity cell: monogram + name, ellipsised when the name is long. */
+.admin-vol-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-inline-size: 0;
+}
+
+.admin-vol-avatar {
+  flex: 0 0 auto;
+  inline-size: 34px;
+  block-size: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--sky-3);
+  color: var(--ink-2);
+  border: 1px solid var(--hair);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-vol-name {
+  font-weight: 600;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Email cell; muted, with a distinct shade for the "no email" placeholder. */
+.admin-vol-email { color: var(--gray-600); }
+.admin-vol-email--empty { color: var(--gray-400); }
+
+/* Row action buttons: keep the shared .btn shape but guarantee a comfortable
+   tap target (the shared .btn-sm alone is ~30px tall) and kill the double-tap
+   zoom delay on touch. Scoped so the shared .btn-sm is untouched. */
+.admin-vol-action {
+  min-block-size: 40px;
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-vol-catreq-item { transition: none; }
+}
