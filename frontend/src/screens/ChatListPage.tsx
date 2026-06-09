@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import type { ReactNode } from "react";
 import {
   collection,
   onSnapshot,
@@ -163,392 +163,237 @@ export default function ChatListPage() {
   // Conversation count is only meaningful once the list has resolved.
   const showCount = !authLoading && !!user && !loading && !error;
 
-  // ── Shared presentational helpers ──────────────────────────────
-  const stateCardStyle: CSSProperties = {
-    padding: "clamp(40px, 6vw, 64px) clamp(28px, 5vw, 48px)",
-    textAlign: "center",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    border: "1px solid var(--hair)",
-    borderRadius: "var(--radius-lg)",
-    background: "var(--white)",
-    boxShadow: "var(--shadow-sm)",
-  };
+  const showTabs = showCount && chats.length > 0;
 
-  const stateIconWrap = (fill: string, color: string): CSSProperties => ({
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "60px",
-    height: "60px",
-    borderRadius: "50%",
-    background: fill,
-    color: color,
-    marginBlockEnd: "12px",
-  });
-
-  const stateTitleStyle: CSSProperties = {
-    fontFamily: "'Frank Ruhl Libre', Georgia, serif",
-    fontSize: "var(--fs-h3)",
-    fontWeight: 500,
-    color: "var(--ink)",
-    letterSpacing: "-0.01em",
-    margin: 0,
-  };
-
-  const stateBodyStyle: CSSProperties = {
-    color: "var(--gray-600)",
-    fontSize: "var(--fs-body)",
-    lineHeight: 1.65,
-    maxWidth: "34rem",
-    margin: "0 0 8px",
-  };
-
-  const eyebrowStyle: CSSProperties = {
-    fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-    fontSize: "var(--fs-xs)",
-    fontWeight: 500,
-    letterSpacing: "0.12em",
-    textTransform: "uppercase",
-    color: "var(--gray-400)",
-  };
-
-  // Skeleton placeholder row for the loading state.
-  const SkeletonRow = ({ last }: { last: boolean }) => (
+  // ── Shared state shell (loading / empty / error / permission) ──────
+  const renderState = (opts: {
+    icon: ReactNode;
+    tone?: "ember" | "danger" | "warning" | "muted" | "info";
+    title?: ReactNode;
+    body?: ReactNode;
+    action?: ReactNode;
+  }) => (
     <div
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "20px 24px",
-        borderBlockStart: last ? "none" : "1px solid var(--hair)",
-      }}
+      className="chat-state chat-state--card"
+      role={opts.tone === "danger" ? "alert" : undefined}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <div
-          className="skeleton"
-          style={{
-            width: "44px",
-            height: "44px",
-            borderRadius: "var(--radius)",
-          }}
-        />
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div className="skeleton" style={{ width: "160px", height: "13px", borderRadius: "999px" }} />
-          <div className="skeleton" style={{ width: "96px", height: "11px", borderRadius: "999px" }} />
+      <span
+        aria-hidden="true"
+        className={`chat-state__icon chat-state__icon--${opts.tone ?? "ember"}`}
+      >
+        {opts.icon}
+      </span>
+      {opts.title && <h2 className="chat-state__title">{opts.title}</h2>}
+      {opts.body && <p className="chat-state__body">{opts.body}</p>}
+      {opts.action && <div className="chat-state__action">{opts.action}</div>}
+    </div>
+  );
+
+  // Skeleton list for the loading state — mirrors the row shape.
+  const skeletonList = (srLabel?: string) => (
+    <div className="chat-list-card">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="chat-skel-row">
+          <div className="chat-skel-row__lead">
+            <div className="skeleton chat-skel-row__avatar" />
+            <div className="chat-skel-row__lines">
+              <div className="skeleton chat-skel-row__l1" />
+              <div className="skeleton chat-skel-row__l2" />
+            </div>
+          </div>
+          <div className="skeleton chat-skel-row__l3" />
         </div>
-      </div>
-      <div className="skeleton" style={{ width: "64px", height: "11px", borderRadius: "999px" }} />
+      ))}
+      {srLabel && <span className="sr-only">{srLabel}</span>}
     </div>
   );
 
   const renderBody = () => {
-    if (authLoading) {
-      return (
-        <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--hair)", borderRadius: "var(--radius-lg)" }}>
-          {[0, 1, 2].map((i) => (
-            <SkeletonRow key={i} last={i === 2} />
-          ))}
-        </div>
-      );
-    }
+    if (authLoading) return skeletonList();
 
     if (!user) {
-      return (
-        <div style={stateCardStyle}>
-          <span style={stateIconWrap("var(--sky-3)", "var(--ink-2)")}>
-            <Lock size={26} strokeWidth={1.75} />
-          </span>
-          <span style={eyebrowStyle}>{c.signIn}</span>
-          <h2 style={stateTitleStyle}>{c.signInRequired}</h2>
-          <p style={stateBodyStyle}>{c.signInListBody}</p>
+      return renderState({
+        tone: "ember",
+        icon: <Lock size={26} strokeWidth={1.75} />,
+        title: c.signInRequired,
+        body: c.signInListBody,
+        action: (
           <Link
             href={`/login?next=${encodeURIComponent("/chats")}`}
             className="btn btn-ember"
-            style={{ marginBlockStart: "8px" }}
           >
             {c.signIn}
           </Link>
-        </div>
-      );
+        ),
+      });
     }
 
-    if (loading) {
-      return (
-        <div className="card" style={{ padding: 0, overflow: "hidden", border: "1px solid var(--hair)", borderRadius: "var(--radius-lg)" }}>
-          {[0, 1, 2].map((i) => (
-            <SkeletonRow key={i} last={i === 2} />
-          ))}
-          <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-            {c.loadingChats}
-          </span>
-        </div>
-      );
-    }
+    if (loading) return skeletonList(c.loadingChats);
 
     if (error === "permission") {
-      return (
-        <div style={stateCardStyle}>
-          <span style={stateIconWrap("var(--warning-soft)", "var(--warning)")}>
-            <Lock size={26} strokeWidth={1.75} />
-          </span>
-          <h2 style={stateTitleStyle}>{c.signInRequired}</h2>
-          <p style={stateBodyStyle}>{c.permissionList}</p>
+      return renderState({
+        tone: "warning",
+        icon: <Lock size={26} strokeWidth={1.75} />,
+        title: c.signInRequired,
+        body: c.permissionList,
+        action: (
           <Link
             href={`/login?next=${encodeURIComponent("/chats")}`}
             className="btn btn-ember"
-            style={{ marginBlockStart: "8px" }}
           >
             {c.signInAgain}
           </Link>
-        </div>
-      );
+        ),
+      });
     }
 
     if (error) {
-      return (
-        <div style={stateCardStyle}>
-          <span style={stateIconWrap("var(--danger-soft)", "var(--danger)")}>
-            <AlertTriangle size={26} strokeWidth={1.75} />
-          </span>
-          <p style={stateBodyStyle}>{c.loadError}</p>
+      return renderState({
+        tone: "danger",
+        icon: <AlertTriangle size={26} strokeWidth={1.75} />,
+        body: c.loadError,
+        action: (
           <button
             className="btn btn-outline"
-            style={{ marginBlockStart: "8px", display: "inline-flex", alignItems: "center", gap: "8px" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}
             onClick={() => window.location.reload()}
           >
             <RotateCcw size={16} />
             {c.refresh}
           </button>
-        </div>
-      );
+        ),
+      });
     }
 
     if (chats.length === 0) {
-      return (
-        <div style={stateCardStyle}>
-          <span style={stateIconWrap("var(--ember-soft)", "var(--ember)")}>
-            <MessagesSquare size={28} strokeWidth={1.75} />
-          </span>
-          <h2 style={stateTitleStyle}>{c.emptyTitle}</h2>
-          <p style={stateBodyStyle}>{c.emptyBody}</p>
-          <Link href="/requests" className="btn btn-ember" style={{ marginBlockStart: "8px" }}>
+      return renderState({
+        tone: "ember",
+        icon: <MessagesSquare size={28} strokeWidth={1.75} />,
+        title: c.emptyTitle,
+        body: c.emptyBody,
+        action: (
+          <Link href="/requests" className="btn btn-ember">
             {c.submitRequest}
           </Link>
-        </div>
-      );
+        ),
+      });
+    }
+
+    if (visibleChats.length === 0) {
+      return renderState({
+        tone: "info",
+        icon: <MessagesSquare size={26} strokeWidth={1.75} />,
+        body: tab === "active" ? c.activeEmpty : c.pastEmpty,
+      });
     }
 
     return (
-      <>
-        {/* req 13b — active / past tab toggle */}
-        <div className="chat-tabs" role="tablist" aria-label={c.inlineHeader.title}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "active"}
-            className={`chat-tab${tab === "active" ? " chat-tab--active" : ""}`}
-            onClick={() => setTab("active")}
-          >
-            {c.activeTab}
-            <span className="chat-tab__count">{activeChats.length}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "past"}
-            className={`chat-tab${tab === "past" ? " chat-tab--active" : ""}`}
-            onClick={() => setTab("past")}
-          >
-            {c.pastTab}
-            <span className="chat-tab__count">{pastChats.length}</span>
-          </button>
-        </div>
-
-        {visibleChats.length === 0 ? (
-          <div style={stateCardStyle}>
-            <span style={stateIconWrap("var(--sky-3)", "var(--ink-2)")}>
-              <MessagesSquare size={26} strokeWidth={1.75} />
-            </span>
-            <p style={stateBodyStyle}>
-              {tab === "active" ? c.activeEmpty : c.pastEmpty}
-            </p>
-          </div>
-        ) : (
-      <div
-        className="card"
-        style={{
-          padding: 0,
-          overflow: "hidden",
-          border: "1px solid var(--hair)",
-          borderRadius: "var(--radius-lg)",
-          boxShadow: "var(--shadow-sm)",
-        }}
-      >
-        <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {visibleChats.map((chat, index) => {
-            const highlighted = !!focusRequestId && chat.requestId === focusRequestId;
+      <div className="chat-list-card">
+        <ul className="chat-list-card__ul">
+          {visibleChats.map((chat) => {
+            const highlighted =
+              !!focusRequestId && chat.requestId === focusRequestId;
             return (
-            <li key={chat.id}>
-              <Link
-                href={`/chats/${chat.id}`}
-                aria-label={`${c.request} ${chat.requestId}`}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "16px",
-                  padding: "18px 22px",
-                  textDecoration: "none",
-                  borderBlockStart: index > 0 ? "1px solid var(--hair)" : "none",
-                  background: highlighted ? "var(--ember-soft)" : "transparent",
-                  boxShadow: highlighted ? "inset 3px 0 0 var(--ember)" : "none",
-                  transition: "background var(--dur-2) var(--ease-out)",
-                  outline: "none",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--sky-3)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = highlighted ? "var(--ember-soft)" : "transparent")}
-                onFocus={(e) => {
-                  e.currentTarget.style.background = "var(--sky-3)";
-                  e.currentTarget.style.boxShadow = "inset 0 0 0 2px var(--ember)";
-                }}
-                onBlur={(e) => {
-                  e.currentTarget.style.background = highlighted ? "var(--ember-soft)" : "transparent";
-                  e.currentTarget.style.boxShadow = highlighted ? "inset 3px 0 0 var(--ember)" : "none";
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "16px", minWidth: 0 }}>
-                  <span
-                    aria-hidden="true"
-                    style={{
-                      flexShrink: 0,
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "var(--radius)",
-                      background: "var(--ember-soft)",
-                      color: "var(--ember)",
-                    }}
-                  >
-                    <MessageCircle size={21} strokeWidth={1.9} />
-                  </span>
-
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontWeight: 600,
-                        color: "var(--ink)",
-                        fontSize: "var(--fs-body)",
-                        lineHeight: 1.35,
-                      }}
-                    >
-                      {c.request}{" "}
-                      <span
-                        style={{
-                          fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                          fontSize: "var(--fs-sm)",
-                          color: "var(--ember-700)",
-                        }}
-                      >
-                        {chat.requestId}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        color: "var(--gray-500)",
-                        fontSize: "var(--fs-sm)",
-                        marginBlockStart: "4px",
-                      }}
-                    >
-                      <Users size={14} strokeWidth={1.9} aria-hidden="true" />
-                      {chat.participants.length} {c.participants}
-                      {isPastChat(chat) && (
-                        <span className="chat-past-badge">{c.pastBadge}</span>
-                      )}
+              <li key={chat.id}>
+                <Link
+                  href={`/chats/${chat.id}`}
+                  aria-label={`${c.request} ${chat.requestId}`}
+                  className={`chat-row${highlighted ? " chat-row--focus" : ""}`}
+                >
+                  <div className="chat-row__lead">
+                    <span className="chat-row__icon" aria-hidden="true">
+                      <MessageCircle size={21} strokeWidth={1.9} />
+                    </span>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="chat-row__title">
+                        {c.request}{" "}
+                        <span className="chat-row__id">{chat.requestId}</span>
+                      </div>
+                      <div className="chat-row__meta">
+                        <Users size={14} strokeWidth={1.9} aria-hidden="true" />
+                        {chat.participants.length} {c.participants}
+                        {isPastChat(chat) && (
+                          <span className="chat-past-badge">{c.pastBadge}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    flexShrink: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      color: "var(--gray-500)",
-                      fontSize: "var(--fs-sm)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    <Clock size={13} strokeWidth={1.9} aria-hidden="true" />
-                    {chat.lastMessageAt ? formatDate(chat.lastMessageAt, lang) : "—"}
-                  </span>
-                  <ChevronIcon
-                    size={18}
-                    strokeWidth={2}
-                    aria-hidden="true"
-                    style={{ color: "var(--gray-400)" }}
-                  />
-                </div>
-              </Link>
-            </li>
+                  <div className="chat-row__end">
+                    <span className="chat-row__time">
+                      <Clock size={13} strokeWidth={1.9} aria-hidden="true" />
+                      {chat.lastMessageAt
+                        ? formatDate(chat.lastMessageAt, lang)
+                        : "-"}
+                    </span>
+                    <ChevronIcon
+                      size={18}
+                      strokeWidth={2}
+                      aria-hidden="true"
+                      className="chat-row__chevron"
+                    />
+                  </div>
+                </Link>
+              </li>
             );
           })}
         </ul>
       </div>
-        )}
-      </>
     );
   };
 
   return (
-    <>
-      {/* ── Inline editorial header (eyebrow → serif title → count) ── */}
-      <div
-        className="page-container chat-inline-header"
-        style={{
-          maxWidth: "820px",
-          paddingBlock: "clamp(36px, 5vw, 56px) clamp(20px, 3vw, 28px)",
-        }}
-      >
-        <Reveal>
-          <header className="chat-inline-header__inner">
-            <span className="eyebrow chat-inline-header__eyebrow">
+    <div className="page-container chat-list-shell">
+      <div className="chat-list-layout">
+        {/* ── Title + filter rail (offset inline-start) ── */}
+        <aside className="chat-list-rail">
+          <Reveal>
+            <span className="eyebrow chat-list-rail__eyebrow">
               {c.inlineHeader.eyebrow}
             </span>
-            <h1 className="chat-inline-header__title">{c.inlineHeader.title}</h1>
+            <h1 className="chat-list-rail__title">{c.inlineHeader.title}</h1>
             {showCount && (
-              <p className="chat-inline-header__count">
+              <p className="chat-list-rail__count">
                 {c.conversationCount(chats.length)}
               </p>
             )}
-          </header>
-        </Reveal>
-      </div>
 
-      <div
-        className="page-container"
-        style={{
-          maxWidth: "820px",
-          paddingBlock: "0 clamp(56px, 8vw, 88px)",
-        }}
-      >
-        <Reveal>{renderBody()}</Reveal>
+            {showTabs && (
+              <div
+                className="chat-filter"
+                role="tablist"
+                aria-label={c.inlineHeader.title}
+              >
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "active"}
+                  className={`chat-filter__tab${tab === "active" ? " chat-filter__tab--active" : ""}`}
+                  onClick={() => setTab("active")}
+                >
+                  <span>{c.activeTab}</span>
+                  <span className="chat-filter__count">{activeChats.length}</span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === "past"}
+                  className={`chat-filter__tab${tab === "past" ? " chat-filter__tab--active" : ""}`}
+                  onClick={() => setTab("past")}
+                >
+                  <span>{c.pastTab}</span>
+                  <span className="chat-filter__count">{pastChats.length}</span>
+                </button>
+              </div>
+            )}
+          </Reveal>
+        </aside>
+
+        {/* ── Conversation list (wide column) ── */}
+        <div className="chat-list-main">
+          <Reveal>{renderBody()}</Reveal>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

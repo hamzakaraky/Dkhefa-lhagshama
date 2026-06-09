@@ -1,101 +1,300 @@
-/* Chat screens — screen-specific classes (ChatListPage, ChatWindowPage). */
+/* Chat screens — screen-specific classes (ChatListPage, ChatWindowPage).
+   Redesign: asymmetric composition (a context/filter rail offset against the
+   conversation), one shared state shell, full borders / tints instead of
+   side-stripes, status-driven dot color. All logical-property based so the
+   HE / RTL layout falls out of `direction` with no mirrored overrides. */
 
-/* ── Note 3 — compact, start-aligned inline editorial header ──────────
-   Replaces the empty PageHeader band on the chat list + window. Matches
-   the DirectoryPage eyebrow → serif title pattern. */
-.chat-inline-header__inner {
-  text-align: start;
+/* ─────────────────────────────────────────────────────────────────────
+   1. PAGE SHELLS + ASYMMETRIC GRIDS
+   The page block stays centered; the *composition inside it* is offset
+   (narrow rail + wide conversation), which is the asymmetry. Collapses to
+   a single column below 900px.
+───────────────────────────────────────────────────────────────────── */
+.chat-list-shell,
+.chat-window-shell {
+  max-width: 1040px;
 }
 
-/* Window header places the title block and the "all chats" link on one
-   baseline-aligned row, wrapping on narrow viewports. */
-.chat-inline-header__inner--window {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+.chat-list-shell {
+  padding-block: clamp(36px, 5vw, 64px) clamp(56px, 8vw, 88px);
 }
 
-.chat-inline-header__eyebrow {
+/* Tap behaviour for the interactive surfaces on both screens: kill the
+   double-tap zoom delay and the grey mobile tap flash. */
+.chat-row,
+.chat-filter__tab,
+.chat-attach-btn,
+.chat-file-bubble,
+.chat-composer__input {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chat-window-shell {
+  padding-block: clamp(24px, 4vw, 40px) clamp(48px, 7vw, 80px);
+}
+
+.chat-list-layout,
+.chat-window-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: clamp(24px, 4vw, 48px);
+}
+
+@media (min-width: 900px) {
+  .chat-list-layout {
+    grid-template-columns: minmax(208px, 0.8fr) minmax(0, 2fr);
+    align-items: start;
+  }
+  .chat-window-layout {
+    grid-template-columns: minmax(0, 2.1fr) minmax(248px, 0.9fr);
+    align-items: start;
+  }
+  /* Source order is main → rail; on desktop the rail moves to the
+     inline-end column and the conversation takes the inline-start one. */
+  .chat-window-main { grid-column: 1; }
+  .chat-window-rail {
+    grid-column: 2;
+    position: sticky;
+    top: calc(var(--nav-h) + 16px);
+  }
+  /* Title/filter rail tracks the list while it scrolls. */
+  .chat-list-rail {
+    position: sticky;
+    top: calc(var(--nav-h) + 16px);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   2. LIST RAIL — title block + vertical filter
+───────────────────────────────────────────────────────────────────── */
+.chat-list-rail__eyebrow {
   display: block;
   color: var(--ember);
   margin-block-end: 12px;
 }
 
-.chat-inline-header__title {
+.chat-list-rail__title {
   font-family: "Frank Ruhl Libre", Georgia, serif;
   font-size: var(--fs-h2);
   font-weight: 500;
   letter-spacing: -0.01em;
-  line-height: 1.15;
+  line-height: 1.12;
   color: var(--ink);
   margin: 0;
+  text-wrap: balance;
 }
 
-.chat-inline-header__count {
+.chat-list-rail__count {
   margin: 10px 0 0;
   color: var(--gray-500);
   font-size: var(--fs-sm);
 }
 
-/* ── req 9 — chat-window header actions (open request + all chats) ──── */
-.chat-window-header-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-}
-
-/* ── req 13b — active / past chat tab toggle ──────────────────────────
-   Segmented control above the chat list. Logical properties keep the
-   active-tab counter on the correct side in RTL. */
-.chat-tabs {
-  display: inline-flex;
+/* Vertical segmented filter (Active / Past). Full-width rows so the rail
+   reads as a filter list, not a floating decorative label. */
+.chat-filter {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  margin-block-end: 18px;
-  padding: 4px;
-  background: var(--sky-3);
-  border: 1px solid var(--hair);
-  border-radius: 999px;
+  margin-block-start: clamp(20px, 3vw, 28px);
 }
 
-.chat-tab {
+.chat-filter__tab {
   appearance: none;
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 999px;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--gray-600);
   font: inherit;
   font-size: var(--fs-sm);
   font-weight: 600;
+  text-align: start;
   cursor: pointer;
-  transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+  transition: background var(--dur-2) var(--ease-out),
+    color var(--dur-2) var(--ease-out),
+    border-color var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
 }
 
-.chat-tab--active {
+@media (hover: hover) and (pointer: fine) {
+  .chat-filter__tab:hover:not(.chat-filter__tab--active) {
+    background: var(--sky-3);
+    color: var(--ink);
+  }
+}
+
+.chat-filter__tab:active { transform: scale(0.97); }
+
+.chat-filter__tab:focus-visible {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: var(--ring);
+}
+
+/* Selected tab as a raised chip: ember-700 on white is 7.6:1 (vs ~4.3:1 for
+   ember-700 on the ember-soft tint), while the ember count pill + elevation
+   still read as "active". */
+.chat-filter__tab--active {
   background: var(--white);
-  color: var(--ink);
+  color: var(--ember-700);
+  border-color: var(--hair);
   box-shadow: var(--shadow-xs);
 }
 
-.chat-tab__count {
+.chat-filter__count {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 18px;
-  padding-inline: 6px;
+  min-width: 22px;
+  height: 20px;
+  padding-inline: 7px;
   border-radius: 999px;
-  background: var(--ember-soft);
-  color: var(--ember-700);
-  font-size: 11px;
+  background: var(--sky-3);
+  color: var(--gray-600);
+  font-size: 12px;
   font-weight: 600;
+}
+
+/* cream on ember-700 ≈ 4.83:1 (passes AA); plain ember was ~3.5:1. */
+.chat-filter__tab--active .chat-filter__count {
+  background: var(--ember-700);
+  color: var(--cream);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   3. CONVERSATION LIST + ROWS
+───────────────────────────────────────────────────────────────────── */
+.chat-list-card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.chat-list-card__ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: 18px 22px;
+  text-decoration: none;
+  background: transparent;
+  transition: background var(--dur-2) var(--ease-out);
+}
+
+.chat-row + .chat-row,
+.chat-list-card li + li .chat-row {
+  border-block-start: 1px solid var(--hair);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .chat-row:hover { background: var(--sky-3); }
+  .chat-row--focus:hover { background: var(--ember-soft); }
+}
+
+/* Press feedback: a touch deeper than hover, no scale (a full-width row
+   scaling reads as a glitch). */
+.chat-row:active { background: var(--sky-2); }
+.chat-row--focus:active { background: var(--ember-soft); }
+
+.chat-row:focus-visible {
+  outline: none;
+  /* Full inset ring, not a one-sided accent stripe. */
+  box-shadow: inset 0 0 0 2px var(--ember);
+  background: var(--sky-3);
+}
+
+/* Focused / deep-linked row: a background tint carries the highlight —
+   no side-stripe. */
+.chat-row--focus { background: var(--ember-soft); }
+
+.chat-row__lead {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  min-width: 0;
+}
+
+.chat-row__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--ember-soft);
+  color: var(--ember);
+}
+
+.chat-row--focus .chat-row__icon {
+  background: var(--ember);
+  color: var(--cream);
+}
+
+.chat-row__title {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: var(--fs-body);
+  line-height: 1.35;
+}
+
+.chat-row__id {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--fs-sm);
+  color: var(--ember-700);
+}
+
+.chat-row__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-block-start: 4px;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+}
+
+.chat-row__end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.chat-row__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+}
+
+.chat-row__chevron {
+  /* gray-500 (~5:1) clears the 3:1 non-text-contrast bar; gray-400 was ~2.9:1. */
+  color: var(--gray-500);
+  transition: transform var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+
+/* Hover nudges the chevron toward where the row leads (reading direction). */
+@media (hover: hover) and (pointer: fine) {
+  .chat-row:hover .chat-row__chevron { transform: translateX(3px); color: var(--ember); }
+  [dir="rtl"] .chat-row:hover .chat-row__chevron { transform: translateX(-3px); }
 }
 
 /* "Closed" tag on past-chat rows. */
@@ -112,11 +311,232 @@
   color: var(--gray-600);
 }
 
-/* ── Note 11 — participant identity (photo + name) ────────────────────
-   Avatar shown for the other participant in the panel header and on
-   incoming message rows. Photo variant is a cover-cropped circle; the
-   initials variant is the same circle filled with the editorial sky
-   tint + ember letters, matching the admin roster avatars. */
+/* ─────────────────────────────────────────────────────────────────────
+   4. SHARED STATE SHELL (loading / empty / error / permission)
+   One vocabulary across both screens and inside the message feed.
+───────────────────────────────────────────────────────────────────── */
+.chat-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--sp-2);
+  max-width: 34rem;
+  margin-inline: auto;
+  padding: clamp(36px, 6vw, 60px) clamp(24px, 5vw, 44px);
+}
+
+/* When the shell is the only thing in a list column, give it the card frame. */
+.chat-state--card {
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Centered inside the scrolling message feed. */
+.chat-state--feed {
+  margin: auto;
+  max-width: 26rem;
+  padding-block: var(--sp-7);
+}
+
+.chat-state__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
+  margin-block-end: 10px;
+  background: var(--ember-soft);
+  color: var(--ember);
+}
+
+.chat-state__icon--danger { background: var(--danger-soft); color: var(--danger); }
+.chat-state__icon--warning { background: var(--warning-soft); color: var(--warning); }
+.chat-state__icon--muted { background: var(--gray-100); color: var(--gray-500); }
+.chat-state__icon--info { background: var(--sky-3); color: var(--ink-2); }
+
+.chat-state__title {
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0;
+}
+
+.chat-state__body {
+  color: var(--gray-600);
+  font-size: var(--fs-body);
+  line-height: 1.65;
+  margin: 0 0 4px;
+}
+
+.chat-state__action { margin-block-start: 8px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   5. SKELETON ROW (list loading)
+───────────────────────────────────────────────────────────────────── */
+.chat-skel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+}
+.chat-skel-row + .chat-skel-row { border-block-start: 1px solid var(--hair); }
+.chat-skel-row__lead { display: flex; align-items: center; gap: 16px; }
+.chat-skel-row__lines { display: flex; flex-direction: column; gap: 8px; }
+.chat-skel-row__avatar { width: 44px; height: 44px; border-radius: var(--radius); }
+.chat-skel-row__l1 { width: 160px; height: 13px; border-radius: 999px; }
+.chat-skel-row__l2 { width: 96px; height: 11px; border-radius: 999px; }
+.chat-skel-row__l3 { width: 64px; height: 11px; border-radius: 999px; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   6. WINDOW — slim top bar
+───────────────────────────────────────────────────────────────────── */
+.chat-window-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-block-end: clamp(20px, 3vw, 28px);
+}
+
+.chat-window-bar__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   7. WINDOW — context rail (identity + status + actions)
+───────────────────────────────────────────────────────────────────── */
+.chat-window-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.chat-rail-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--sp-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-xs);
+}
+
+.chat-rail-name {
+  font-family: "Frank Ruhl Libre", Georgia, serif;
+  font-size: var(--fs-h3);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  color: var(--ink);
+  margin: 0;
+  text-wrap: balance;
+}
+
+.chat-rail-sub {
+  margin: 0;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+}
+
+.chat-rail-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-xs);
+}
+
+.chat-rail-status--closed { background: var(--gray-50); }
+
+.chat-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.chat-status__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  background: var(--gray-400);
+}
+
+/* Status-driven color (was always-ember). */
+.chat-status__dot--active { background: var(--ember); }
+.chat-status__dot--open { background: var(--info); }
+.chat-status__dot--ok { background: var(--success); }
+.chat-status__dot--done { background: var(--gray-400); }
+
+.chat-status__label {
+  font-size: var(--fs-sm);
+  color: var(--gray-600);
+  letter-spacing: 0.01em;
+}
+
+.chat-rail-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.chat-rail-actions .btn { width: 100%; justify-content: center; }
+
+.chat-rail-note {
+  font-size: var(--fs-sm);
+  color: var(--gray-600);
+  line-height: 1.5;
+}
+
+.chat-action-spin { animation: chat-spin 0.8s linear infinite; }
+
+/* ─────────────────────────────────────────────────────────────────────
+   8. WINDOW — conversation panel (feed + composer)
+───────────────────────────────────────────────────────────────────── */
+.chat-conv {
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+}
+
+.chat-feed {
+  flex: 1;
+  overflow-y: auto;
+  /* Keep scroll momentum inside the feed; don't chain to the page. */
+  overscroll-behavior: contain;
+  min-height: 46vh;
+  max-height: 62vh;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  background: var(--paper);
+}
+
+/* The feed is focusable (tabIndex=0) so it can be scrolled by keyboard. */
+.chat-feed:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: -2px;
+}
+
+/* ── avatars (panel + message rows) ── */
 .chat-avatar {
   flex-shrink: 0;
   border-radius: 999px;
@@ -124,16 +544,9 @@
   border: 1px solid var(--hair);
   background: var(--white);
 }
-
-.chat-avatar--md {
-  width: 40px;
-  height: 40px;
-}
-
-.chat-avatar--sm {
-  width: 28px;
-  height: 28px;
-}
+.chat-avatar--lg { width: 52px; height: 52px; }
+.chat-avatar--md { width: 40px; height: 40px; }
+.chat-avatar--sm { width: 28px; height: 28px; }
 
 .chat-avatar--initials {
   display: inline-flex;
@@ -148,14 +561,9 @@
   text-transform: uppercase;
   user-select: none;
 }
-
-.chat-avatar--initials.chat-avatar--md {
-  font-size: var(--fs-sm);
-}
-
-.chat-avatar--initials.chat-avatar--sm {
-  font-size: var(--fs-xs);
-}
+.chat-avatar--initials.chat-avatar--lg { font-size: var(--fs-body); }
+.chat-avatar--initials.chat-avatar--md { font-size: var(--fs-sm); }
+.chat-avatar--initials.chat-avatar--sm { font-size: var(--fs-xs); }
 
 /* Message row: avatar + bubble column. flex-direction is set inline per
    message (row / row-reverse) so the avatar sits on the correct side in
@@ -165,110 +573,114 @@
   align-items: flex-end;
   gap: var(--sp-2);
   max-width: 82%;
-}
-
-/* Mine rows (row-reverse, justify flex-end) push to the inline-end edge. */
-.chat-msg-row {
   margin-inline-start: auto;
 }
-
 .chat-msg-row:has(.chat-msg-row__avatar) {
   margin-inline-start: 0;
   margin-inline-end: auto;
 }
-
 .chat-msg-row__avatar {
   display: inline-flex;
   flex-shrink: 0;
-  margin-block-end: 22px; /* aligns avatar with the bubble, clearing the timestamp line */
+  margin-block-end: 22px; /* clears the timestamp line, aligns to bubble */
 }
 
-/* ── Note 6 — linked-request lifecycle strip ──────────────────────────
-   A slim band between the panel header and the message feed. Surfaces the
-   linked request's status and, for the assigned volunteer/handler, the
-   "Mark as done" action. Logical properties keep it RTL-correct. */
-.chat-lifecycle-strip {
+.chat-msg-col {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-3);
-  flex-wrap: wrap;
-  padding-inline: var(--sp-5);
-  padding-block: 10px;
-  border-block-end: 1px solid var(--hair);
-  background: var(--paper);
-}
-
-.chat-lifecycle-strip__status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--sp-2);
+  flex-direction: column;
   min-width: 0;
 }
 
-.chat-lifecycle-strip__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--ember);
-  flex-shrink: 0;
-}
-
-.chat-lifecycle-strip__label {
+/* ── text bubble ── */
+.chat-bubble {
+  max-width: 100%;
+  padding: 10px 14px;
   font-size: var(--fs-sm);
-  color: var(--gray-600);
-  letter-spacing: 0.01em;
+  line-height: 1.6;
+  word-break: break-word;
+  text-align: start;
+  /* Entrance plays once per message; React keys by id so only newly
+     arrived bubbles animate, never re-renders of existing ones. */
+  animation: chat-bubble-in var(--dur-3) var(--ease-out) both;
+}
+.chat-bubble--in {
+  align-self: flex-start;
+  background: var(--white);
+  color: var(--gray-700);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+  box-shadow: var(--shadow-xs);
+}
+.chat-bubble--mine {
+  align-self: flex-end;
+  background: var(--ink);
+  color: var(--cream);
+  border: 1px solid var(--ink);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-.chat-lifecycle-strip__action {
-  flex-shrink: 0;
-  display: inline-flex;
+.chat-time {
+  font-size: var(--fs-xs);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+  margin-block-start: 4px;
+  margin-inline: 4px;
+}
+.chat-msg-col--mine .chat-time { align-self: flex-end; }
+
+/* ── composer ── */
+.chat-composer {
+  display: flex;
+  gap: var(--sp-3);
   align-items: center;
-  gap: 8px;
+  padding-inline: var(--sp-5);
+  padding-block: var(--sp-4);
+  border-block-start: 1px solid var(--hair);
+  background: var(--white);
 }
 
-.chat-lifecycle-strip__spin {
-  animation: chat-lifecycle-spin 0.8s linear infinite;
+.chat-composer__input {
+  flex: 1;
+  min-width: 0;
+  padding-inline: var(--sp-4);
+  padding-block: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--hair);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: start;
+  transition: border-color var(--dur-2) var(--ease-out),
+    box-shadow var(--dur-2) var(--ease-out);
+}
+.chat-composer__input::placeholder { color: var(--gray-500); }
+.chat-composer__input:focus-visible {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: var(--ring);
 }
 
-@keyframes chat-lifecycle-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-lifecycle-strip__spin {
-    animation: none;
-  }
-}
-
-/* ── req 25 — close-consent controls inside the lifecycle strip ─────────
-   A small cluster of actions (request / confirm / decline / cancel) plus an
-   optional inline note. Wraps under the status label on narrow viewports.
-   Logical properties keep it RTL-safe. */
-.chat-lifecycle-strip__consent {
-  display: inline-flex;
+/* Inline send error below the panel. */
+.chat-send-error {
+  display: flex;
   align-items: center;
   gap: var(--sp-2);
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
-
-.chat-lifecycle-strip__note {
+  margin-block-start: var(--sp-4);
+  padding: 12px var(--sp-4);
+  border-radius: var(--radius);
+  background: var(--danger-soft);
+  border: 1px solid var(--danger);
+  color: var(--danger);
   font-size: var(--fs-sm);
-  color: var(--gray-600);
-  letter-spacing: 0.01em;
+  text-align: start;
 }
 
-/* Closed state — the whole strip reads as resolved. */
-.chat-lifecycle-strip--closed .chat-lifecycle-strip__dot {
-  background: var(--gray-400);
-}
-
-/* ── req 26 — composer file-attach button ──────────────────────────────
-   Square ghost button sitting before the text input. Matches the input
-   height (44px) so the composer row stays on one baseline. */
+/* ─────────────────────────────────────────────────────────────────────
+   9. COMPOSER FILE-ATTACH BUTTON
+───────────────────────────────────────────────────────────────────── */
 .chat-attach-btn {
   appearance: none;
   flex-shrink: 0;
@@ -283,40 +695,28 @@
   color: var(--gray-600);
   cursor: pointer;
   transition: border-color var(--dur-2) var(--ease-out),
-    color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
+    color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
 }
-
-.chat-attach-btn:hover:not(:disabled) {
-  border-color: var(--ember);
-  color: var(--ember);
-  background: var(--ember-soft);
+@media (hover: hover) and (pointer: fine) {
+  .chat-attach-btn:hover:not(:disabled) {
+    border-color: var(--ember);
+    color: var(--ember);
+    background: var(--ember-soft);
+  }
 }
-
+.chat-attach-btn:active:not(:disabled) { transform: scale(0.93); }
 .chat-attach-btn:focus-visible {
   outline: none;
   border-color: var(--ember);
   box-shadow: var(--ring);
 }
+.chat-attach-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.chat-attach-btn__spin { animation: chat-spin 0.8s linear infinite; }
 
-.chat-attach-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-
-.chat-attach-btn__spin {
-  animation: chat-lifecycle-spin 0.8s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chat-attach-btn__spin {
-    animation: none;
-  }
-}
-
-/* ── req 26 — downloadable file bubble inside a message ─────────────────
-   Replaces the text body when a message carries an attachment. The colour
-   scheme adapts to mine / incoming via modifier classes so it sits well on
-   the dark (mine) and light (incoming) bubbles. */
+/* ─────────────────────────────────────────────────────────────────────
+   10. DOWNLOADABLE FILE BUBBLE
+───────────────────────────────────────────────────────────────────── */
 .chat-file-bubble {
   appearance: none;
   display: inline-flex;
@@ -331,24 +731,21 @@
   text-align: start;
   cursor: pointer;
   box-shadow: var(--shadow-xs);
+  animation: chat-bubble-in var(--dur-3) var(--ease-out) both;
   transition: border-color var(--dur-2) var(--ease-out),
-    box-shadow var(--dur-2) var(--ease-out);
+    box-shadow var(--dur-2) var(--ease-out),
+    transform var(--dur-1) var(--ease-out);
 }
-
-.chat-file-bubble:hover:not(:disabled) {
-  border-color: var(--ember);
+@media (hover: hover) and (pointer: fine) {
+  .chat-file-bubble:hover:not(:disabled) { border-color: var(--ember); }
 }
-
+.chat-file-bubble:active:not(:disabled) { transform: scale(0.98); }
 .chat-file-bubble:focus-visible {
   outline: none;
   border-color: var(--ember);
   box-shadow: var(--ring);
 }
-
-.chat-file-bubble:disabled {
-  cursor: progress;
-  opacity: 0.75;
-}
+.chat-file-bubble:disabled { cursor: progress; opacity: 0.75; }
 
 .chat-file-bubble--mine {
   background: var(--ink);
@@ -368,7 +765,6 @@
   background: var(--ember-soft);
   color: var(--ember);
 }
-
 .chat-file-bubble--mine .chat-file-bubble__icon {
   background: rgba(255, 255, 255, 0.14);
   color: var(--cream);
@@ -380,7 +776,6 @@
   min-width: 0;
   gap: 2px;
 }
-
 .chat-file-bubble__name {
   font-size: var(--fs-sm);
   font-weight: 600;
@@ -389,7 +784,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .chat-file-bubble__sub {
   display: inline-flex;
   align-items: center;
@@ -398,20 +792,37 @@
   letter-spacing: 0.02em;
   opacity: 0.8;
 }
-
 .chat-file-bubble__action {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   margin-inline-start: auto;
 }
+.chat-file-bubble__spin { animation: chat-spin 0.8s linear infinite; }
 
-.chat-file-bubble__spin {
-  animation: chat-lifecycle-spin 0.8s linear infinite;
+/* ─────────────────────────────────────────────────────────────────────
+   11. MOTION
+───────────────────────────────────────────────────────────────────── */
+@keyframes chat-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Subtle settle for a freshly arrived message bubble. */
+@keyframes chat-bubble-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chat-file-bubble__spin {
-    animation: none;
-  }
+  .chat-action-spin,
+  .chat-attach-btn__spin,
+  .chat-file-bubble__spin { animation: none; }
+  /* Keep the comprehension cue (fade) but drop all movement. */
+  .chat-bubble,
+  .chat-file-bubble { animation: none; }
+  .chat-row:hover .chat-row__chevron,
+  [dir="rtl"] .chat-row:hover .chat-row__chevron { transform: none; }
+  .chat-filter__tab:active,
+  .chat-attach-btn:active:not(:disabled),
+  .chat-file-bubble:active:not(:disabled) { transform: none; }
 }

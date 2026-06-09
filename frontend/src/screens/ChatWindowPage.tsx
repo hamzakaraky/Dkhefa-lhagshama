@@ -326,7 +326,6 @@ export default function ChatWindowPage() {
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
-  const [inputFocused, setInputFocused] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   // ── req 26 — file attachments ──────────────────────────────────────────
@@ -338,11 +337,20 @@ export default function ChatWindowPage() {
   const isRtl = lang === "he";
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
-  // Auto-scroll to bottom when new messages arrive.
+  // Auto-scroll to bottom when new messages arrive. Jump instantly on the
+  // first paint (no scroll-through of history) and whenever reduced motion is
+  // requested; glide only for messages arriving in an already-open chat.
+  const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    const el = bottomRef.current;
+    if (!el) return;
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const behavior: ScrollBehavior =
+      !didInitialScrollRef.current || prefersReduced ? "auto" : "smooth";
+    didInitialScrollRef.current = true;
+    el.scrollIntoView({ behavior });
   }, [messages]);
 
   async function handleSend(e: FormEvent<HTMLFormElement>) {
@@ -462,8 +470,8 @@ export default function ChatWindowPage() {
   }
 
   // ── Note 11 — avatar: photo when available, initials circle otherwise ──
-  function renderAvatar(name: string, avatarUrl: string | null, size: "sm" | "md") {
-    const px = size === "sm" ? 28 : 40;
+  function renderAvatar(name: string, avatarUrl: string | null, size: "sm" | "md" | "lg") {
+    const px = size === "sm" ? 28 : size === "lg" ? 52 : 40;
     if (avatarUrl) {
       return (
         <img
@@ -487,74 +495,27 @@ export default function ChatWindowPage() {
   }
 
   // ── Shared centred-state shell (loading / empty / error / permission) ──
+  // Reuses the cross-screen `.chat-state` vocabulary; here it sits centred
+  // inside the scrolling message feed.
   interface FeedStateProps {
     icon: ReactNode;
-    tone?: "neutral" | "danger" | "muted" | "ember" | string;
+    tone?: "ember" | "danger" | "muted";
     title?: ReactNode;
     body?: ReactNode;
   }
-  function renderFeedState({ icon, tone = "neutral", title: stateTitle, body }: FeedStateProps) {
-    const ring =
-      tone === "danger"
-        ? "var(--danger-soft)"
-        : tone === "muted"
-        ? "var(--gray-100)"
-        : "var(--ember-soft)";
-    const fg =
-      tone === "danger"
-        ? "var(--danger)"
-        : tone === "muted"
-        ? "var(--gray-500)"
-        : "var(--ember)";
+  function renderFeedState({ icon, tone = "ember", title: stateTitle, body }: FeedStateProps) {
     const isError = tone === "danger";
     return (
       <div
+        className="chat-state chat-state--feed"
         role={isError ? "alert" : "status"}
         aria-live={isError ? "assertive" : "polite"}
-        style={{
-          margin: "auto",
-          maxWidth: "26rem",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          textAlign: "center",
-          gap: "var(--sp-3)",
-          paddingBlock: "var(--sp-7)",
-        }}
       >
-        <span
-          aria-hidden="true"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "56px",
-            height: "56px",
-            borderRadius: "var(--radius-lg)",
-            background: ring,
-            color: fg,
-          }}
-        >
+        <span aria-hidden="true" className={`chat-state__icon chat-state__icon--${tone}`}>
           {icon}
         </span>
-        {stateTitle && (
-          <p
-            style={{
-              fontFamily: "Frank Ruhl Libre, Georgia, serif",
-              fontSize: "var(--fs-h3)",
-              color: "var(--ink)",
-              margin: 0,
-              lineHeight: 1.2,
-            }}
-          >
-            {stateTitle}
-          </p>
-        )}
-        {body && (
-          <p style={{ color: "var(--gray-500)", fontSize: "var(--fs-sm)", lineHeight: 1.65, margin: 0 }}>
-            {body}
-          </p>
-        )}
+        {stateTitle && <p className="chat-state__title">{stateTitle}</p>}
+        {body && <p className="chat-state__body">{body}</p>}
       </div>
     );
   }
@@ -562,557 +523,399 @@ export default function ChatWindowPage() {
   // Auth gate: don't render the chat UI for logged-out users.
   if (!authLoading && !user) {
     return (
-      <>
-        <div
-          className="page-container chat-inline-header"
-          style={{ maxWidth: "640px", paddingBlock: "clamp(36px, 5vw, 56px) clamp(20px, 3vw, 28px)" }}
-        >
-          <header className="chat-inline-header__inner">
-            <span className="eyebrow chat-inline-header__eyebrow">{c.inlineHeader.eyebrow}</span>
-            <h1 className="chat-inline-header__title">{c.signInRequired}</h1>
-          </header>
-        </div>
-        <div className="page-container" style={{ maxWidth: "640px", paddingBlock: "0 var(--sp-9)" }}>
-          <Reveal>
-            <div className="card" style={{ padding: "var(--sp-7)", textAlign: "center" }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "60px",
-                  height: "60px",
-                  borderRadius: "var(--radius-lg)",
-                  background: "var(--ember-soft)",
-                  color: "var(--ember)",
-                  marginBlockEnd: "var(--sp-4)",
-                }}
-              >
-                <Lock size={26} />
-              </span>
-              <h2
-                style={{
-                  fontFamily: "Frank Ruhl Libre, Georgia, serif",
-                  fontSize: "var(--fs-h2)",
-                  fontWeight: 400,
-                  color: "var(--ink)",
-                  margin: "0 0 var(--sp-2)",
-                  lineHeight: 1.2,
-                }}
-              >
-                {c.signInRequired}
-              </h2>
-              <p
-                style={{
-                  color: "var(--gray-500)",
-                  margin: "0 auto var(--sp-5)",
-                  lineHeight: 1.7,
-                  maxWidth: "30rem",
-                }}
-              >
-                {c.signInWindowBody}
-              </p>
+      <div className="page-container chat-window-shell" style={{ maxWidth: "560px" }}>
+        <Reveal>
+          <div className="chat-state chat-state--card">
+            <span aria-hidden="true" className="chat-state__icon chat-state__icon--ember">
+              <Lock size={26} />
+            </span>
+            <h1 className="chat-state__title">{c.signInRequired}</h1>
+            <p className="chat-state__body">{c.signInWindowBody}</p>
+            <div className="chat-state__action">
               <Link href={`/login?next=${encodeURIComponent(router.asPath)}`} className="btn btn-ember">
                 {c.signIn}
                 <ArrowRight size={16} style={{ transform: isRTL ? "scaleX(-1)" : "none" }} />
               </Link>
             </div>
-          </Reveal>
-        </div>
-      </>
+          </div>
+        </Reveal>
+      </div>
     );
   }
 
+  // Status-driven dot color for the rail (was always ember).
+  const statusDotClass = (() => {
+    const s = linkedRequest?.status;
+    if (s === "closed" || s === "rejected") return "chat-status__dot--done";
+    if (s === "in_progress" || s === "awaiting_review") return "chat-status__dot--active";
+    if (s === "resolved" || s === "done") return "chat-status__dot--ok";
+    return "chat-status__dot--open";
+  })();
+
   return (
-    <>
-      {/* ── Inline editorial header: eyebrow (Messages) + human title ── */}
-      <div
-        className="page-container chat-inline-header"
-        style={{ maxWidth: "760px", paddingBlock: "clamp(36px, 5vw, 56px) clamp(20px, 3vw, 28px)" }}
-      >
-        <header className="chat-inline-header__inner chat-inline-header__inner--window">
-          <div>
-            <span className="eyebrow chat-inline-header__eyebrow">{c.inlineHeader.eyebrow}</span>
-            <h1 className="chat-inline-header__title">
-              {otherParticipant ? otherName : c.titleFallback}
-            </h1>
-          </div>
-          <div className="chat-window-header-actions">
-            {/* req 9 — bidirectional link back to the request in my-requests.
-                Shown once we've resolved the chat's linked requestId. */}
-            {linkedRequest && (
-              <Link
-                href={`/my-requests?focus=${encodeURIComponent(linkedRequest.id)}`}
-                className="btn btn-ghost btn-sm"
-                style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexShrink: 0 }}
-                aria-label={c.openRequest}
-                title={c.openRequest}
-              >
-                <FileText size={16} aria-hidden="true" />
-                {c.openRequest}
-              </Link>
-            )}
+    <div className="page-container chat-window-shell">
+      {/* ── Slim top bar: back to list + open linked request ── */}
+      <div className="chat-window-bar">
+        <Link href="/chats" className="btn btn-outline btn-sm">
+          <BackArrow size={16} />
+          {c.allActiveChats}
+        </Link>
+        {linkedRequest && (
+          <div className="chat-window-bar__actions">
+            {/* req 9 — bidirectional link back to the request in my-requests. */}
             <Link
-              href="/chats"
-              className="btn btn-outline btn-sm"
-              style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexShrink: 0 }}
+              href={`/my-requests?focus=${encodeURIComponent(linkedRequest.id)}`}
+              className="btn btn-ghost btn-sm"
+              aria-label={c.openRequest}
+              title={c.openRequest}
             >
-              <BackArrow size={16} />
-              {c.allActiveChats}
+              <FileText size={16} aria-hidden="true" />
+              {c.openRequest}
             </Link>
           </div>
-        </header>
+        )}
       </div>
 
-      <div
-        className="page-container"
-        style={{
-          maxWidth: "760px",
-          paddingBlock: "var(--sp-6) var(--sp-9)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--sp-4)",
-        }}
-      >
-        {/* ── Conversation panel: scrolling feed + sticky composer ── */}
-        <Reveal>
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "var(--shadow-lg)",
-            }}
-          >
-            {/* Panel header strip */}
+      <div className="chat-window-layout">
+        {/* ── Conversation (wide column): scrolling feed + composer ── */}
+        <div className="chat-window-main">
+          <Reveal>
+            <div className="card chat-conv">
+              {/* Message feed — live region so screen readers announce
+                  incoming messages; focusable so it can be scrolled by keyboard. */}
+              <div
+                className="chat-feed"
+                role="log"
+                aria-live="polite"
+                aria-label={c.inlineHeader.eyebrow}
+                tabIndex={0}
+              >
+                {msgsLoading &&
+                  renderFeedState({
+                    tone: "ember",
+                    icon: <MessagesSquare size={26} />,
+                    body: c.loadingMessages,
+                  })}
+                {msgsError === "permission" &&
+                  renderFeedState({
+                    tone: "muted",
+                    icon: <ShieldOff size={26} />,
+                    title: c.noAccess,
+                  })}
+                {msgsError &&
+                  msgsError !== "permission" &&
+                  renderFeedState({
+                    tone: "danger",
+                    icon: <AlertCircle size={26} />,
+                    title: c.messagesError,
+                  })}
+                {!msgsLoading &&
+                  !msgsError &&
+                  messages.length === 0 &&
+                  renderFeedState({
+                    tone: "ember",
+                    icon: <MessagesSquare size={26} />,
+                    body: c.noMessages,
+                  })}
+
+                {messages.map((msg) => {
+                  const isMine = msg.senderId === user?.uid;
+                  // Incoming rows show the sender's avatar (photo or initials),
+                  // keyed by senderId, so the beneficiary sees the volunteer's
+                  // face next to their words.
+                  const sender = participants[msg.senderId];
+                  const senderName =
+                    (sender?.displayName && sender.displayName.trim()) ||
+                    c.participantFallback;
+                  return (
+                    <div
+                      key={msg.id}
+                      className="chat-msg-row"
+                      style={{
+                        flexDirection: isMine ? "row-reverse" : "row",
+                        justifyContent: isMine ? "flex-end" : "flex-start",
+                      }}
+                    >
+                      {!isMine && (
+                        <span className="chat-msg-row__avatar">
+                          {renderAvatar(senderName, sender?.avatarUrl ?? null, "sm")}
+                        </span>
+                      )}
+                      <div className={`chat-msg-col${isMine ? " chat-msg-col--mine" : ""}`}>
+                        {msg.attachment ? (
+                          // req 26 — downloadable file bubble (mine + incoming).
+                          <button
+                            type="button"
+                            className={`chat-file-bubble${
+                              isMine ? " chat-file-bubble--mine" : ""
+                            }`}
+                            onClick={() => handleDownload(msg.attachment!)}
+                            disabled={!!downloading[msg.attachment.name]}
+                            aria-busy={!!downloading[msg.attachment.name]}
+                            aria-label={`${c.download} - ${msg.attachment.name}`}
+                            title={msg.attachment.name}
+                            style={{ direction: isRtl ? "rtl" : "ltr" }}
+                          >
+                            <span className="chat-file-bubble__icon" aria-hidden="true">
+                              <FileText size={18} />
+                            </span>
+                            <span className="chat-file-bubble__meta">
+                              <span className="chat-file-bubble__name">
+                                {msg.attachment.name}
+                              </span>
+                              <span className="chat-file-bubble__sub">
+                                {formatBytes(msg.attachment.size)}
+                              </span>
+                            </span>
+                            <span className="chat-file-bubble__action" aria-hidden="true">
+                              {downloading[msg.attachment.name] ? (
+                                <Loader2 size={16} className="chat-file-bubble__spin" />
+                              ) : (
+                                <Download size={16} />
+                              )}
+                            </span>
+                          </button>
+                        ) : (
+                          <div
+                            className={`chat-bubble ${isMine ? "chat-bubble--mine" : "chat-bubble--in"}`}
+                            style={{ direction: isRtl ? "rtl" : "ltr" }}
+                          >
+                            {msg.content}
+                          </div>
+                        )}
+                        <div className="chat-time">{formatTime(msg.timestamp)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={bottomRef} />
+              </div>
+
+              {/* Composer — sticks to the bottom of the panel */}
+              <form
+                onSubmit={handleSend}
+                className="chat-composer"
+                style={{ direction: isRtl ? "rtl" : "ltr" }}
+              >
+                {/* req 26 — file attach: hidden input driven by a paperclip btn */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.docx,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleFilePick}
+                  disabled={uploading || sending}
+                  style={{ display: "none" }}
+                  tabIndex={-1}
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  className="chat-attach-btn"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || sending}
+                  aria-busy={uploading}
+                  aria-label={uploading ? c.uploading : c.attachFile}
+                  title={uploading ? c.uploading : c.attachFile}
+                >
+                  {uploading ? (
+                    <Loader2 size={18} className="chat-attach-btn__spin" aria-hidden="true" />
+                  ) : (
+                    <Paperclip size={18} aria-hidden="true" />
+                  )}
+                </button>
+                <input
+                  type="text"
+                  name="message"
+                  autoComplete="off"
+                  enterKeyHint="send"
+                  className="chat-composer__input"
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  placeholder={c.inputPH}
+                  disabled={sending}
+                  aria-label={c.inputPH}
+                  style={{ direction: isRtl ? "rtl" : "ltr" }}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-ember"
+                  disabled={sending || !inputText.trim()}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexShrink: 0 }}
+                >
+                  {sending ? c.sending : c.send}
+                  <Send size={15} style={{ transform: isRTL ? "scaleX(-1)" : "none" }} />
+                </button>
+              </form>
+            </div>
+          </Reveal>
+
+          {sendError && (
             <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--sp-3)",
-                paddingInline: "var(--sp-5)",
-                paddingBlock: "var(--sp-4)",
-                borderBlockEnd: "1px solid var(--hair)",
-                background: "var(--sky-3)",
-              }}
+              className="chat-send-error"
+              role="alert"
+              style={{ direction: isRtl ? "rtl" : "ltr" }}
             >
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{c.sendError}</span>
+            </div>
+          )}
+        </div>
+
+        {/* ── Context rail (offset inline-end): identity + status + actions ── */}
+        <aside className="chat-window-rail">
+          <Reveal>
+            {/* Identity — the single place the participant's name appears */}
+            <div className="chat-rail-identity">
               {otherParticipant ? (
-                renderAvatar(otherName, otherParticipant.avatarUrl, "md")
+                renderAvatar(otherName, otherParticipant.avatarUrl, "lg")
               ) : (
                 <span
                   aria-hidden="true"
+                  className="chat-avatar chat-avatar--lg"
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "var(--radius)",
-                    background: "var(--white)",
                     color: "var(--ember)",
-                    border: "1px solid var(--hair)",
                   }}
                 >
-                  <MessageCircle size={20} />
+                  <MessageCircle size={24} />
                 </span>
               )}
-              <div style={{ textAlign: "start", minWidth: 0 }}>
-                <p
-                  className="eyebrow"
-                  style={{
-                    margin: 0,
-                    color: "var(--gray-600)",
-                  }}
-                >
-                  {c.inlineHeader.eyebrow}
+              <h1 className="chat-rail-name">
+                {otherParticipant ? otherName : c.titleFallback}
+              </h1>
+              {linkedRequestId && (
+                <p className="chat-rail-sub">
+                  {c.request} {linkedRequestId}
                 </p>
-                <p
-                  style={{
-                    fontFamily: "Frank Ruhl Libre, Georgia, serif",
-                    fontSize: "var(--fs-body)",
-                    color: "var(--ink)",
-                    margin: "3px 0 0",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {otherParticipant ? otherName : c.titleFallback}
-                </p>
-              </div>
+              )}
             </div>
 
-            {/* ── Note 6 — linked-request lifecycle strip (volunteer) ──────
-                Shows the request status; the assigned volunteer/handler gets a
-                "Mark as done" button while it's in progress. */}
+            {/* ── Note 6 / req 25 — linked-request status + lifecycle actions ── */}
             {linkedRequest && (
               <div
-                className={`chat-lifecycle-strip${
-                  linkedRequest.status === "closed" ? " chat-lifecycle-strip--closed" : ""
+                className={`chat-rail-status${
+                  linkedRequest.status === "closed" ? " chat-rail-status--closed" : ""
                 }`}
                 style={{ direction: isRtl ? "rtl" : "ltr" }}
               >
-                <span className="chat-lifecycle-strip__status">
-                  <span className="chat-lifecycle-strip__dot" aria-hidden="true" />
-                  <span className="chat-lifecycle-strip__label">
+                <span className="chat-status">
+                  <span className={`chat-status__dot ${statusDotClass}`} aria-hidden="true" />
+                  <span className="chat-status__label">
                     {lc.statusLabels[
                       linkedRequest.status as keyof typeof lc.statusLabels
                     ] ?? linkedRequest.status}
                   </span>
                 </span>
 
-                <div className="chat-lifecycle-strip__consent">
-                  {canMarkDone && (
-                    <button
-                      type="button"
-                      className="btn btn-ember btn-sm chat-lifecycle-strip__action"
-                      onClick={handleMarkDone}
-                      disabled={markingDone}
-                      aria-busy={markingDone}
-                    >
-                      {markingDone ? (
-                        <Loader2 size={15} className="chat-lifecycle-strip__spin" aria-hidden="true" />
-                      ) : (
-                        <CheckCircle2 size={15} aria-hidden="true" />
-                      )}
-                      {lc.actions.markDone}
-                    </button>
-                  )}
-
-                  {/* ── req 25 — mutual-consent close handshake ──────────── */}
-                  {canUseCloseConsent && !closeReq && (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-sm chat-lifecycle-strip__action"
-                      onClick={() => handleCloseAction("propose")}
-                      disabled={closeBusy}
-                      aria-busy={closeBusy}
-                    >
-                      {closeBusy ? (
-                        <Loader2 size={15} className="chat-lifecycle-strip__spin" aria-hidden="true" />
-                      ) : (
-                        <CheckCircle2 size={15} aria-hidden="true" />
-                      )}
-                      {c.requestClose}
-                    </button>
-                  )}
-
-                  {canUseCloseConsent && closeReq && otherProposed && (
-                    <>
-                      <span className="chat-lifecycle-strip__note">
-                        {c.otherAskedToClose(closeProposerName)}
-                      </span>
+                {(canMarkDone ||
+                  canUseCloseConsent ||
+                  linkedRequest.status === "closed") && (
+                  <div className="chat-rail-actions">
+                    {canMarkDone && (
                       <button
                         type="button"
-                        className="btn btn-ember btn-sm chat-lifecycle-strip__action"
-                        onClick={() => handleCloseAction("approve")}
-                        disabled={closeBusy}
-                        aria-busy={closeBusy}
+                        className="btn btn-ember btn-sm"
+                        onClick={handleMarkDone}
+                        disabled={markingDone}
+                        aria-busy={markingDone}
                       >
-                        {closeBusy ? (
-                          <Loader2 size={15} className="chat-lifecycle-strip__spin" aria-hidden="true" />
+                        {markingDone ? (
+                          <Loader2 size={15} className="chat-action-spin" aria-hidden="true" />
                         ) : (
                           <CheckCircle2 size={15} aria-hidden="true" />
                         )}
-                        {c.confirmClose}
+                        {lc.actions.markDone}
                       </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm chat-lifecycle-strip__action"
-                        onClick={() => handleCloseAction("decline")}
-                        disabled={closeBusy}
-                      >
-                        <XCircle size={15} aria-hidden="true" />
-                        {c.declineClose}
-                      </button>
-                    </>
-                  )}
+                    )}
 
-                  {canUseCloseConsent && closeReq && iProposed && (
-                    <>
-                      <span className="chat-lifecycle-strip__note">
-                        <Clock
-                          size={14}
-                          aria-hidden="true"
-                          style={{ verticalAlign: "-2px", marginInlineEnd: "6px" }}
-                        />
-                        {c.waitingToClose}
-                      </span>
+                    {/* ── req 25 — mutual-consent close handshake ──────────── */}
+                    {canUseCloseConsent && !closeReq && (
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm chat-lifecycle-strip__action"
-                        onClick={() => handleCloseAction("decline")}
+                        className="btn btn-outline btn-sm"
+                        onClick={() => handleCloseAction("propose")}
                         disabled={closeBusy}
                         aria-busy={closeBusy}
                       >
                         {closeBusy ? (
-                          <Loader2 size={15} className="chat-lifecycle-strip__spin" aria-hidden="true" />
+                          <Loader2 size={15} className="chat-action-spin" aria-hidden="true" />
                         ) : (
-                          <XCircle size={15} aria-hidden="true" />
+                          <CheckCircle2 size={15} aria-hidden="true" />
                         )}
-                        {c.cancelCloseRequest}
+                        {c.requestClose}
                       </button>
-                    </>
-                  )}
-
-                  {linkedRequest.status === "closed" && (
-                    <span className="chat-lifecycle-strip__note">{c.closed}</span>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Message feed */}
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                minHeight: "42vh",
-                maxHeight: "58vh",
-                padding: "var(--sp-5)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "var(--sp-3)",
-                background:
-                  "linear-gradient(var(--paper), var(--paper)) padding-box",
-              }}
-            >
-              {msgsLoading &&
-                renderFeedState({
-                  tone: "ember",
-                  icon: <MessagesSquare size={26} />,
-                  body: c.loadingMessages,
-                })}
-              {msgsError === "permission" &&
-                renderFeedState({
-                  tone: "muted",
-                  icon: <ShieldOff size={26} />,
-                  title: c.noAccess,
-                })}
-              {msgsError &&
-                msgsError !== "permission" &&
-                renderFeedState({
-                  tone: "danger",
-                  icon: <AlertCircle size={26} />,
-                  title: c.messagesError,
-                })}
-              {!msgsLoading &&
-                !msgsError &&
-                messages.length === 0 &&
-                renderFeedState({
-                  tone: "ember",
-                  icon: <MessagesSquare size={26} />,
-                  body: c.noMessages,
-                })}
-
-              {messages.map((msg) => {
-                const isMine = msg.senderId === user?.uid;
-                // Incoming rows show the sender's avatar (photo or initials),
-                // keyed by senderId, so the beneficiary sees the volunteer's
-                // face next to their words.
-                const sender = participants[msg.senderId];
-                const senderName =
-                  (sender?.displayName && sender.displayName.trim()) ||
-                  c.participantFallback;
-                return (
-                  <div
-                    key={msg.id}
-                    className="chat-msg-row"
-                    style={{
-                      flexDirection: isMine ? "row-reverse" : "row",
-                      justifyContent: isMine ? "flex-end" : "flex-start",
-                    }}
-                  >
-                    {!isMine && (
-                      <span className="chat-msg-row__avatar">
-                        {renderAvatar(senderName, sender?.avatarUrl ?? null, "sm")}
-                      </span>
                     )}
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: isMine ? "flex-end" : "flex-start",
-                        minWidth: 0,
-                      }}
-                    >
-                      {msg.attachment ? (
-                        // req 26 — downloadable file bubble (mine + incoming).
+
+                    {canUseCloseConsent && closeReq && otherProposed && (
+                      <>
+                        <span className="chat-rail-note">
+                          {c.otherAskedToClose(closeProposerName)}
+                        </span>
                         <button
                           type="button"
-                          className={`chat-file-bubble${
-                            isMine ? " chat-file-bubble--mine" : ""
-                          }`}
-                          onClick={() => handleDownload(msg.attachment!)}
-                          disabled={!!downloading[msg.attachment.name]}
-                          aria-busy={!!downloading[msg.attachment.name]}
-                          aria-label={`${c.download} — ${msg.attachment.name}`}
-                          title={msg.attachment.name}
-                          style={{ direction: isRtl ? "rtl" : "ltr" }}
+                          className="btn btn-ember btn-sm"
+                          onClick={() => handleCloseAction("approve")}
+                          disabled={closeBusy}
+                          aria-busy={closeBusy}
                         >
-                          <span className="chat-file-bubble__icon" aria-hidden="true">
-                            <FileText size={18} />
-                          </span>
-                          <span className="chat-file-bubble__meta">
-                            <span className="chat-file-bubble__name">
-                              {msg.attachment.name}
-                            </span>
-                            <span className="chat-file-bubble__sub">
-                              {formatBytes(msg.attachment.size)}
-                            </span>
-                          </span>
-                          <span className="chat-file-bubble__action" aria-hidden="true">
-                            {downloading[msg.attachment.name] ? (
-                              <Loader2 size={16} className="chat-file-bubble__spin" />
-                            ) : (
-                              <Download size={16} />
-                            )}
-                          </span>
+                          {closeBusy ? (
+                            <Loader2 size={15} className="chat-action-spin" aria-hidden="true" />
+                          ) : (
+                            <CheckCircle2 size={15} aria-hidden="true" />
+                          )}
+                          {c.confirmClose}
                         </button>
-                      ) : (
-                        <div
-                          style={{
-                            maxWidth: "100%",
-                            background: isMine ? "var(--ink)" : "var(--white)",
-                            color: isMine ? "var(--cream)" : "var(--gray-700)",
-                            border: isMine ? "1px solid var(--ink)" : "1px solid var(--hair)",
-                            borderRadius: isMine
-                              ? "var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg)"
-                              : "var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm)",
-                            padding: "10px 14px",
-                            fontSize: "var(--fs-sm)",
-                            lineHeight: 1.6,
-                            wordBreak: "break-word",
-                            boxShadow: isMine ? "var(--shadow-sm)" : "var(--shadow-xs)",
-                            direction: isRtl ? "rtl" : "ltr",
-                            textAlign: "start",
-                          }}
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleCloseAction("decline")}
+                          disabled={closeBusy}
                         >
-                          {msg.content}
-                        </div>
-                      )}
-                      <div
-                        style={{
-                          fontSize: "var(--fs-xs)",
-                          fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                          letterSpacing: "0.04em",
-                          color: "var(--gray-500)",
-                          marginBlockStart: "4px",
-                          marginInline: "4px",
-                        }}
-                      >
-                        {formatTime(msg.timestamp)}
-                      </div>
-                    </div>
+                          <XCircle size={15} aria-hidden="true" />
+                          {c.declineClose}
+                        </button>
+                      </>
+                    )}
+
+                    {canUseCloseConsent && closeReq && iProposed && (
+                      <>
+                        <span className="chat-rail-note">
+                          <Clock
+                            size={14}
+                            aria-hidden="true"
+                            style={{ verticalAlign: "-2px", marginInlineEnd: "6px" }}
+                          />
+                          {c.waitingToClose}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleCloseAction("decline")}
+                          disabled={closeBusy}
+                          aria-busy={closeBusy}
+                        >
+                          {closeBusy ? (
+                            <Loader2 size={15} className="chat-action-spin" aria-hidden="true" />
+                          ) : (
+                            <XCircle size={15} aria-hidden="true" />
+                          )}
+                          {c.cancelCloseRequest}
+                        </button>
+                      </>
+                    )}
+
+                    {linkedRequest.status === "closed" && (
+                      <span className="chat-rail-note">{c.closed}</span>
+                    )}
                   </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
-
-            {/* Composer — sticks to the bottom of the panel */}
-            <form
-              onSubmit={handleSend}
-              style={{
-                display: "flex",
-                gap: "var(--sp-3)",
-                alignItems: "center",
-                paddingInline: "var(--sp-5)",
-                paddingBlock: "var(--sp-4)",
-                borderBlockStart: "1px solid var(--hair)",
-                background: "var(--white)",
-                direction: isRtl ? "rtl" : "ltr",
-              }}
-            >
-              {/* req 26 — file attach: hidden input driven by a paperclip btn */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.docx,application/pdf,image/jpeg,image/png,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={handleFilePick}
-                disabled={uploading || sending}
-                style={{ display: "none" }}
-                tabIndex={-1}
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                className="chat-attach-btn"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading || sending}
-                aria-busy={uploading}
-                aria-label={uploading ? c.uploading : c.attachFile}
-                title={uploading ? c.uploading : c.attachFile}
-              >
-                {uploading ? (
-                  <Loader2 size={18} className="chat-attach-btn__spin" aria-hidden="true" />
-                ) : (
-                  <Paperclip size={18} aria-hidden="true" />
                 )}
-              </button>
-              <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onFocus={() => setInputFocused(true)}
-                onBlur={() => setInputFocused(false)}
-                placeholder={c.inputPH}
-                disabled={sending}
-                aria-label={c.inputPH}
-                style={{
-                  flex: 1,
-                  paddingInline: "var(--sp-4)",
-                  paddingBlock: "12px",
-                  borderRadius: "var(--radius)",
-                  border: `1px solid ${inputFocused ? "var(--ember)" : "var(--hair)"}`,
-                  background: "var(--paper)",
-                  color: "var(--ink)",
-                  fontSize: "var(--fs-sm)",
-                  outline: "none",
-                  boxShadow: inputFocused ? "var(--ring)" : "none",
-                  transition: "border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out)",
-                  direction: isRtl ? "rtl" : "ltr",
-                  textAlign: "start",
-                }}
-              />
-              <button
-                type="submit"
-                className="btn btn-ember"
-                disabled={sending || !inputText.trim()}
-                style={{ display: "inline-flex", alignItems: "center", gap: "8px", flexShrink: 0 }}
-              >
-                {sending ? c.sending : c.send}
-                <Send size={15} style={{ transform: isRTL ? "scaleX(-1)" : "none" }} />
-              </button>
-            </form>
-          </div>
-        </Reveal>
-
-        {sendError && (
-          <div
-            role="alert"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--sp-2)",
-              padding: "12px var(--sp-4)",
-              borderRadius: "var(--radius)",
-              background: "var(--danger-soft)",
-              border: "1px solid var(--danger)",
-              color: "var(--danger)",
-              fontSize: "var(--fs-sm)",
-              direction: isRtl ? "rtl" : "ltr",
-              textAlign: "start",
-            }}
-          >
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{c.sendError}</span>
-          </div>
-        )}
+              </div>
+            )}
+          </Reveal>
+        </aside>
       </div>
-    </>
+    </div>
   );
 }
