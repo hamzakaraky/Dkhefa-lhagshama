@@ -58,7 +58,7 @@ export default function HomePage() {
             </h1>
             <p className="section-lede hero-lede-onphoto hero-rise" style={{ margin: '0 0 28px', '--rise-delay': '150ms' } as CSSProperties}>{t.hero.subtitle}</p>
 
-            <div className="hero-rise" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', '--rise-delay': '210ms' } as CSSProperties}>
+            <div className="hero-rise hero-actions" style={{ '--rise-delay': '210ms' } as CSSProperties}>
               <MagneticButton className="btn btn-ember btn-lg" onClick={() => navigate('/requests')}>
                 {t.hero.cta}
                 <ArrowIcon size={16} />
@@ -68,14 +68,7 @@ export default function HomePage() {
             {/* Inline stat strip — woven into the hero, not a separate metric band */}
             <dl
               className="hero-rise hero-stats-onphoto"
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 'clamp(20px, 4vw, 40px)',
-                margin: '36px 0 0',
-                paddingBlockStart: '24px',
-                '--rise-delay': '270ms',
-              } as CSSProperties}
+              style={{ '--rise-delay': '270ms' } as CSSProperties}
             >
               {[
                 { num: mockStats.beneficiaries, suffix: '',  label: t.hero.stats.beneficiaries },
@@ -83,19 +76,11 @@ export default function HomePage() {
                 { num: mockStats.satisfaction,  suffix: '%', label: t.hero.stats.satisfaction },
                 { num: mockStats.yearsActive,   suffix: '',  label: t.hero.stats.years },
               ].map((s, i) => (
-                <div key={i}>
+                <div className="hero-stat" key={i}>
                   <dd className="hero-stat-num hero-stat-num-onphoto" style={{ margin: 0 }}>
                     <StatCard num={s.num} suffix={s.suffix} delay={i * 120} />
                   </dd>
-                  <dt
-                    style={{
-                      fontSize: '12px', color: 'rgba(244,238,224,0.82)', marginBlockStart: '6px', lineHeight: 1.3,
-                      fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                      letterSpacing: '0.06em', textTransform: 'uppercase',
-                    }}
-                  >
-                    {s.label}
-                  </dt>
+                  <dt className="hero-stat-label-onphoto">{s.label}</dt>
                 </div>
               ))}
             </dl>
@@ -107,7 +92,7 @@ export default function HomePage() {
       <section id="services-section" className="section-padding" style={{ background: 'var(--paper)' }}>
         <div className="page-container">
           <Reveal>
-            <header style={{ maxWidth: '46rem', margin: '0 auto 48px', textAlign: 'center' }}>
+            <header className="home-section-head">
               <h2 className="section-display-bold">{t.services.title}</h2>
               <p className="section-lede" style={{ margin: '12px auto 0' }}>{t.services.subtitle}</p>
             </header>
@@ -117,7 +102,7 @@ export default function HomePage() {
             {serviceEntries.map(([key, svc], i) => (
               <Reveal key={key} delay={i * 0.08}>
                 <button type="button" className="area-item" onClick={() => navigate('/requests')}>
-                  <span className="area-icon">{SERVICE_ICONS[key]}</span>
+                  <span className="area-icon" aria-hidden="true">{SERVICE_ICONS[key]}</span>
                   <h3 className="area-title">{svc.title}</h3>
                   <p className="area-desc">{svc.desc}</p>
                 </button>
@@ -139,7 +124,7 @@ export default function HomePage() {
                 shadow="var(--shadow-lg)"
                 border="1px solid var(--hair)"
               />
-              <span className="volunteers-figure-badge">
+              <span className="volunteers-figure-badge" aria-hidden="true">
                 <HeartHandshake size={26} />
               </span>
             </div>
@@ -156,7 +141,7 @@ export default function HomePage() {
               <ul className="volunteers-points">
                 {t.home.volunteers.points.map((p, i) => (
                   <li key={i} className="volunteers-point">
-                    <span className="volunteers-point-icon"><Check size={16} strokeWidth={3} /></span>
+                    <span className="volunteers-point-icon" aria-hidden="true"><Check size={16} strokeWidth={3} /></span>
                     <span>
                       <span className="volunteers-point-title">{p.title}</span>
                       <span className="volunteers-point-desc">{p.desc}</span>
@@ -178,28 +163,12 @@ export default function HomePage() {
       <section className="section-padding" style={{ background: 'var(--ink)' }}>
         <div className="page-container">
           <Reveal>
-            <header style={{ maxWidth: '40rem', marginBlockEnd: '40px' }}>
-              <span
-                style={{
-                  fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-                  fontSize: '0.75rem', fontWeight: 500, letterSpacing: '0.12em',
-                  textTransform: 'uppercase', color: 'var(--ember)', display: 'block', marginBlockEnd: '14px',
-                }}
-              >
+            <header className="home-section-head-start">
+              <span className="home-eyebrow-onink">
                 {lang === 'he' ? 'קולות מהקהילה' : 'Voices from the community'}
               </span>
-              <h2
-                style={{
-                  fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-                  fontSize: 'var(--fs-display)', fontWeight: 400, color: 'var(--cream)',
-                  lineHeight: 1.14, letterSpacing: '-0.01em', margin: '0 0 16px', textWrap: 'balance',
-                }}
-              >
-                {t.stories.title}
-              </h2>
-              <p style={{ color: 'rgba(244,238,224,0.78)', fontSize: 'var(--fs-lede)', lineHeight: 1.6, margin: 0 }}>
-                {t.stories.subtitle}
-              </p>
+              <h2 className="home-display-onink">{t.stories.title}</h2>
+              <p className="home-lede-onink">{t.stories.subtitle}</p>
             </header>
           </Reveal>
 
@@ -235,7 +204,7 @@ export default function HomePage() {
                     <span className="story-panel-body">
                       <span className="story-panel-stars" aria-label={`${s.rating}/5`}>
                         {Array(s.rating).fill(0).map((_, j) => (
-                          <Star key={j} size={14} fill="var(--ember)" color="var(--ember)" />
+                          <Star key={j} size={14} fill="var(--ember)" color="var(--ember)" aria-hidden="true" />
                         ))}
                       </span>
                       <span className="story-panel-quote">
@@ -258,7 +227,7 @@ export default function HomePage() {
       <section className="section-padding" style={{ background: 'var(--paper)' }}>
         <div className="page-container">
           <Reveal>
-            <header style={{ maxWidth: '40rem', marginBlockEnd: '40px' }}>
+            <header className="home-section-head-start">
               <h2 className="section-display-bold">
                 {lang === 'he' ? 'איך זה עובד' : 'How it works'}
               </h2>
@@ -328,20 +297,10 @@ export default function HomePage() {
       {/* ── FINAL CTA — full-bleed ink band ───────────────────────────────── */}
       <section style={{ background: 'var(--ink)', paddingBlock: 'clamp(56px, 8vw, 88px)' }}>
         <Reveal>
-          <div className="page-container" style={{ textAlign: 'center', maxWidth: '46rem' }}>
-            <h2
-              style={{
-                fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-                fontSize: 'var(--fs-display)', fontWeight: 400, color: 'var(--cream)',
-                lineHeight: 1.14, letterSpacing: '-0.01em', margin: '0 0 14px', textWrap: 'balance',
-              }}
-            >
-              {t.cta.title}
-            </h2>
-            <p style={{ color: 'rgba(244,238,224,0.8)', fontSize: 'var(--fs-lede)', lineHeight: 1.6, margin: '0 auto 28px', maxWidth: '36rem' }}>
-              {t.cta.subtitle}
-            </p>
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="page-container home-cta">
+            <h2 className="home-display-onink" style={{ margin: '0 0 14px' }}>{t.cta.title}</h2>
+            <p className="home-cta-lede">{t.cta.subtitle}</p>
+            <div className="home-cta-actions">
               <MagneticButton className="btn btn-ember btn-lg" onClick={() => navigate('/requests')}>
                 {t.cta.primary} <ArrowIcon size={16} />
               </MagneticButton>

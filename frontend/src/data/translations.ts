@@ -16,8 +16,8 @@ const base = {
       impactBody: 'אנחנו מחברים בין חברי הקהילה האתיופית-ישראלית לבין הסיוע, ההזדמנויות והאנשים שיכולים לעזור — הכול במקום אחד.',
       volunteers: {
         eyebrow: 'המתנדבים שלנו',
-        title: 'מתנדבים שנמצאים כאן — ונשארים',
-        body: 'המתנדבים הם הלב של עמותת דחיפה להגשמה. הם מלווים את חברי הקהילה בכל צעד — חונכים תלמידים, מכינים לראיונות עבודה, מסייעים מול הרשויות, ופשוט נמצאים שם כשהכי צריך.',
+        title: 'מתנדבים שנמצאים כאן, ונשארים',
+        body: 'המתנדבים הם הלב של עמותת דחיפה להגשמה. הם מלווים את חברי הקהילה בכל צעד: חונכים תלמידים, מכינים לראיונות עבודה, מסייעים מול הרשויות, ופשוט נמצאים שם כשהכי צריך.',
         points: [
           { title: 'חונכות אישית', desc: 'ליווי אחד-על-אחד בחינוך, בקריירה ובחיי היום-יום.' },
           { title: 'תמיד בהישג יד', desc: 'אדם אמיתי שאפשר להתקשר אליו לאורך כל השנה, לא רק ברגע משבר.' },
@@ -72,7 +72,7 @@ const base = {
 
     // ── HOME HERO ─────────────────────────────────────────────
     hero: {
-      badge:     '✦ עמותה רשומה • ייעוץ חינם • ישראל ואתיופיה',
+      badge:     'עמותה רשומה • ייעוץ חינם • ישראל ואתיופיה',
       title1:    'כי כל אחד',
       titleHighlight: 'ראוי',
       title2:    'להגשים את עצמו',
@@ -1016,11 +1016,11 @@ const base = {
       impactBody: 'We connect members of the Ethiopian-Israeli community with the support, opportunities, and people who can help — all in one place.',
       volunteers: {
         eyebrow: 'Our volunteers',
-        title: 'Volunteers who show up — and stay',
-        body: 'Volunteers are the heart of Push for Fulfillment. They walk alongside community members every step of the way — mentoring students, preparing people for job interviews, navigating government offices, and simply being there when it matters most.',
+        title: 'Volunteers who show up, and stay',
+        body: 'Volunteers are the heart of Push for Fulfillment. They walk alongside community members at every step: mentoring students, preparing people for job interviews, navigating government offices, and simply being there when it matters most.',
         points: [
           { title: 'One-on-one mentoring', desc: 'Matched guidance in education, career, and everyday life.' },
-          { title: 'Always within reach', desc: 'A real person to call year-round — not only in a crisis.' },
+          { title: 'Always within reach', desc: 'A real person to call year-round, not only in a crisis.' },
           { title: 'Rooted in the community', desc: 'Volunteers who know the culture, language, and challenges firsthand.' },
         ],
         cta: 'Join as a volunteer',
@@ -1070,7 +1070,7 @@ const base = {
     },
 
     hero: {
-      badge:          '✦ Registered NGO • Free Consulting • Israel & Ethiopia',
+      badge:          'Registered NGO • Free Consulting • Israel & Ethiopia',
       title1:         'Because everyone',
       titleHighlight: 'deserves',
       title2:         'to fulfill their potential',
