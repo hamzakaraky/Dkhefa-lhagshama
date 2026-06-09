@@ -763,15 +763,29 @@
   border-radius: var(--radius);
   background: var(--paper);
   text-decoration: none;
+  touch-action: manipulation;
   transition: border-color var(--dur-2) var(--ease-out),
     box-shadow var(--dur-2) var(--ease-out),
     transform var(--dur-2) var(--ease-out);
 }
 
-.admin-attention-card:hover {
-  border-color: var(--ember);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .admin-attention-card:hover {
+    border-color: var(--ember);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+
+  .admin-attention-card:active {
+    transform: translateY(-1px) scale(0.99);
+    transition-duration: var(--dur-1, 120ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-attention-card { transition: none; }
+  .admin-attention-card:hover,
+  .admin-attention-card:active { transform: none; }
 }
 
 .admin-attention-card:focus-visible {
@@ -801,7 +815,11 @@
   transition: color var(--dur-2) var(--ease-out);
 }
 
-.admin-attention-card:hover .admin-attention-arrow { color: var(--ember); }
+@media (hover: hover) {
+  .admin-attention-card:hover .admin-attention-arrow { color: var(--ember); }
+}
+
+.admin-attention-card:focus-visible .admin-attention-arrow { color: var(--ember); }
 
 .admin-attention-count {
   font-family: 'Frank Ruhl Libre', Georgia, serif;
@@ -809,6 +827,8 @@
   font-size: 2rem;
   line-height: 1;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  margin-block-start: 0.5rem;
 }
 
 .admin-attention-label {
@@ -819,11 +839,26 @@
 }
 
 .admin-attention-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-block-start: 0.15rem;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: var(--fs-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ember);
+  color: var(--gray-500);
+  transition: color var(--dur-2) var(--ease-out);
+}
+
+@media (hover: hover) {
+  .admin-attention-card:hover .admin-attention-cta { color: var(--ember-700); }
+}
+
+.admin-attention-card:focus-visible .admin-attention-cta { color: var(--ember-700); }
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-attention-cta { transition: none; }
 }
 
 /* ── Admin task-request form (req 20/21) — file rows with per-file
