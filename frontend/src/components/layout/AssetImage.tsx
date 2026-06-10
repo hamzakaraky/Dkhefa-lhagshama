@@ -25,9 +25,9 @@ function ensureStyles() {
   const el = document.createElement('style')
   el.id = STYLE_ID
   el.textContent = `
-    @keyframes assetImageShimmer {
-      0%   { background-position: -160% 0; }
-      100% { background-position: 160% 0; }
+    @keyframes assetImagePulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.5; }
     }
     .asset-image-shell {
       position: relative;
@@ -37,14 +37,8 @@ function ensureStyles() {
     .asset-image-skeleton {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        100deg,
-        rgba(255,255,255,0) 20%,
-        rgba(255,255,255,0.55) 50%,
-        rgba(255,255,255,0) 80%
-      ), var(--sky-2, #E8EFF6);
-      background-size: 200% 100%;
-      animation: assetImageShimmer 1.4s ease-in-out infinite;
+      background: var(--sky-2, #E8EFF6);
+      animation: assetImagePulse 1.4s ease-in-out infinite;
     }
     .asset-image-img {
       display: block;
@@ -62,9 +56,7 @@ function ensureStyles() {
       align-items: center;
       justify-content: center;
       color: var(--ember, #B9694E);
-      background:
-        radial-gradient(120% 120% at 80% 0%, rgba(185,105,78,0.10), transparent 60%),
-        var(--sky-2, #E8EFF6);
+      background: var(--sky-2, #E8EFF6);
     }
     @media (prefers-reduced-motion: reduce) {
       .asset-image-skeleton { animation: none; }
