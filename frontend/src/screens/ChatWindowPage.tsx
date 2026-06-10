@@ -326,7 +326,7 @@ export default function ChatWindowPage() {
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const feedRef = useRef<HTMLDivElement | null>(null);
 
   // ── req 26 — file attachments ──────────────────────────────────────────
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -337,20 +337,21 @@ export default function ChatWindowPage() {
   const isRtl = lang === "he";
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
-  // Auto-scroll to bottom when new messages arrive. Jump instantly on the
-  // first paint (no scroll-through of history) and whenever reduced motion is
-  // requested; glide only for messages arriving in an already-open chat.
+  // Keep the message FEED pinned to its latest message — scroll only the feed
+  // container, never the page (scrollIntoView would scroll every ancestor incl.
+  // the window, yanking the whole page down when a chat opens). Jump instantly
+  // on first paint and under reduced motion; glide only for live arrivals.
   const didInitialScrollRef = useRef(false);
   useEffect(() => {
-    const el = bottomRef.current;
-    if (!el) return;
+    const feed = feedRef.current;
+    if (!feed) return;
     const prefersReduced =
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const behavior: ScrollBehavior =
       !didInitialScrollRef.current || prefersReduced ? "auto" : "smooth";
     didInitialScrollRef.current = true;
-    el.scrollIntoView({ behavior });
+    feed.scrollTo({ top: feed.scrollHeight, behavior });
   }, [messages]);
 
   async function handleSend(e: FormEvent<HTMLFormElement>) {
@@ -584,6 +585,7 @@ export default function ChatWindowPage() {
               {/* Message feed — live region so screen readers announce
                   incoming messages; focusable so it can be scrolled by keyboard. */}
               <div
+                ref={feedRef}
                 className="chat-feed"
                 role="log"
                 aria-live="polite"
@@ -688,7 +690,6 @@ export default function ChatWindowPage() {
                     </div>
                   );
                 })}
-                <div ref={bottomRef} />
               </div>
 
               {/* Composer — sticks to the bottom of the panel */}
