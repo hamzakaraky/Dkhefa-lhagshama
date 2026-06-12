@@ -47,7 +47,8 @@ export default function VolunteerAssignedPage() {
   const [dropping, setDropping] = useState<string | null>(null)
   const [editUrgency, setEditUrgency] = useState('medium')
   const [editDeadline, setEditDeadline] = useState('')
-  const [report, setReport] = useState({ done: false, reached: false, stuck: false })
+  // Free-text hand-off report; the backend dropSchema expects optional strings.
+  const [report, setReport] = useState({ done: '', reached: '', stuck: '' })
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -76,7 +77,7 @@ export default function VolunteerAssignedPage() {
   const openDrop = (item: AssignedItem) => {
     setEditing(null)
     setDropping(item.id)
-    setReport({ done: false, reached: false, stuck: false })
+    setReport({ done: '', reached: '', stuck: '' })
   }
 
   const saveEdit = async (id: string) => {
@@ -117,12 +118,23 @@ export default function VolunteerAssignedPage() {
   }
 
   const submitDrop = async (id: string) => {
+    const done = report.done.trim()
+    const reached = report.reached.trim()
+    const stuck = report.stuck.trim()
+    if (!done && !reached && !stuck) {
+      setNotice({ kind: 'err', text: a.dropNeedReport })
+      return
+    }
     setBusy(id)
     setNotice(null)
     try {
       const res = await apiFetch(`/api/volunteer/requests/${id}/drop`, {
         method: 'POST',
-        body: JSON.stringify(report),
+        body: JSON.stringify({
+          ...(done && { done }),
+          ...(reached && { reached }),
+          ...(stuck && { stuck }),
+        }),
       })
       if (!res.ok) throw new Error('drop failed')
       setNotice({ kind: 'ok', text: a.dropSuccess })
@@ -283,33 +295,36 @@ export default function VolunteerAssignedPage() {
                   <fieldset className="volapp-fieldset">
                     <legend className="volapp-subhead">{a.dropTitle}</legend>
                     <p className="volapp-panel-sub">{a.dropSubtitle}</p>
-                    <label className="volapp-check">
-                      <input
-                        type="checkbox"
-                        name="done"
-                        checked={report.done}
-                        onChange={(e) => setReport((r) => ({ ...r, done: e.target.checked }))}
-                      />
-                      {a.dropDone}
-                    </label>
-                    <label className="volapp-check">
-                      <input
-                        type="checkbox"
-                        name="reached"
-                        checked={report.reached}
-                        onChange={(e) => setReport((r) => ({ ...r, reached: e.target.checked }))}
-                      />
-                      {a.dropReached}
-                    </label>
-                    <label className="volapp-check">
-                      <input
-                        type="checkbox"
-                        name="stuck"
-                        checked={report.stuck}
-                        onChange={(e) => setReport((r) => ({ ...r, stuck: e.target.checked }))}
-                      />
-                      {a.dropStuck}
-                    </label>
+                    <label className="form-label" htmlFor={`drop-done-${item.id}`}>{a.dropDone}</label>
+                    <textarea
+                      id={`drop-done-${item.id}`}
+                      name="done"
+                      className="form-textarea"
+                      rows={2}
+                      maxLength={4000}
+                      value={report.done}
+                      onChange={(e) => setReport((r) => ({ ...r, done: e.target.value }))}
+                    />
+                    <label className="form-label" htmlFor={`drop-reached-${item.id}`}>{a.dropReached}</label>
+                    <textarea
+                      id={`drop-reached-${item.id}`}
+                      name="reached"
+                      className="form-textarea"
+                      rows={2}
+                      maxLength={4000}
+                      value={report.reached}
+                      onChange={(e) => setReport((r) => ({ ...r, reached: e.target.value }))}
+                    />
+                    <label className="form-label" htmlFor={`drop-stuck-${item.id}`}>{a.dropStuck}</label>
+                    <textarea
+                      id={`drop-stuck-${item.id}`}
+                      name="stuck"
+                      className="form-textarea"
+                      rows={2}
+                      maxLength={4000}
+                      value={report.stuck}
+                      onChange={(e) => setReport((r) => ({ ...r, stuck: e.target.value }))}
+                    />
                   </fieldset>
                   <div className="volapp-card-actions">
                     <button
