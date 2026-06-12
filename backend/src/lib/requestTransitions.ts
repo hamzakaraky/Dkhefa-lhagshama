@@ -36,6 +36,7 @@ export type TransitionRole = 'admin' | 'volunteer';
  * |-----------------|-----------------------------|------------------------------|
  * | pending         | in_progress, rejected       | admin                        |
  * | in_progress     | awaiting_review             | assigned volunteer (or admin)|
+ * | in_progress     | closed (one-step close)     | admin                        |
  * | in_progress     | referred, rejected          | admin                        |
  * | awaiting_review | closed                      | admin                        |
  * | awaiting_review | in_progress (send back)     | admin                        |
@@ -64,6 +65,10 @@ const TRANSITIONS: Record<RequestStatus, TransitionRule[]> = {
   in_progress: [
     // Assigned volunteer marks done → awaiting_review (admin may also do it).
     { to: 'awaiting_review', roles: ['admin', 'volunteer'], requiresAssignment: true },
+    // Admin one-step close — an admin alone may close without the
+    // awaiting_review stop (the volunteer+beneficiary consent path stays in
+    // lib/closeConsent, which bypasses this map).
+    { to: 'closed', roles: ['admin'] },
     { to: 'referred', roles: ['admin'] },
     { to: 'rejected', roles: ['admin'] },
   ],

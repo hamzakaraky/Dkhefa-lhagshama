@@ -26,16 +26,19 @@ import { writeRequestEvent } from '@/lib/requestEvents';
 import { notifyBeneficiaryOfRequest } from '@/lib/notify';
 import { REQUEST_STATUSES, type RequestStatus } from '@/routes/requests';
 import { canTransition, canArchive } from '@/lib/requestTransitions';
+import { sortByPriority } from '@/lib/requestSort';
+import { volunteerDisplayName } from '@/lib/volunteerName';
 import { ensureChatForRequest } from '@/lib/chatOnAssign';
 
 const router = Router();
 router.use(authenticate, requireRole('admin'));
 
 // ── GET /api/admin/requests ───────────────────────────────────────────────
-// Optional query params: status, category, urgency, limit (default 50)
+// Optional query params: status, category, urgency, volunteerId, sort
+// ('newest' default | 'priority'), limit (default 50)
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { status, category, urgency, archived, limit: limitStr } =
+    const { status, category, urgency, archived, volunteerId, sort, limit: limitStr } =
       req.query as Record<string, string | undefined>;
     const limit = Math.min(parseInt(limitStr ?? '50', 10) || 50, 200);
 
@@ -48,24 +51,22 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       status && REQUEST_STATUSES.includes(status as RequestStatus) ? status : undefined;
 
     const snap = await db().collection('requests').get();
-    const items = snap.docs
-      .filter((d) => {
-        const dd = d.data();
-        if (wantStatus && dd.status !== wantStatus) return false;
-        if (category && dd.category !== category) return false;
-        if (urgency && dd.urgency !== urgency) return false;
-        if (archivedMode === 'all') return true;
-        const isArchived = dd.archived === true;
-        return archivedMode === 'true' ? isArchived : !isArchived;
-      })
-      .sort((a, b) => {
-        const ta = a.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
-        const tb = b.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
-        return tb - ta; // newest first
-      })
-      .slice(0, limit)
-      .map((d) => {
+    const docs = snap.docs.filter((d) => {
+      const dd = d.data();
+      if (wantStatus && dd.status !== wantStatus) return false;
+      if (category && dd.category !== category) return false;
+      if (urgency && dd.urgency !== urgency) return false;
+      if (volunteerId && dd.assignedVolunteerId !== volunteerId) return false;
+      if (archivedMode === 'all') return true;
+      const isArchived = dd.archived === true;
+      return archivedMode === 'true' ? isArchived : !isArchived;
+    });
+
+    const toRow = (d: (typeof docs)[number]) => {
       const data = d.data();
+      // Compact close-handshake state (req 25) so the admin list can flag
+      // pending consent-close proposals without a detail fetch.
+      const cr = (data.closeRequest as Record<string, unknown> | null | undefined) ?? null;
       return {
         id: d.id,
         beneficiaryId:        data.beneficiaryId,
@@ -80,11 +81,20 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         archived:             data.archived === true,
         description:          data.description,
         assignedVolunteerId:  data.assignedVolunteerId ?? null,
+        assignedVolunteerName: data.assignedVolunteerName ?? null,
         handler:              data.handler ?? null,
         deadline:             data.deadline ?? null,
         notes:                data.notes ?? '',
         referral:             data.referral ?? null,
         attachments:          data.attachments ?? [],
+        closeRequest: cr
+          ? {
+              proposedRole:        cr.proposedRole ?? null,
+              proposedAt:          cr.proposedAt ?? null,
+              volunteerApproved:   cr.volunteerApproved === true,
+              beneficiaryApproved: cr.beneficiaryApproved === true,
+            }
+          : null,
         // Pool / task / claim fields (reqs 20, 22) for list badges.
         title:                data.title ?? null,
         origin:              (data.origin as string | undefined) ?? 'beneficiary',
@@ -92,11 +102,26 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         poolStatus:          (data.poolStatus as string | undefined) ?? 'none',
         hasClaims:            data.hasClaims === true,
         claimsCount:          Array.isArray(data.claims) ? data.claims.length : 0,
+        wasPreviouslyTaken:   data.wasPreviouslyTaken === true,
         createdAt:            data.createdAt?.toDate?.()?.toISOString?.() ?? null,
         updatedAt:            data.updatedAt?.toDate?.()?.toISOString?.() ?? null,
         assignedAt:           data.assignedAt?.toDate?.()?.toISOString?.() ?? null,
       };
-    });
+    };
+
+    // sort=priority reuses the canonical urgency/deadline order (req 19);
+    // the default stays createdAt descending ('newest').
+    const items =
+      sort === 'priority'
+        ? sortByPriority(docs.map(toRow)).slice(0, limit)
+        : docs
+            .sort((a, b) => {
+              const ta = a.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
+              const tb = b.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
+              return tb - ta; // newest first
+            })
+            .slice(0, limit)
+            .map(toRow);
 
     res.json({ items });
   } catch (err) {
@@ -199,8 +224,13 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
     const data = snap.data()!;
     const prevVolunteerId = data.assignedVolunteerId ?? null;
 
+    // Denormalize the display name so list views never need an N+1 lookup
+    // (and former volunteers keep a readable name after deactivation).
+    const assignedVolunteerName = await volunteerDisplayName(volunteerId);
+
     await ref.update({
       assignedVolunteerId: volunteerId,
+      assignedVolunteerName,
       assignedAt: FieldValue.serverTimestamp(),
       handler: volunteerId,
       // Claim flow (req 22): the chosen volunteer wins the pool; any other
@@ -259,10 +289,10 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
 //
 // Note 6 — transition-map-validated, race-safe status change. The lifecycle is
 // an explicit transition map (lib/requestTransitions), not forward-only:
-// admins may close (awaiting_review→closed), send back (awaiting_review→
-// in_progress), reopen (closed→in_progress), reject, or start (pending→
-// in_progress). Illegal moves return 409. The read-check-write runs in a
-// Firestore transaction so concurrent admin edits can't clobber each other.
+// admins may close (in_progress→closed or awaiting_review→closed), send back
+// (awaiting_review→in_progress), reopen (closed→in_progress), reject, or start
+// (pending→in_progress). Illegal moves return 409. The read-check-write runs in
+// a Firestore transaction so concurrent admin edits can't clobber each other.
 //
 // `to` is the contract field; `status` is accepted as a legacy alias.
 const statusSchema = z
@@ -324,6 +354,9 @@ router.post('/:id/status', async (req: Request, res: Response): Promise<void> =>
 
       tx.update(ref, {
         status: to,
+        // Closing resolves any pending consent-close handshake (req 25) so no
+        // stale proposal lingers on a request the admin already closed.
+        ...(to === 'closed' ? { closeRequest: null } : {}),
         updatedAt: FieldValue.serverTimestamp(),
       });
     });

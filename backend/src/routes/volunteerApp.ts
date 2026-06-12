@@ -24,6 +24,7 @@ import { writeRequestEvent } from '@/lib/requestEvents';
 import { authenticate, requireAnyRole } from '@/middleware/auth';
 import { sortByPriority, type SortableRequest } from '@/lib/requestSort';
 import { applyCloseConsent } from '@/lib/closeConsent';
+import { volunteerDisplayName } from '@/lib/volunteerName';
 import { notifyBeneficiaryOfRequest } from '@/lib/notify';
 
 const router = Router();
@@ -38,17 +39,6 @@ function toIso(value: unknown): string | null {
   if (ts?.toDate) return ts.toDate().toISOString();
   if (typeof value === 'string') return value;
   return null;
-}
-
-/** Best-effort display name for a volunteer doc, falling back to email/uid. */
-async function volunteerDisplayName(uid: string, email?: string): Promise<string> {
-  try {
-    const snap = await db().collection('volunteers').doc(uid).get();
-    const data = snap.data() as { fullName?: string; name?: string } | undefined;
-    return data?.fullName ?? data?.name ?? email ?? uid;
-  } catch {
-    return email ?? uid;
-  }
 }
 
 interface AttachmentLike {
@@ -592,6 +582,20 @@ router.post('/requests/:id/close', async (req: Request, res: Response): Promise<
       await notifyBeneficiaryOfRequest(requestId, 'closed');
     } catch (err) {
       console.error('[volunteer] POST /requests/:id/close side-effects:', err);
+    }
+  } else if (result.action) {
+    // Propose/decline leave a timeline trace too, so admins can see a pending
+    // (or withdrawn) consent-close handshake before it resolves.
+    try {
+      await writeRequestEvent({
+        requestId,
+        type: 'close_consent',
+        actorId: uid,
+        visibility: 'all',
+        details: { action: result.action, role: 'volunteer' },
+      });
+    } catch (err) {
+      console.error('[volunteer] POST /requests/:id/close consent-event side-effects:', err);
     }
   }
 

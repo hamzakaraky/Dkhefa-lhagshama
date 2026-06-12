@@ -469,6 +469,21 @@ router.post('/:id/close', authenticate, async (req: Request, res: Response): Pro
       // eslint-disable-next-line no-console
       console.error('[requests.close] side-effects:', err);
     }
+  } else if (result.action) {
+    // Propose/decline leave a timeline trace too, so admins can see a pending
+    // (or withdrawn) consent-close handshake before it resolves.
+    try {
+      await writeRequestEvent({
+        requestId,
+        type: 'close_consent',
+        actorId,
+        visibility: 'all',
+        details: { action: result.action, role: 'beneficiary' },
+      });
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[requests.close] consent-event side-effects:', err);
+    }
   }
 
   res.json({ ok: true, closed: result.closed, closeRequest: result.closeRequest });

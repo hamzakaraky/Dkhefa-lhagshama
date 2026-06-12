@@ -17,6 +17,9 @@ import { db } from '@/lib/firebaseAdmin';
 export type CloseRole = 'volunteer' | 'beneficiary';
 export type CloseAction = 'propose' | 'approve' | 'decline';
 
+/** What effectively happened, for the caller's event trail (req 25). */
+export type CloseEffect = 'proposed' | 'approved' | 'declined';
+
 export interface CloseResult {
   /** HTTP-ish status for the route to surface. */
   status: 'ok' | 'not_found' | 'forbidden' | 'invalid_state';
@@ -24,6 +27,13 @@ export interface CloseResult {
   closed: boolean;
   /** Current close handshake state after the action (null if cleared). */
   closeRequest: Record<string, unknown> | null;
+  /**
+   * Effective action taken (an `approve` with no pending proposal starts a
+   * fresh handshake, so it reports 'proposed'). Null when status !== 'ok'.
+   */
+  action: CloseEffect | null;
+  /** Role that proposed the handshake this action touched, when known. */
+  proposedRole: CloseRole | null;
 }
 
 /** Statuses from which a consent-close is allowed. */
@@ -44,30 +54,34 @@ export async function applyCloseConsent(
 
   const result = await db().runTransaction(async (tx) => {
     const snap = await tx.get(ref);
-    if (!snap.exists) return { status: 'not_found', closed: false, closeRequest: null } as CloseResult;
+    if (!snap.exists)
+      return { status: 'not_found', closed: false, closeRequest: null, action: null, proposedRole: null } as CloseResult;
     const data = snap.data() ?? {};
+
+    const existing = (data.closeRequest as Record<string, unknown> | null | undefined) ?? null;
+    const existingRole = (existing?.proposedRole as CloseRole | undefined) ?? null;
 
     // Defensive ownership check.
     const owns =
       role === 'beneficiary'
         ? data.beneficiaryId === actorUid
         : data.assignedVolunteerId === actorUid || data.handler === actorUid;
-    if (!owns) return { status: 'forbidden', closed: false, closeRequest: null } as CloseResult;
+    if (!owns)
+      return { status: 'forbidden', closed: false, closeRequest: null, action: null, proposedRole: null } as CloseResult;
 
     if (action === 'decline') {
       tx.update(ref, { closeRequest: null, updatedAt: FieldValue.serverTimestamp() });
-      return { status: 'ok', closed: false, closeRequest: null } as CloseResult;
+      return { status: 'ok', closed: false, closeRequest: null, action: 'declined', proposedRole: existingRole } as CloseResult;
     }
 
     if (!CLOSEABLE.has(String(data.status))) {
-      return { status: 'invalid_state', closed: false, closeRequest: null } as CloseResult;
+      return { status: 'invalid_state', closed: false, closeRequest: null, action: null, proposedRole: null } as CloseResult;
     }
-
-    const existing = (data.closeRequest as Record<string, unknown> | null | undefined) ?? null;
 
     // Build the next handshake state. propose (or approve with no existing
     // proposal) starts a fresh handshake with the proposer's side set.
     let next: Record<string, unknown>;
+    let effect: CloseEffect;
     if (!existing || action === 'propose') {
       next = {
         proposedBy: actorUid,
@@ -76,6 +90,7 @@ export async function applyCloseConsent(
         volunteerApproved: role === 'volunteer',
         beneficiaryApproved: role === 'beneficiary',
       };
+      effect = 'proposed';
     } else {
       // approve an existing proposal — set this side true, keep the rest.
       next = {
@@ -83,7 +98,9 @@ export async function applyCloseConsent(
         volunteerApproved: existing.volunteerApproved === true || role === 'volunteer',
         beneficiaryApproved: existing.beneficiaryApproved === true || role === 'beneficiary',
       };
+      effect = 'approved';
     }
+    const nextRole = (next.proposedRole as CloseRole | undefined) ?? role;
 
     const bothApproved = next.volunteerApproved === true && next.beneficiaryApproved === true;
 
@@ -93,11 +110,11 @@ export async function applyCloseConsent(
         closeRequest: null,
         updatedAt: FieldValue.serverTimestamp(),
       });
-      return { status: 'ok', closed: true, closeRequest: null } as CloseResult;
+      return { status: 'ok', closed: true, closeRequest: null, action: effect, proposedRole: nextRole } as CloseResult;
     }
 
     tx.update(ref, { closeRequest: next, updatedAt: FieldValue.serverTimestamp() });
-    return { status: 'ok', closed: false, closeRequest: next } as CloseResult;
+    return { status: 'ok', closed: false, closeRequest: next, action: effect, proposedRole: nextRole } as CloseResult;
   });
 
   // When closed, mark the linked chat(s) inactive (outside the request tx).

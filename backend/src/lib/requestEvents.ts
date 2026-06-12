@@ -23,6 +23,7 @@ export type RequestEventType =
   | 'assigned'
   | 'status_changed'
   | 'note_added'
+  | 'close_consent'
   | 'rated';
 
 export type RequestEventVisibility = 'all' | 'internal';
