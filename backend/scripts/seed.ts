@@ -48,7 +48,7 @@ const REGIONS: TaxonomyEntry[] = [
 //  and `orderBy('createdAt','desc')`, with optional equality filters on
 //  `category`, `region`, `audience`. So every doc MUST have:
 //    status: 'approved', createdAt: <Timestamp>, title, body,
-//    category, region, audience, sourceName, sourceUrl.
+//    category, orgType, region, audience, sourceName, sourceUrl.
 //
 //  `category` values are the NGO_AREAS filter chips in DirectoryPage:
 //    education | employment | legal | social | housing
@@ -56,6 +56,11 @@ const REGIONS: TaxonomyEntry[] = [
 //  (`title`/`body`/`region`/`audience`) use the bilingual field contract
 //  `{ he, en }` so the API can pass them through and the UI renders the
 //  active language. `category` stays an enum key (not translated).
+//
+//  `orgType` splits the catalog into 'ngo' (עמותה) vs 'partner' (שותף);
+//  docs without the field count as 'ngo'. All seeds (including the
+//  government-ministry ones) start as 'ngo' — the NPO reclassifies
+//  partners in the admin directory UI.
 // ─────────────────────────────────────────────────────────────
 interface Bilingual {
   he: string;
@@ -67,6 +72,7 @@ interface AnswerSeed {
   title: Bilingual;
   body: Bilingual;
   category: string;
+  orgType: 'ngo' | 'partner';
   region: Bilingual;
   audience: Bilingual;
   sourceName: string;
@@ -82,6 +88,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Tuition scholarships for students of Ethiopian origin, professional training and personal career mentoring.',
     },
     category: 'education',
+    orgType: 'ngo',
     region: { he: 'מרכז', en: 'Center' },
     audience: { he: 'סטודנטים', en: 'Students' },
     sourceName: 'קרן ראשי | Rashi Foundation',
@@ -95,6 +102,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Hebrew classes, literacy and exam preparation for Ethiopian-Israeli community members of all ages.',
     },
     category: 'education',
+    orgType: 'ngo',
     region: { he: 'ירושלים', en: 'Jerusalem' },
     audience: { he: 'עולים חדשים', en: 'New immigrants' },
     sourceName: 'עמותת פידל | Fidel Association',
@@ -108,6 +116,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Software bootcamps, placement in tech jobs and employer mentoring for community graduates.',
     },
     category: 'employment',
+    orgType: 'ngo',
     region: { he: 'תל אביב', en: 'Tel Aviv' },
     audience: { he: 'מחפשי עבודה', en: 'Job seekers' },
     sourceName: 'טק-קריירה | Tech-Career',
@@ -121,6 +130,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Career counseling, CV writing, interview preparation and vocational training.',
     },
     category: 'employment',
+    orgType: 'ngo',
     region: { he: 'חיפה', en: 'Haifa' },
     audience: { he: 'מבוגרים', en: 'Adults' },
     sourceName: 'משרד העבודה | Ministry of Labor',
@@ -134,6 +144,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Free legal representation, protection of immigrant rights and counseling on status and labor matters.',
     },
     category: 'legal',
+    orgType: 'ngo',
     region: { he: 'מרכז', en: 'Center' },
     audience: { he: 'כלל הקהילה', en: 'General public' },
     sourceName: 'איגוד לזכויות אדם | Human Rights Association',
@@ -147,6 +158,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Support centers helping citizens navigate government bureaucracy and realize their rights.',
     },
     category: 'legal',
+    orgType: 'ngo',
     region: { he: 'דרום', en: 'South' },
     audience: { he: 'משפחות', en: 'Families' },
     sourceName: 'ידיד | Yedid',
@@ -160,6 +172,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Aid for vulnerable populations: elderly, children, people with disabilities and families in distress.',
     },
     category: 'social',
+    orgType: 'ngo',
     region: { he: 'צפון', en: 'North' },
     audience: { he: 'קשישים', en: 'Elderly' },
     sourceName: 'ג׳וינט ישראל | JDC Israel',
@@ -173,6 +186,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Support groups, parental guidance and emotional accompaniment for women and families in the community.',
     },
     category: 'social',
+    orgType: 'ngo',
     region: { he: 'נגב', en: 'Negev' },
     audience: { he: 'נשים', en: 'Women' },
     sourceName: 'דחיפה להגשמה | Push for Fulfillment',
@@ -186,6 +200,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Housing assistance, emergency food and services for new immigrants and families in crisis.',
     },
     category: 'housing',
+    orgType: 'ngo',
     region: { he: 'שרון', en: 'Sharon' },
     audience: { he: 'משפחות במשבר', en: 'Families in crisis' },
     sourceName: 'עמותת בית | Beit Association',
@@ -199,6 +214,7 @@ const ANSWERS: AnswerSeed[] = [
       en: 'Guidance on public housing applications, rent subsidies and exercising rights with the Housing Ministry.',
     },
     category: 'housing',
+    orgType: 'ngo',
     region: { he: 'ירושלים', en: 'Jerusalem' },
     audience: { he: 'עולים חדשים', en: 'New immigrants' },
     sourceName: 'משרד הבינוי והשיכון | Ministry of Housing',

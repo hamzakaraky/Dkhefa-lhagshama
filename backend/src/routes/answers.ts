@@ -9,6 +9,7 @@ const querySchema = z.object({
   category: z.string().trim().min(1).max(80).optional(),
   region: z.string().trim().min(1).max(80).optional(),
   audience: z.string().trim().min(1).max(80).optional(),
+  orgType: z.enum(['ngo', 'partner']).optional(),
 });
 
 router.get('/', async (req: Request, res: Response) => {
@@ -21,7 +22,7 @@ router.get('/', async (req: Request, res: Response) => {
     return;
   }
 
-  const { category } = parsed.data;
+  const { category, orgType } = parsed.data;
 
   try {
     let query = db()
@@ -50,11 +51,20 @@ router.get('/', async (req: Request, res: Response) => {
         audience: data.audience ?? null,
         sourceName: data.sourceName ?? null,
         sourceUrl: data.sourceUrl ?? null,
+        // Org type: 'partner' (שותף) vs 'ngo' (עמותה). Docs created before the
+        // field existed have no `orgType` and count as 'ngo'.
+        orgType: data.orgType === 'partner' ? 'partner' : 'ngo',
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
       };
     });
 
-    res.json({ items });
+    // `orgType` is filtered IN MEMORY (after the mapper applies the 'ngo'
+    // default) rather than with a `.where()`: legacy docs lack the field, so a
+    // server-side equality filter would drop them from the 'ngo' result — and
+    // skipping the extra `.where()` avoids a new composite index.
+    const filtered = orgType ? items.filter((item) => item.orgType === orgType) : items;
+
+    res.json({ items: filtered });
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[answers.get] failed:', err);

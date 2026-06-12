@@ -13,6 +13,7 @@ import helmet from 'helmet'; // #83
 
 import { initializeFirebaseAdmin } from '@/lib/firebaseAdmin';
 import adminRouter from '@/routes/admin';
+import adminDirectoryRouter from '@/routes/adminDirectory';
 import adminVolunteersRouter from '@/routes/adminVolunteers';
 import adminRequestsRouter from '@/routes/adminRequests';
 import adminUsersRouter from '@/routes/adminUsers';
@@ -123,6 +124,7 @@ app.use('/api/admin/requests',   adminRequestsRouter);
 app.use('/api/admin/users',      adminUsersRouter);
 app.use('/api/admin/stats',      adminStatsRouter);
 app.use('/api/admin/insights',   adminInsightsRouter);
+app.use('/api/admin/directory',  adminDirectoryRouter);
 app.use('/api/admin',      adminRouter);
 app.use('/api/volunteers', authWriteLimiter, volunteersRouter);
 // Volunteer operational app (reqs 14–19): own dashboard, pool, claims, drops.

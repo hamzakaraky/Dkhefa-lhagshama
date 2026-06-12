@@ -85,6 +85,26 @@ These are not Firestore fields, but they gate the notification channel (`lib/not
 
 If `SENDGRID_API_KEY` / `NOTIFY_FROM_EMAIL` are unset, notifications are logged (`[notify:log] ...`) instead of sent, so the flow works without credentials.
 
+## Round 2 — directory management (2026-06-12)
+
+Admin directory CRUD (`/api/admin/directory/*`) splits the partner catalog (`answers`) into NGO vs partner org types. Still **additive** — no existing field changed type or meaning.
+
+### New / changed fields by collection
+
+| Collection | Field | Type | Purpose |
+|---|---|---|---|
+| `answers` | `orgType` | enum(`ngo`, `partner`) | Directory organization type: `ngo` = עמותה, `partner` = שותף (admin-added partner). **Absent = `ngo`** — docs created before this field count as NGOs; every reader applies that default (no backfill needed). |
+| `answers` | `createdBy` | string (uid) | Admin uid for answers created via `POST /api/admin/directory/answers`. Seeded / legacy answers don't carry it. |
+| `businesses` | `createdBy` | string (uid) | Admin uid for businesses created via `POST /api/admin/directory/businesses`. These docs also carry `ownerId: null` (admin-created — no owner-edit path), where user-submitted businesses have a real `ownerId`. |
+
+### TODO — edit `db-design.drawio` then re-export (human step)
+
+Apply these in app.diagrams.net, then export PNG/SVG and update the wiki.
+
+- [ ] **`answers` entity** — add `+ orgType: enum(ngo,partner)` and `+ createdBy: string`, matching the existing `+ name: type` style.
+- [ ] **`businesses` entity** — add `+ createdBy: string` and note `ownerId` is now nullable (admin-created docs).
+- [ ] **Re-export** — `File ▸ Export as` PNG and SVG, replace the images on the wiki Architecture & Design page.
+
 ## Notes
 
 - No schema change here requires a new Firestore composite index — the volunteer pool, assigned, and admin request lists use single-field queries plus in-memory sort/filter (`lib/requestSort.ts`).
