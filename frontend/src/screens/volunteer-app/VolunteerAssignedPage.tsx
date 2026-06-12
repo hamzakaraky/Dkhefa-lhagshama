@@ -9,6 +9,7 @@ import {
   LogOut,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiFetch, apiJson } from '@/lib/apiClient'
 import { formatDate } from '@/utils/helpers'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
@@ -35,6 +36,8 @@ export default function VolunteerAssignedPage() {
   const v = t.volunteerApp
   const a = v.assigned
   const statusLabels = t.lifecycle.statusLabels as Record<string, string>
+  // Bilingual category labels from the admin-managed taxonomy.
+  const { labelFor } = useCategories()
 
   const [items, setItems] = useState<AssignedItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -187,7 +190,7 @@ export default function VolunteerAssignedPage() {
           return (
             <article key={item.id} className="card volapp-req-card">
               <div className="volapp-req-head">
-                <h3 className="volapp-req-title">{item.title || item.category}</h3>
+                <h3 className="volapp-req-title">{item.title || labelFor(item.category)}</h3>
                 {item.status && (
                   <StatusBadge
                     status={item.status}
@@ -206,7 +209,7 @@ export default function VolunteerAssignedPage() {
                 {item.category && (
                   <span className="badge badge-blue">
                     <Tag size={13} aria-hidden="true" />
-                    {item.category}
+                    {labelFor(item.category)}
                   </span>
                 )}
                 {item.wasPreviouslyTaken && (

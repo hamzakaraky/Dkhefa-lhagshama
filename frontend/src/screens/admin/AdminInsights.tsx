@@ -15,6 +15,7 @@ import {
 import type { TooltipContentProps } from 'recharts'
 import { useReducedMotion } from 'motion/react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiFetch } from '@/lib/apiClient'
 import type { InsightsData } from '@/types'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -75,6 +76,8 @@ export default function AdminInsights() {
   const ins = t.insights
   const lifecycle = t.lifecycle
   const age = t.admin.ageInsights
+  // Bilingual category labels from the admin-managed taxonomy (chart axis).
+  const { labelFor } = useCategories()
 
   // Honor prefers-reduced-motion: recharts animates bars/areas on mount by
   // default, so we disable that growth tween when the user opts out. Charts
@@ -139,6 +142,18 @@ export default function AdminInsights() {
       })),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [data, lang],
+  )
+
+  // Mirror the statusLabel approach for categories: ids resolve through the
+  // admin-managed taxonomy (labelFor) before the data reaches recharts, so
+  // the axis shows bilingual labels instead of raw stored keys.
+  const byCategoryData = useMemo(
+    () =>
+      (data?.byCategory ?? []).map((d) => ({
+        ...d,
+        label: labelFor(d.category),
+      })),
+    [data, labelFor],
   )
 
   const hasData = useMemo(() => {
@@ -259,9 +274,9 @@ export default function AdminInsights() {
           {data!.byCategory.length > 0 ? (
             <div className="insights-chart" dir="ltr" role="img" aria-label={ins.charts.byCategory}>
               <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={data!.byCategory} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
+                <BarChart data={byCategoryData} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
                   <CartesianGrid stroke={COLOR_HAIR} vertical={false} />
-                  <XAxis dataKey="category" tick={axisTick} tickLine={false} axisLine={{ stroke: COLOR_HAIR }} interval={0} />
+                  <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: COLOR_HAIR }} interval={0} />
                   <YAxis
                     orientation={yAxisOrientation}
                     allowDecimals={false}

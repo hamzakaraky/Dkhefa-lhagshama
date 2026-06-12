@@ -55,6 +55,19 @@ export type Area =
   | string;
 
 /**
+ * An admin-managed help category (Firestore `categories/{id}` doc, feedback
+ * round 2). Doc ids are slugs; labels are bilingual fields ON the doc, never
+ * translations.ts entries. `archived` soft-hides a category from pickers
+ * while old request docs keep resolving its label.
+ */
+export interface Category {
+  id: string;
+  nameHe: string;
+  nameEn: string;
+  archived?: boolean;
+}
+
+/**
  * Canonical lifecycle status of a beneficiary request (request-lifecycle spec).
  *
  * Authority is the backend transition map; these are the only states the

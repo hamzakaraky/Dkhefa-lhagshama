@@ -17,7 +17,8 @@ interface RequestFormValues {
   consent: boolean;
 }
 
-import { CheckCircle, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, AlertTriangle, ShieldCheck, Sparkles, Clock, Lock } from 'lucide-react'
+import { CheckCircle, ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, AlertTriangle, ShieldCheck, Sparkles, Clock, Lock, Home, HeartPulse, HandHeart } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Reveal from '../components/motion/Reveal'
 import SuggestCard from '@/components/SuggestCard'
 import StepIndicator from '@/components/forms/StepIndicator'
@@ -30,17 +31,25 @@ import { useAuth } from '../contexts/AuthContext'
 import { sendEmailVerification } from 'firebase/auth' // #86
 import { firebaseAuth } from '../lib/firebase' // #86
 import { useForm } from '../hooks/useForm'
+import { useCategories } from '../hooks/useCategories'
 import { validateStep1, validateStep2, validateStep3, validateStep4 } from '../utils/validators'
 import { apiFetch, apiJson } from '../lib/apiClient'
 import type { Suggestion } from '@/types'
 
 // ── Constants ──────────────────────────────────────────────────
-const CATS = [
-  { key:'education',  Icon: GraduationCap, bg:'#EBF3FF', color:'#1A5EA0' },
-  { key:'employment', Icon: Briefcase,     bg:'#E8F5EC', color:'#15803D' },
-  { key:'legal',      Icon: Scale,         bg:'#FBF0C8', color:'#7C5F00' },
-  { key:'social',     Icon: Users,         bg:'#F5EBF8', color:'#6D28D9' },
-]
+// Category LIST comes from the admin-managed taxonomy (useCategories); only
+// the per-tile icon/color treatment stays local, keyed by the well-known slug
+// ids. Any id without an entry gets the neutral DEFAULT treatment so a brand
+// new admin category still renders a coherent tile.
+const CAT_STYLE: Record<string, { Icon: LucideIcon; bg: string; color: string }> = {
+  education:  { Icon: GraduationCap, bg:'#EBF3FF', color:'#1A5EA0' },
+  employment: { Icon: Briefcase,     bg:'#E8F5EC', color:'#15803D' },
+  legal:      { Icon: Scale,         bg:'#FBF0C8', color:'#7C5F00' },
+  social:     { Icon: Users,         bg:'#F5EBF8', color:'#6D28D9' },
+  housing:    { Icon: Home,          bg:'#EBF3FF', color:'#1A5EA0' },
+  health:     { Icon: HeartPulse,    bg:'#E8F5EC', color:'#15803D' },
+}
+const DEFAULT_CAT_STYLE = { Icon: HandHeart, bg: 'var(--ember-soft)', color: 'var(--ember)' }
 
 // localStorage key for draft persistence (#93)
 const DRAFT_KEY = 'rq_draft_v1'
@@ -72,6 +81,8 @@ export default function RequestsPage() {
   const { t, isRTL, lang } = useLanguage()
   const { toast } = useApp()
   const { user, role, loading: authLoading } = useAuth()
+  // Admin-managed taxonomy: tile list + bilingual label resolution.
+  const { categories, loading: catsLoading, labelFor } = useCategories()
   const navigate = useNavigate()
   const router = useRouter()
   const BackArrow  = isRTL ? ArrowRight : ArrowLeft
@@ -620,28 +631,42 @@ export default function RequestsPage() {
               tabIndex={errors.category ? -1 : undefined}
               style={{ marginBottom:'24px' }}
             >
-              {CATS.map(({ key, Icon, bg, color }) => {
-                const cat = (rq.step2.cats as Record<string, { label?: string; hint?: string }>)[key]
-                const selected = values.category === key
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    className="choice-tile"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => setValue('category', key)}
-                  >
-                    <span className="choice-tile-icon" aria-hidden="true" style={{ background:bg, color }}>
-                      <Icon size={20} />
-                    </span>
-                    <span style={{ minWidth:0 }}>
-                      <span className="choice-tile-title">{cat.label}</span>
-                      <span className="choice-tile-hint">{cat.hint}</span>
-                    </span>
-                  </button>
-                )
-              })}
+              {catsLoading
+                ? // Brief skeleton tiles while the taxonomy loads — same grid
+                  // cell footprint as a tile, so there is no layout jump.
+                  [0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className="skeleton"
+                      style={{ minHeight:'76px', borderRadius:'var(--radius-lg)' }}
+                      aria-hidden="true"
+                    />
+                  ))
+                : categories.map(({ id }) => {
+                    const { Icon, bg, color } = CAT_STYLE[id] ?? DEFAULT_CAT_STYLE
+                    // Labels come from the category doc (labelFor); the legacy
+                    // static map only still contributes the optional hint line.
+                    const hint = (rq.step2.cats as Record<string, { label?: string; hint?: string }>)[id]?.hint
+                    const selected = values.category === id
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className="choice-tile"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => setValue('category', id)}
+                      >
+                        <span className="choice-tile-icon" aria-hidden="true" style={{ background:bg, color }}>
+                          <Icon size={20} />
+                        </span>
+                        <span style={{ minWidth:0 }}>
+                          <span className="choice-tile-title">{labelFor(id)}</span>
+                          {hint && <span className="choice-tile-hint">{hint}</span>}
+                        </span>
+                      </button>
+                    )
+                  })}
             </div>
             {errors.category && <div id="category-error" role="alert" className="form-error" style={{ marginBottom:'14px' }}>{errors.category}</div>}
 
@@ -746,7 +771,7 @@ export default function RequestsPage() {
                   [rq.step4.fullName,  `${values.firstName} ${values.lastName}`],
                   [rq.step4.phone,     values.phone],
                   [rq.step4.city,      values.city],
-                  [rq.step4.category,  values.category ? (rq.step2.cats as Record<string, { label?: string }>)[values.category]?.label : '—'],
+                  [rq.step4.category,  values.category ? labelFor(values.category) : '—'],
                   [rq.step4.urgency,   values.urgency === 'high' ? rq.step2.urgencyHigh : values.urgency === 'medium' ? rq.step2.urgencyMed : rq.step2.urgencyLow],
                   ...(values.deadline ? [[t.myRequests.table.deadline, values.deadline]] : []),
                 ].map(([label, val]) => (

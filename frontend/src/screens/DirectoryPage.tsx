@@ -8,6 +8,7 @@ import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import { useApp } from '@/contexts/AppContext'
 import Reveal from '../components/motion/Reveal'
 import { useLanguage } from '../contexts/LanguageContext'
+import { useCategories } from '../hooks/useCategories'
 import { apiJson } from '../lib/apiClient'
 import type { CaughtError, TNode, Lang } from '@/types'
 
@@ -69,6 +70,9 @@ export default function DirectoryPage() {
   const router = useRouter()
   const d = t.directory
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight
+  // Admin-managed request/answers taxonomy: drives the NGO-area filter chips
+  // + their labels. Business categories stay a separate static enum.
+  const { categories: ngoCategories, labelFor: catLabel } = useCategories()
 
   // ── BILINGUAL FIELD HELPERS ───────────────────────────────────
   // Translatable fields arrive from the API as `{ he, en }` objects. These
@@ -320,7 +324,9 @@ export default function DirectoryPage() {
   }, [loadAnswers])
 
   const BIZ_CATS = ['all', 'food', 'services', 'health', 'education', 'beauty', 'tech']
-  const NGO_AREAS = ['all', 'education', 'employment', 'legal', 'social', 'housing']
+  // NGO areas come from the live taxonomy; ids without a dedicated icon fall
+  // back to LayoutGrid via the `|| LayoutGrid` lookup below.
+  const NGO_AREAS = ['all', ...ngoCategories.map((c) => c.id)]
 
   // Segmented control: each tab is a self-contained pill inside a tinted track.
   const tabStyle = (active: boolean): CSSProperties => ({
@@ -579,7 +585,7 @@ export default function DirectoryPage() {
                     onClick={() => { setAnswerCategory(area); setAnswerPage(1) }}
                   >
                     <Icon size={15} aria-hidden="true" />
-                    {area === 'all' ? d.filterAll : d.ngoAreas[area]}
+                    {area === 'all' ? d.filterAll : catLabel(area)}
                   </button>
                 )
               })}
@@ -726,7 +732,7 @@ export default function DirectoryPage() {
                   const aTitle = L(answer.title)
                   const aRegion = L(answer.region)
                   const aAudience = L(answer.audience)
-                  const areaLabel = answer.category && (answer.category === 'all' ? d.filterAll : d.ngoAreas[answer.category] || answer.category)
+                  const areaLabel = answer.category && (answer.category === 'all' ? d.filterAll : catLabel(String(answer.category)))
                   return (
                   <Reveal key={answer.id} delay={Math.min(i, 5) * 0.06} className="card card-interactive dir-answer-card">
                     {areaLabel && (

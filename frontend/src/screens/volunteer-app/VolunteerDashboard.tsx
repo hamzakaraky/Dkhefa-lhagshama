@@ -12,6 +12,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import type { VolunteerMe } from '@/types'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
@@ -43,6 +44,8 @@ export default function VolunteerDashboard() {
   const { t } = useLanguage()
   const v = t.volunteerApp
   const d = v.dash
+  // Admin-managed taxonomy: category-permission picker + chip labels.
+  const { categories: allCategories, labelFor } = useCategories()
 
   const [me, setMe] = useState<VolunteerMe | null>(null)
   const [assigned, setAssigned] = useState<AssignedItem[]>([])
@@ -153,6 +156,19 @@ export default function VolunteerDashboard() {
     rejected: d.categories.statusRejected,
   }
 
+  // Pickable categories: active taxonomy minus the ones already approved or
+  // pending for this volunteer (no point re-requesting them).
+  const requestableCategories = useMemo(() => {
+    if (!me) return allCategories
+    const taken = new Set<string>([
+      ...me.approvedCategories,
+      ...me.requestedCategories
+        .filter((rc) => rc.status === 'pending')
+        .map((rc) => rc.category),
+    ])
+    return allCategories.filter((c) => !taken.has(c.id))
+  }, [allCategories, me])
+
   const workOptions: { key: VolunteerMe['workStatus']; label: string }[] = [
     { key: 'free', label: d.workStatus.free },
     { key: 'working', label: d.workStatus.working },
@@ -236,7 +252,7 @@ export default function VolunteerDashboard() {
               {me.approvedCategories.map((c) => (
                 <span key={c} className="badge badge-green">
                   <span className="badge-dot" aria-hidden="true" />
-                  {c}
+                  {labelFor(c)}
                 </span>
               ))}
             </div>
@@ -252,7 +268,7 @@ export default function VolunteerDashboard() {
               {me.requestedCategories.map((rc, i) => (
                 <span key={`${rc.category}-${i}`} className="badge badge-amber">
                   <span className="badge-dot" aria-hidden="true" />
-                  {rc.category}
+                  {labelFor(rc.category)}
                   {rc.status ? ` · ${statusKeyLabel[rc.status] ?? rc.status}` : ''}
                 </span>
               ))}
@@ -263,17 +279,22 @@ export default function VolunteerDashboard() {
         <form className="volapp-cat-form" onSubmit={requestCategory}>
           <h3 className="volapp-subhead">{d.categories.requestTitle}</h3>
           <div className="volapp-cat-fields">
-            <input
-              type="text"
+            {/* Picker over the admin-managed taxonomy (was free text) —
+                already-approved / pending categories are filtered out. */}
+            <select
               name="requestCategory"
-              className="form-input"
+              className="form-select"
               value={catName}
               onChange={(e) => setCatName(e.target.value)}
-              placeholder={d.categories.requestPlaceholder}
-              aria-label={d.categories.requestPlaceholder}
-              autoComplete="off"
-              spellCheck={false}
-            />
+              aria-label={d.categories.requestTitle}
+            >
+              <option value="">{d.categories.selectPlaceholder}</option>
+              {requestableCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {labelFor(c.id)}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
               name="requestCategoryNote"
@@ -310,7 +331,7 @@ export default function VolunteerDashboard() {
             {pool.byCategory.map((b) => (
               <span key={b.category} className="volapp-count-chip">
                 <Tag size={14} aria-hidden="true" />
-                {b.category}
+                {labelFor(b.category)}
                 <span className="volapp-count-num">{b.count}</span>
               </span>
             ))}

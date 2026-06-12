@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Inbox, ChevronLeft, ChevronRight, Plus, HandHeart, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
 import CreateTaskDialog from '@/components/admin/CreateTaskDialog'
@@ -64,6 +65,8 @@ interface RequestRow {
 export default function AdminRequestsListPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
+  // Bilingual category labels from the admin-managed taxonomy.
+  const { labelFor } = useCategories()
   const [filter, setFilter] = useState<FilterKey>('')
   const [items, setItems] = useState<RequestRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -323,7 +326,7 @@ export default function AdminRequestsListPage() {
                         </td>
                         <td data-label={a.reqList.colCategory}>
                           <span className={r.category ? 'admin-reqlist-meta' : 'admin-reqlist-meta--empty'}>
-                            {r.category || '·'}
+                            {r.category ? labelFor(r.category) : '·'}
                           </span>
                         </td>
                         <td data-label={a.reqList.colCity}>

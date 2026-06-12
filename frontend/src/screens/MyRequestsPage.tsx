@@ -9,6 +9,7 @@ import Reveal from "../components/motion/Reveal";
 import { useApp } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import { useCategories } from "../hooks/useCategories";
 import { apiJson } from "../lib/apiClient";
 import { formatDate, truncate } from "../utils/helpers";
 import type { CSSProperties, ReactNode } from "react";
@@ -329,7 +330,10 @@ function RequestCard({ item, t, lang, expandedId, onToggle, isFocused, focusRef 
   focusRef?: (el: HTMLDivElement | null) => void;
 }) {
   const isExpanded = expandedId === item.id;
-  const categoryLabel = (cat: string) => t.myRequests.categories[cat] || cat;
+  // Category labels resolve from the admin-managed taxonomy doc; the static
+  // t.myRequests.categories map survives inside labelFor as a legacy fallback.
+  const { labelFor } = useCategories();
+  const categoryLabel = (cat: string) => labelFor(cat);
   const urgencyLabel  = (urg: string) => t.myRequests.urgencies[urg]  || urg;
   const tbl = t.myRequests.table;
   const mr = t.myRequests;

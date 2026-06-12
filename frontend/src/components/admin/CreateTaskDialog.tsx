@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { ClipboardList, Paperclip, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import { getIdToken } from '@/lib/auth'
 
@@ -33,16 +34,14 @@ const URGENCIES = ['low', 'medium', 'high'] as const
  *   1. POST /api/admin/requests/task → { id }
  *   2. for each picked file: POST raw bytes to
  *      /api/uploads/requests/{id}?filename=...&volunteerVisible=<checkbox>
- * Category options reuse the live request-form category keys (rq.step2.cats).
+ * Category options come from the admin-managed taxonomy (useCategories), the
+ * same list the beneficiary form renders — no parallel list to drift.
  */
 export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTaskDialogProps) {
   const { t } = useLanguage()
   const a = t.admin
   const f = a.taskForm
-  // Category options come from the existing request-form taxonomy so admin
-  // tasks share the beneficiary catalog (no parallel list to drift).
-  const cats = t.request.step2.cats as Record<string, { label?: string }>
-  const catKeys = Object.keys(cats)
+  const { categories, labelFor } = useCategories()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
@@ -210,9 +209,9 @@ export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTas
               disabled={busy}
             >
               <option value="">{f.categoryPH}</option>
-              {catKeys.map((key) => (
-                <option key={key} value={key}>
-                  {cats[key]?.label || key}
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {labelFor(c.id)}
                 </option>
               ))}
             </select>

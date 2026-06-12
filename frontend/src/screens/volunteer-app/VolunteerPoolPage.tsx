@@ -10,6 +10,7 @@ import {
   Check,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiFetch, apiJson } from '@/lib/apiClient'
 import { formatDate } from '@/utils/helpers'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
@@ -48,6 +49,8 @@ export default function VolunteerPoolPage() {
   const v = t.volunteerApp
   const p = v.pool
   const statusLabels = t.lifecycle.statusLabels as Record<string, string>
+  // Bilingual category labels from the admin-managed taxonomy.
+  const { labelFor } = useCategories()
 
   const [data, setData] = useState<PoolResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -137,7 +140,7 @@ export default function VolunteerPoolPage() {
         {items.map((item) => (
           <article key={item.id} className="card volapp-req-card">
             <div className="volapp-req-head">
-              <h3 className="volapp-req-title">{item.title || item.category}</h3>
+              <h3 className="volapp-req-title">{item.title || labelFor(item.category)}</h3>
               {item.status && (
                 <StatusBadge
                   status={item.status}
@@ -162,7 +165,7 @@ export default function VolunteerPoolPage() {
               {item.category && (
                 <span className="badge badge-blue">
                   <Tag size={13} aria-hidden="true" />
-                  {item.category}
+                  {labelFor(item.category)}
                 </span>
               )}
               {item.origin === 'admin' && (
@@ -285,7 +288,7 @@ export default function VolunteerPoolPage() {
               aria-pressed={activeCat === b.category}
               onClick={() => setActiveCat(b.category)}
             >
-              {b.category}
+              {labelFor(b.category)}
               <span className="volapp-count-num">{b.count}</span>
             </button>
           ))}

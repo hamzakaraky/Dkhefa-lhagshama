@@ -19,6 +19,7 @@ import {
   Tag,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
 import Reveal from '../../components/motion/Reveal'
@@ -154,6 +155,8 @@ export default function AdminVolunteerDetailPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
   const vd = a.volDetail
+  // Bilingual category labels from the admin-managed taxonomy.
+  const { labelFor } = useCategories()
   const router = useRouter()
   const uid = typeof router.query.uid === 'string' ? router.query.uid : ''
   const BackArrow = isRTL ? ArrowRight : ArrowLeft
@@ -370,7 +373,7 @@ export default function AdminVolunteerDetailPage() {
                     >
                       {volunteer.approvedCategories.map((c) => (
                         <span key={c} className="badge badge-ember">
-                          {c}
+                          {labelFor(c)}
                         </span>
                       ))}
                     </span>
@@ -425,7 +428,7 @@ export default function AdminVolunteerDetailPage() {
                           </td>
                           <td data-label={a.reqList.colCategory}>
                             <span className={r.category ? 'admin-reqlist-meta' : 'admin-reqlist-meta--empty'}>
-                              {r.category || EMPTY}
+                              {r.category ? labelFor(r.category) : EMPTY}
                             </span>
                           </td>
                           <td data-label={a.reqList.colStatus}>

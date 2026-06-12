@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useApp } from '@/contexts/AppContext'
+import { useCategories } from '@/hooks/useCategories'
 import { apiJson, apiFetch } from '@/lib/apiClient'
 import type { Attachment, RequestStatus } from '@/types'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -251,6 +252,8 @@ export default function AdminRequestDetailPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
   const lc = t.lifecycle
+  // Bilingual category labels from the admin-managed taxonomy.
+  const { labelFor } = useCategories()
   const { toast } = useApp()
   const router = useRouter()
   const { id } = router.query
@@ -709,7 +712,7 @@ export default function AdminRequestDetailPage() {
                 }}
               >
                 <MetaCell icon={Tag} label={a.reqDetail.category}>
-                  {request.category || EMPTY}
+                  {request.category ? labelFor(request.category) : EMPTY}
                 </MetaCell>
                 <MetaCell icon={MapPin} label={a.reqDetail.city}>
                   {request.city || EMPTY}
