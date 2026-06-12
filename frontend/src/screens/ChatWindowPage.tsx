@@ -257,18 +257,21 @@ export default function ChatWindowPage() {
   // ── req 25 — mutual-consent close handshake ────────────────────────────
   // The caller's role is derived from the request: if the signed-in user owns
   // the request (beneficiaryId), they act as the beneficiary and hit the
-  // beneficiary endpoint; an assigned volunteer/handler/admin acts as the
-  // volunteer side. This mirrors the server's CloseRole split.
+  // beneficiary endpoint; the assigned volunteer/handler (which may be an
+  // admin) acts as the volunteer side. This mirrors the server's CloseRole
+  // split.
   const isBeneficiary =
     !!linkedRequest && !!user && linkedRequest.beneficiaryId === user.uid;
   const myCloseRole: "beneficiary" | "volunteer" = isBeneficiary
     ? "beneficiary"
     : "volunteer";
-  // Only beneficiary or assigned volunteer/handler/admin may use the control.
+  // Only the beneficiary or the assigned handler may use the control. A
+  // non-assigned admin is excluded on purpose: the backend's ownership check
+  // 403s them, so showing the buttons would only produce error toasts.
   const canUseCloseConsent =
     !!linkedRequest &&
     !!user &&
-    (isBeneficiary || isAssignedHandler || hasRole("admin")) &&
+    (isBeneficiary || isAssignedHandler) &&
     (linkedRequest.status === "in_progress" ||
       linkedRequest.status === "awaiting_review");
 

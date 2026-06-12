@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { Inbox, ChevronLeft, ChevronRight, Plus, HandHeart } from 'lucide-react'
+import { Inbox, ChevronLeft, ChevronRight, Plus, HandHeart, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { apiJson } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -29,6 +29,11 @@ const STATUS_FILTERS = [
 const ARCHIVED_FILTER = 'archived'
 type FilterKey = (typeof STATUS_FILTERS)[number] | typeof ARCHIVED_FILTER
 
+// The two server-side sort orders offered by GET /api/admin/requests:
+// 'newest' (createdAt desc, the default) and 'priority' (urgency/deadline).
+const SORT_KEYS = ['newest', 'priority'] as const
+type SortKey = (typeof SORT_KEYS)[number]
+
 // Row shape returned by GET /api/admin/requests. Loose by design: only the
 // fields this list reads are declared; everything else is allowed through.
 interface RequestRow {
@@ -44,6 +49,15 @@ interface RequestRow {
   origin?: string
   requestType?: string
   hasClaims?: boolean
+  assignedVolunteerId?: string | null
+  assignedVolunteerName?: string | null
+  // Compact consent-close handshake state (req 25), null when none pending.
+  closeRequest?: {
+    proposedRole?: string | null
+    proposedAt?: string | null
+    volunteerApproved?: boolean
+    beneficiaryApproved?: boolean
+  } | null
   [key: string]: unknown
 }
 
@@ -58,6 +72,11 @@ export default function AdminRequestsListPage() {
   // When linked from the dashboard with ?claims=true, narrow the list to
   // requests that have interested volunteers (req 22 surfacing).
   const [claimsOnly, setClaimsOnly] = useState(false)
+  // Server-side sort order: newest (default) or priority (urgency/deadline).
+  const [sort, setSort] = useState<SortKey>('newest')
+  // ?volunteerId= deep link (e.g. from the volunteers roster): narrow the list
+  // to one volunteer's assigned requests, server-side.
+  const [volunteerId, setVolunteerId] = useState('')
 
   const ManageArrow = isRTL ? ChevronLeft : ChevronRight
 
@@ -71,6 +90,9 @@ export default function AdminRequestsListPage() {
     if (status && ([...STATUS_FILTERS, ARCHIVED_FILTER] as readonly string[]).includes(status)) {
       setFilter(status as FilterKey)
     }
+    if (params.get('sort') === 'priority') setSort('priority')
+    const vid = params.get('volunteerId')
+    if (vid) setVolunteerId(vid)
   }, [])
 
   // Reflect the active filter in the URL so the view is bookmarkable, shareable,
@@ -80,9 +102,11 @@ export default function AdminRequestsListPage() {
     const params = new URLSearchParams()
     if (filter) params.set('status', filter)
     if (claimsOnly) params.set('claims', 'true')
+    if (sort === 'priority') params.set('sort', 'priority')
+    if (volunteerId) params.set('volunteerId', volunteerId)
     const qs = params.toString()
     window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname)
-  }, [filter, claimsOnly])
+  }, [filter, claimsOnly, sort, volunteerId])
 
   // Resolve the human label for a filter tab. Active statuses use the canonical
   // admin status labels; the archived tab + "all" use their dedicated keys.
@@ -99,20 +123,21 @@ export default function AdminRequestsListPage() {
       // The archived tab pulls the archived bucket; status tabs filter by
       // status. The default ('') view returns active (non-archived) requests:
       // the backend excludes archived === true unless ?archived=true is sent.
-      const qs =
-        filter === ARCHIVED_FILTER
-          ? '?archived=true'
-          : filter
-            ? `?status=${filter}`
-            : ''
-      const res = await apiJson(`/api/admin/requests${qs}`) as { items?: RequestRow[] }
+      // sort + volunteerId ride along on every view.
+      const params = new URLSearchParams()
+      if (filter === ARCHIVED_FILTER) params.set('archived', 'true')
+      else if (filter) params.set('status', filter)
+      if (sort === 'priority') params.set('sort', 'priority')
+      if (volunteerId) params.set('volunteerId', volunteerId)
+      const qs = params.toString()
+      const res = await apiJson(`/api/admin/requests${qs ? `?${qs}` : ''}`) as { items?: RequestRow[] }
       setItems(res.items || [])
     } catch (err) {
       setError(adminErrorMessage(err as { status?: number } | null, lang))
     } finally {
       setLoading(false)
     }
-  }, [filter, lang])
+  }, [filter, sort, volunteerId, lang])
 
   useEffect(() => {
     load()
@@ -121,6 +146,12 @@ export default function AdminRequestsListPage() {
   // When the claims-only view is active, narrow to requests that carry at
   // least one interested-volunteer claim (req 22).
   const visibleItems = claimsOnly ? items.filter((r) => r.hasClaims) : items
+
+  // Label for the ?volunteerId= filter chip: every returned row is assigned to
+  // that volunteer, so any row's denormalized name resolves it; uid otherwise.
+  const volunteerChipName =
+    items.find((r) => r.assignedVolunteerId === volunteerId)?.assignedVolunteerName ||
+    volunteerId
 
   // Live result summary: "N results" reusing the column/empty vocabulary the
   // page already ships (no new translation keys introduced).
@@ -183,13 +214,46 @@ export default function AdminRequestsListPage() {
               </button>
             )
           })}
+          {/* Sort toggle: same tab anatomy, parked at the bar's inline-end
+              behind its own hairline so it reads as a separate control. */}
+          <div role="group" aria-label={a.reqList.sortLabel} className="admin-reqlist-sort">
+            {SORT_KEYS.map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={sort === s}
+                onClick={() => setSort(s)}
+                className={`admin-reqlist-tab${sort === s ? ' is-active' : ''}`}
+              >
+                {s === 'newest' ? a.reqList.sortNewest : a.reqList.sortPriority}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* ?volunteerId= deep-link chip: names the active volunteer filter and
+            offers one tap to drop back to the full list. */}
+        {volunteerId && (
+          <div className="admin-reqlist-volchip">
+            <span className="admin-reqlist-volchip-label">
+              {a.reqList.volunteerFilter}: {volunteerChipName}
+            </span>
+            <button
+              type="button"
+              className="admin-reqlist-volchip-clear"
+              aria-label={a.reqList.volunteerFilterClear}
+              onClick={() => setVolunteerId('')}
+            >
+              <X size={13} aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </Reveal>
 
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
 
       {loading ? (
-        <TableSkeleton rows={6} cols={5} />
+        <TableSkeleton rows={6} cols={6} />
       ) : visibleItems.length === 0 ? (
         <Reveal>
           <EmptyState icon={Inbox} title={a.reqList.empty} message={a.reqList.emptyHint} />
@@ -227,6 +291,7 @@ export default function AdminRequestsListPage() {
                     <th>{a.reqList.colTitle}</th>
                     <th>{a.reqList.colCategory}</th>
                     <th>{a.reqList.colCity}</th>
+                    <th>{a.reqList.colAssigned}</th>
                     <th>{a.reqList.colStatus}</th>
                     <th className="admin-table-actions-col">{a.ui.actions}</th>
                   </tr>
@@ -266,6 +331,34 @@ export default function AdminRequestsListPage() {
                             {r.city || '·'}
                           </span>
                         </td>
+                        <td data-label={a.reqList.colAssigned}>
+                          {/* An assignee links to the volunteer drill-down
+                              (/admin/volunteers/[uid]). */}
+                          {r.assignedVolunteerId ? (
+                            <Link
+                              href={`/admin/volunteers/${r.assignedVolunteerId}`}
+                              className="admin-reqlist-vollink"
+                            >
+                              {r.assignedVolunteerName ? (
+                                <span className="admin-reqlist-meta">{r.assignedVolunteerName}</span>
+                              ) : (
+                                // Pre-denormalization rows carry only the uid:
+                                // CSS-truncate it, full uid in the title attr.
+                                <span
+                                  className="admin-reqlist-meta admin-reqlist-uid"
+                                  title={r.assignedVolunteerId}
+                                >
+                                  {r.assignedVolunteerId}
+                                </span>
+                              )}
+                            </Link>
+                          ) : r.assignedVolunteerName ? (
+                            // Name without a uid (defensive): nothing to link to.
+                            <span className="admin-reqlist-meta">{r.assignedVolunteerName}</span>
+                          ) : (
+                            <span className="admin-reqlist-meta--empty">·</span>
+                          )}
+                        </td>
                         <td data-label={a.reqList.colStatus}>
                           <span className="admin-reqlist-cell">
                             <StatusBadge
@@ -274,6 +367,20 @@ export default function AdminRequestsListPage() {
                             />
                             {r.archived && (
                               <StatusBadge status={ARCHIVED_FILTER} label={t.lifecycle.archivedBadge} />
+                            )}
+                            {/* req 25 — a pending consent-close handshake: one
+                                side proposed and awaits the other (title names
+                                the proposer; amber via the awaiting tone). */}
+                            {r.closeRequest && (
+                              <span
+                                title={
+                                  r.closeRequest.proposedRole === 'beneficiary'
+                                    ? a.reqList.closeProposedByBeneficiary
+                                    : a.reqList.closeProposedByVolunteer
+                                }
+                              >
+                                <StatusBadge status="awaiting_review" label={a.reqList.closeBadge} />
+                              </span>
                             )}
                           </span>
                         </td>

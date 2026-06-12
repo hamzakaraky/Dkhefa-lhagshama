@@ -1291,6 +1291,65 @@
   .admin-reqlist-tab:active { transform: none; }
 }
 
+/* Sort toggle: shares the tab anatomy, parked at the bar's inline-end behind
+   its own hairline (mirrors the archived-tab separation cue). Logical
+   properties auto-flip in RTL. */
+.admin-reqlist-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-inline-start: auto;
+  padding-inline-start: var(--sp-3);
+  border-inline-start: 1px solid var(--hair);
+}
+
+/* ?volunteerId= deep-link filter chip: names the active volunteer filter,
+   with a one-tap clear. Sits between the filter bar and the table. */
+.admin-reqlist-volchip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  margin-block-end: var(--sp-4);
+  padding-block: 4px;
+  padding-inline: 12px 6px;
+  background: var(--sky-3);
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  font-size: var(--fs-sm);
+  color: var(--ink-2);
+}
+
+.admin-reqlist-volchip-label {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.admin-reqlist-volchip-clear {
+  appearance: none;
+  display: grid;
+  place-items: center;
+  inline-size: 22px;
+  block-size: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gray-600);
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .admin-reqlist-volchip-clear:hover {
+    background: var(--white);
+    color: var(--ink);
+  }
+}
+
+.admin-reqlist-volchip-clear:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
 /* Section header: serif title + mono result count, baseline-aligned. */
 .admin-reqlist-head {
   display: flex;
@@ -1355,6 +1414,40 @@
 /* Empty metadata placeholder (category / city not set). */
 .admin-reqlist-meta { color: var(--gray-600); }
 .admin-reqlist-meta--empty { color: var(--gray-400); }
+
+/* Assigned-to cell link to the volunteer drill-down (/admin/volunteers/[uid]).
+   Colour + underline cues only (no transform) so nothing shifts under the
+   pointer; ring on keyboard focus. */
+.admin-reqlist-vollink {
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+
+@media (hover: hover) {
+  .admin-reqlist-vollink:hover .admin-reqlist-meta {
+    color: var(--ember);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.admin-reqlist-vollink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* Assigned-volunteer fallback when only the uid is known (rows assigned before
+   the name was denormalized): CSS-truncated, full uid in the title attr. */
+.admin-reqlist-uid {
+  display: inline-block;
+  max-inline-size: 10ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
 
 /* Per-row claims flag: an interested-volunteer marker on the request. */
 .admin-reqlist-claims {

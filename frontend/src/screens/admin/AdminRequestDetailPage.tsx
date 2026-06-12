@@ -15,6 +15,7 @@ import {
   UserPlus,
   StickyNote,
   CheckCircle2,
+  Handshake,
   RotateCcw,
   XCircle,
   Undo2,
@@ -38,7 +39,9 @@ import Reveal from '../../components/motion/Reveal'
 // refer action, and `archived` is a boolean flag set via the archive endpoint.
 const ADMIN_TRANSITIONS: Record<string, RequestStatus[]> = {
   pending: ['in_progress', 'rejected'],
-  in_progress: ['awaiting_review', 'referred', 'rejected'],
+  // An admin alone may one-step close an in-progress request (no
+  // awaiting_review stop) — mirrors the backend map on this branch.
+  in_progress: ['awaiting_review', 'closed', 'referred', 'rejected'],
   awaiting_review: ['closed', 'in_progress'],
   closed: ['in_progress'],
   referred: [],
@@ -96,6 +99,14 @@ interface RequestDetail {
   hasClaims?: boolean
   origin?: string
   requestType?: string
+  // Pending consent-close handshake (req 25), null/absent when none.
+  closeRequest?: {
+    proposedBy?: string
+    proposedRole?: string
+    proposedAt?: string
+    volunteerApproved?: boolean
+    beneficiaryApproved?: boolean
+  } | null
   [key: string]: unknown
 }
 
@@ -111,6 +122,7 @@ interface ActiveVolunteer {
 // duplicate the full translation typing that lives elsewhere.
 type AdminCopy = {
   statusLabels: Record<string, string>
+  roleLabels: Record<string, string>
   reqDetail: Record<string, string>
   [key: string]: unknown
 }
@@ -131,6 +143,20 @@ function eventLabel(ev: RequestEvent, a: AdminCopy): string {
       }`
     case 'note_added':
       return (ev.details && ev.details.note) || a.reqDetail.addNote
+    // req 25 — consent-close handshake trail: details carry
+    // { action: 'proposed'|'approved'|'declined', role: 'volunteer'|'beneficiary' }.
+    case 'close_consent': {
+      const action = typeof ev.details?.action === 'string' ? ev.details.action : ''
+      const role = typeof ev.details?.role === 'string' ? ev.details.role : ''
+      const base =
+        action === 'declined'
+          ? a.reqDetail.closeConsentDeclined
+          : action === 'approved'
+            ? a.reqDetail.closeConsentApproved
+            : a.reqDetail.closeConsentProposed
+      const roleLabel = (role && a.roleLabels[role]) || role
+      return roleLabel ? `${base} (${roleLabel})` : base
+    }
     default:
       return ev.type
   }
@@ -469,7 +495,9 @@ export default function AdminRequestDetailPage() {
       pt: PendingTransition
       danger?: boolean
     }[] = []
-    if (current === 'awaiting_review' && allowed.includes('closed')) {
+    // Close is offered from awaiting_review AND in_progress (admin one-step
+    // close, e.g. to resolve a one-sided consent-close handshake — req 25).
+    if ((current === 'awaiting_review' || current === 'in_progress') && allowed.includes('closed')) {
       controls.push({ key: 'close', label: lc.actions.close, Icon: CheckCircle2, pt: { kind: 'close', to: 'closed' } })
     }
     if (current === 'awaiting_review' && allowed.includes('in_progress')) {
@@ -693,6 +721,49 @@ export default function AdminRequestDetailPage() {
                   )}
                 </MetaCell>
               </dl>
+
+              {/* req 25 — pending consent-close handshake: who proposed and
+                  where each side stands. The admin may close for the missing
+                  party via the Close control in the action panel. */}
+              {request.closeRequest && (
+                <div
+                  style={{
+                    margin: 'var(--sp-5) 0 0',
+                    padding: 'var(--sp-4)',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--hair)',
+                    background: 'var(--sky-3)',
+                  }}
+                >
+                  <span style={{ ...EYEBROW, color: 'var(--ember)' }}>
+                    <Handshake size={14} aria-hidden="true" />
+                    {a.reqDetail.closePanelTitle}
+                  </span>
+                  <p style={{ margin: 'var(--sp-2) 0 0', fontWeight: 600, color: 'var(--ink)' }}>
+                    {a.reqDetail.closeProposedBy}:{' '}
+                    {(request.closeRequest.proposedRole &&
+                      (a.roleLabels as Record<string, string>)[request.closeRequest.proposedRole]) ||
+                      request.closeRequest.proposedRole ||
+                      EMPTY}
+                    {' · '}
+                    {fmt(request.closeRequest.proposedAt)}
+                  </p>
+                  <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-700)', lineHeight: 1.5 }}>
+                    {(a.roleLabels as Record<string, string>).volunteer}:{' '}
+                    {request.closeRequest.volunteerApproved
+                      ? a.reqDetail.closeAgreed
+                      : a.reqDetail.closeWaiting}
+                    {' · '}
+                    {(a.roleLabels as Record<string, string>).beneficiary}:{' '}
+                    {request.closeRequest.beneficiaryApproved
+                      ? a.reqDetail.closeAgreed
+                      : a.reqDetail.closeWaiting}
+                  </p>
+                  <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                    {a.reqDetail.closeAdminHint}
+                  </p>
+                </div>
+              )}
 
               {/* Referral panel (Note 8) — shown once the request was referred */}
               {request.referral && request.referral.partnerName && (

@@ -414,8 +414,20 @@ const base = {
         colTitle:   'תיאור',
         colCategory:'קטגוריה',
         colCity:    'עיר',
+        colAssigned:'מוקצה ל',
         colStatus:  'סטטוס',
         manage:     'ניהול',
+        // Sort toggle (newest / priority)
+        sortLabel:    'מיון',
+        sortNewest:   'החדשות קודם',
+        sortPriority: 'לפי דחיפות',
+        // req 25 — pending consent-close flag on a row
+        closeBadge: 'בקשת סגירה',
+        closeProposedByVolunteer:   'המתנדב/ת ביקש/ה לסגור את הבקשה וממתין/ה להסכמת הפונה.',
+        closeProposedByBeneficiary: 'הפונה ביקש/ה לסגור את הבקשה וממתין/ה להסכמת המתנדב/ת.',
+        // ?volunteerId= deep-link filter chip
+        volunteerFilter:      'מתנדב/ת',
+        volunteerFilterClear: 'ניקוי סינון מתנדב',
       },
       reqDetail: {
         title:        'פרטי בקשה',
@@ -444,6 +456,15 @@ const base = {
         statusBackwardError:  'לא ניתן להחזיר בקשה לסטטוס קודם.',
         statusConflictError:  'הסטטוס עודכן בינתיים על ידי מנהל/ת אחר/ת. רענן/י ונסה/י שוב.',
         statusGenericError:   'עדכון הסטטוס נכשל. נסה/י שוב.',
+        // req 25 — consent-close handshake panel + timeline labels
+        closePanelTitle:  'בקשת סגירה ממתינה',
+        closeProposedBy:  'הוצע על ידי',
+        closeAgreed:      'אישר/ה',
+        closeWaiting:     'ממתין/ה לאישור',
+        closeAdminHint:   'מנהל/ת יכול/ה לסגור את הבקשה גם עבור הצד שטרם אישר.',
+        closeConsentProposed: 'הוגשה בקשת סגירה',
+        closeConsentApproved: 'בקשת הסגירה אושרה',
+        closeConsentDeclined: 'בקשת הסגירה נדחתה',
       },
       userMgmt: {
         title:    'משתמשים',
@@ -1416,8 +1437,20 @@ const base = {
         colTitle:   'Description',
         colCategory:'Category',
         colCity:    'City',
+        colAssigned:'Assigned to',
         colStatus:  'Status',
         manage:     'Manage',
+        // Sort toggle (newest / priority)
+        sortLabel:    'Sort',
+        sortNewest:   'Newest',
+        sortPriority: 'Priority',
+        // req 25 — pending consent-close flag on a row
+        closeBadge: 'Close requested',
+        closeProposedByVolunteer:   'The volunteer asked to close this request and is waiting for the beneficiary to agree.',
+        closeProposedByBeneficiary: 'The beneficiary asked to close this request and is waiting for the volunteer to agree.',
+        // ?volunteerId= deep-link filter chip
+        volunteerFilter:      'Volunteer',
+        volunteerFilterClear: 'Clear volunteer filter',
       },
       reqDetail: {
         title:        'Request details',
@@ -1446,6 +1479,15 @@ const base = {
         statusBackwardError:  'A request cannot be moved back to an earlier status.',
         statusConflictError:  'The status was changed by another admin in the meantime. Please refresh and try again.',
         statusGenericError:   'Failed to update the status. Please try again.',
+        // req 25 — consent-close handshake panel + timeline labels
+        closePanelTitle:  'Pending close request',
+        closeProposedBy:  'Proposed by',
+        closeAgreed:      'Agreed',
+        closeWaiting:     'Awaiting approval',
+        closeAdminHint:   'An admin may close this request on behalf of the side that has not yet agreed.',
+        closeConsentProposed: 'Close requested',
+        closeConsentApproved: 'Close request approved',
+        closeConsentDeclined: 'Close request declined',
       },
       userMgmt: {
         title:    'Users',
