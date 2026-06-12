@@ -37,7 +37,7 @@ const base = {
       submit: 'שליחת דירוג',
       thanks: 'תודה על המשוב!',
       error: 'שליחת הדירוג נכשלה. נסו שוב.',
-      errorNotResolved: 'ניתן לדרג רק בקשות שטופלו.',
+      errorNotResolved: 'ניתן לדרג רק בקשות שנסגרו.',
     },
     dir: 'rtl',
     lang: 'he',
@@ -1030,7 +1030,7 @@ const base = {
       // #67 — auto-fill
       autoFill: {
         fillBtn:        'מלא מהפרופיל שלי',
-        saveToProfile:  'שמור פרטים לפרופיל',
+        saveToProfile:  'לשמור את הפרטים האלה בפרופיל שלך?',
         saved:          'הפרטים נשמרו בפרופיל',
         saveError:      'שמירת הפרופיל נכשלה',
         emailNote:      'ניתן לשנות את כתובת האימייל',
@@ -1091,7 +1091,7 @@ const base = {
       submit: 'Submit rating',
       thanks: 'Thanks for your feedback!',
       error: 'Failed to submit your rating. Please try again.',
-      errorNotResolved: 'Only resolved requests can be rated.',
+      errorNotResolved: 'Only closed requests can be rated.',
     },
     dir: 'ltr',
     lang: 'en',
@@ -2066,7 +2066,7 @@ const base = {
       // #67 — auto-fill
       autoFill: {
         fillBtn:       'Auto-fill from my profile',
-        saveToProfile: 'Save details to profile',
+        saveToProfile: 'Save these details to your profile?',
         saved:         'Details saved to profile',
         saveError:     'Failed to save profile',
         emailNote:     'You may change your email address',

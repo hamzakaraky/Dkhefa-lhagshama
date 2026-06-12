@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { CheckCircle, ChevronDown, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus, MessageCircle } from "lucide-react";
+import { CheckCircle, ChevronDown, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus, MessageCircle, UserCheck } from "lucide-react";
 
 import RatingForm from "@/components/forms/RatingForm";
 import SuggestCard from "@/components/SuggestCard";
 import Reveal from "../components/motion/Reveal";
+import { useApp } from "../contexts/AppContext";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { apiJson } from "../lib/apiClient";
@@ -40,6 +41,20 @@ interface TimelineEvent {
   id?: string | number;
   type: string;
   createdAt?: string;
+}
+
+// #67 — personal fields stashed by RequestsPage right before its post-submit
+// redirect (its in-form save-to-profile offer could never render). Read here
+// when arriving via ?new=, offered once, and cleared on save or dismiss so
+// the details do not outlive the offer.
+const SAVE_PROFILE_OFFER_KEY = "pff:saveProfileOffer";
+interface SaveProfileOffer {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  city?: string;
+  age?: string;
+  gender?: string;
 }
 
 // ── Small monospace eyebrow/label helper ──────────────────────
@@ -516,6 +531,7 @@ export default function MyRequestsPage() {
   const { t: tRaw, lang } = useLanguage();
   const t = tRaw as unknown as Translations;
   const { user, loading: authLoading } = useAuth();
+  const { toast } = useApp();
   const router = useRouter();
 
   const [items, setItems] = useState<RequestRecord[]>([]);
@@ -535,6 +551,65 @@ export default function MyRequestsPage() {
   // scroll to + highlight the matching card.
   const focusId = (typeof router.query.focus === "string" ? router.query.focus : null) || null;
   const focusCardRef = useRef<HTMLDivElement | null>(null);
+
+  // #67 — save-to-profile offer (moved here from the request form, whose
+  // post-submit redirect unmounted it before the offer could render).
+  const [saveOffer, setSaveOffer] = useState<SaveProfileOffer | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const offerActedRef = useRef(false);
+
+  // Read the stash only when we arrived via ?new= (i.e., straight from a
+  // submit). The stash stays in sessionStorage until the user acts on it.
+  useEffect(() => {
+    if (!newId) return;
+    try {
+      const raw = window.sessionStorage?.getItem(SAVE_PROFILE_OFFER_KEY);
+      if (raw) setSaveOffer(JSON.parse(raw) as SaveProfileOffer);
+    } catch { /* corrupt stash — ignore, never block the page */ }
+  }, [newId]);
+
+  // Either action (save or dismiss) clears the stash — PII hygiene: the
+  // personal details live only until acted on.
+  const clearSaveOffer = useCallback(() => {
+    offerActedRef.current = true;
+    try { window.sessionStorage?.removeItem(SAVE_PROFILE_OFFER_KEY); } catch { /* noop */ }
+    setSaveOffer(null);
+  }, []);
+
+  // Belt-and-braces: if the page unmounts after an action, make sure the
+  // stash is gone (clearSaveOffer already removed it; this covers any race).
+  useEffect(() => () => {
+    if (offerActedRef.current) {
+      try { window.sessionStorage?.removeItem(SAVE_PROFILE_OFFER_KEY); } catch { /* noop */ }
+    }
+  }, []);
+
+  // #67 — moved from RequestsPage.offerSaveProfile: PATCH the stashed fields
+  // into the profile. apiJson throws on non-2xx, so failures surface as the
+  // error toast. The stash is cleared either way (the user acted).
+  const handleSaveOffer = useCallback(async () => {
+    if (!saveOffer || savingProfile) return;
+    setSavingProfile(true);
+    try {
+      await apiJson("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          firstName: saveOffer.firstName,
+          lastName:  saveOffer.lastName,
+          phone:     saveOffer.phone,
+          city:      saveOffer.city,
+          age:       Number(saveOffer.age) || undefined,
+          gender:    saveOffer.gender || undefined,
+        }),
+      });
+      toast(t.stream2.autoFill.saved, "success");
+    } catch {
+      toast(t.stream2.autoFill.saveError, "error");
+    } finally {
+      setSavingProfile(false);
+    }
+    clearSaveOffer();
+  }, [saveOffer, savingProfile, toast, t, clearSaveOffer]);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -676,6 +751,38 @@ export default function MyRequestsPage() {
                 <div style={{ fontSize: "12.5px", fontWeight: 500, fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace', marginBlockStart: "2px" }}>
                   {newId}
                 </div>
+              </div>
+            </div>
+          </Reveal>
+        )}
+
+        {/* #67 — save-to-profile offer, shown right under the success banner
+            when the just-submitted personal details differ from the profile */}
+        {newId && !loading && saveOffer && (
+          <Reveal>
+            <div className="soft-note" role="status" style={{ marginBlockEnd: "28px", alignItems: "center", flexWrap: "wrap" }}>
+              <UserCheck size={18} className="soft-note-icon" aria-hidden="true" />
+              <span style={{ flex: 1, minWidth: "180px", fontSize: "13px", color: "var(--ink-2)" }}>
+                {t.stream2.autoFill.saveToProfile}
+              </span>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  className={`btn btn-outline btn-sm${savingProfile ? " is-loading" : ""}`}
+                  onClick={handleSaveOffer}
+                  disabled={savingProfile}
+                  aria-busy={savingProfile}
+                >
+                  {t.common.save}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={clearSaveOffer}
+                  disabled={savingProfile}
+                >
+                  {t.myRequests.suggest.dismiss}
+                </button>
               </div>
             </div>
           </Reveal>

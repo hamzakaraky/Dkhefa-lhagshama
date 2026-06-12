@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import type { ChangeEvent } from 'react'
 import { useRouter } from 'next/router'
 const useNavigate = () => {
@@ -44,6 +44,13 @@ const CATS = [
 
 // localStorage key for draft persistence (#93)
 const DRAFT_KEY = 'rq_draft_v1'
+
+// sessionStorage key for the post-submit "save to profile" offer (#67).
+// The submit redirect unmounts this page in the same tick, so any in-form
+// offer could never render; instead the submitted personal fields are
+// stashed here and MyRequestsPage shows the offer (and clears the stash on
+// save or dismiss, so the details do not outlive the offer).
+const SAVE_PROFILE_OFFER_KEY = 'pff:saveProfileOffer'
 
 function loadDraft() {
   try {
@@ -95,7 +102,12 @@ export default function RequestsPage() {
   // #67 — profile prefill state
   const [profileLoaded, setProfileLoaded] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
-  const [showSaveProfile, setShowSaveProfile] = useState(false)
+  // Canonical profile values as last loaded from the server — compared after
+  // submit to decide whether the save-to-profile offer is worth stashing.
+  const profileSnapshot = useRef<{
+    firstName: string; lastName: string; phone: string;
+    city: string; age: string; gender: string;
+  } | null>(null)
 
   // Client-generated UUID — stable per form session (#93 + upload path prefix)
   const requestId = useMemo(() => {
@@ -189,6 +201,14 @@ export default function RequestsPage() {
         }
       }
       const p = data.profile || {}
+      profileSnapshot.current = {
+        firstName: p.firstName || '',
+        lastName:  p.lastName  || '',
+        phone:     p.phone     || '',
+        city:      p.city      || '',
+        age:       p.age ? String(p.age) : '',
+        gender:    p.gender    || '',
+      }
       let filledAny = false
       if (p.firstName)   { setValue('firstName', p.firstName); filledAny = true }
       if (p.lastName)    { setValue('lastName',  p.lastName);  filledAny = true }
@@ -226,27 +246,6 @@ export default function RequestsPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
-
-  // #67 — save profile after submit
-  const offerSaveProfile = useCallback(async () => {
-    try {
-      await apiFetch('/api/users/me', {
-        method: 'PATCH',
-        body: JSON.stringify({
-          firstName: values.firstName,
-          lastName:  values.lastName,
-          phone:     values.phone,
-          city:      values.city,
-          age:       Number(values.age) || undefined,
-          gender:    toCanonicalGender(values.gender) || undefined,
-        }),
-      })
-      toast(s2.autoFill.saved, 'success')
-    } catch {
-      toast(s2.autoFill.saveError, 'error')
-    }
-    setShowSaveProfile(false)
-  }, [values, s2.autoFill.saved, s2.autoFill.saveError, toast, toCanonicalGender])
 
   // ── Validation / navigation ─────────────────────────────────
   const goNext = () => {
@@ -324,7 +323,25 @@ export default function RequestsPage() {
       const newId = body.requestId || requestId
       clearDraft()
       setSubmitted(true)
-      setShowSaveProfile(true)
+      // #67 — stash the submitted personal fields so MyRequestsPage can offer
+      // to save them to the profile (the redirect below unmounts this page in
+      // the same tick, so no in-form offer can render). Stashed only when the
+      // fields differ from the profile we loaded; cleared there on save or
+      // dismiss to keep the details from outliving the offer.
+      const offered = {
+        firstName: values.firstName,
+        lastName:  values.lastName,
+        phone:     values.phone,
+        city:      values.city,
+        age:       values.age,
+        gender:    toCanonicalGender(values.gender),
+      }
+      const snap = profileSnapshot.current
+      const differs = !snap || (Object.keys(offered) as (keyof typeof offered)[])
+        .some((k) => (offered[k] || '') !== (snap[k] || ''))
+      if (differs) {
+        try { window.sessionStorage?.setItem(SAVE_PROFILE_OFFER_KEY, JSON.stringify(offered)) } catch { /* noop */ }
+      }
       // #94 — replace route so back-button doesn't re-open the form
       router.replace(`/my-requests?new=${newId}`)
     } catch (err) {
@@ -760,23 +777,6 @@ export default function RequestsPage() {
               </label>
               {errors.consent && <div id="consent-error" role="alert" className="form-error" style={{ marginTop:'8px' }}>{errors.consent}</div>}
             </FormGroup>
-
-            {/* #67 — save-to-profile offer */}
-            {showSaveProfile && (
-              <div className="soft-note" style={{ marginTop:'16px', alignItems:'center', flexWrap:'wrap' }}>
-                <span style={{ flex:1, minWidth:'180px', fontSize:'13px', color:'var(--ink-2)' }}>
-                  {s2.autoFill.saveToProfile}
-                </span>
-                <div style={{ display:'flex', gap:'8px' }}>
-                  <button type="button" className="btn btn-outline btn-sm" onClick={offerSaveProfile}>
-                    {t.common.save}
-                  </button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setShowSaveProfile(false)}>
-                    {t.common.cancel}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
