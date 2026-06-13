@@ -772,12 +772,15 @@ export default function ChatWindowPage() {
     );
   }
 
-  // Status-driven dot color for the rail (was always ember).
+  // Status-driven dot color for the rail. Maps only the canonical
+  // RequestStatus set (types/index.ts): terminal states (closed/rejected/
+  // referred) → done, active work (in_progress/awaiting_review) → active, and
+  // pending (or anything unknown) → open. The retired 'resolved'/'done'
+  // strings are intentionally not handled — they are not part of the contract.
   const statusDotClass = (() => {
     const s = linkedRequest?.status;
-    if (s === "closed" || s === "rejected") return "chat-status__dot--done";
+    if (s === "closed" || s === "rejected" || s === "referred") return "chat-status__dot--done";
     if (s === "in_progress" || s === "awaiting_review") return "chat-status__dot--active";
-    if (s === "resolved" || s === "done") return "chat-status__dot--ok";
     return "chat-status__dot--open";
   })();
 

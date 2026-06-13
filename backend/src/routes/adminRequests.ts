@@ -242,6 +242,17 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
     }
 
     const data = snap.data()!;
+
+    // Reject assignment on a terminal request (closed/referred/rejected):
+    // assigning would create an active chat on a dead request and fire a
+    // misleading "assigned" notification. The admin UI also disables the
+    // control for these states; this 409 is the hard server-side guard.
+    const TERMINAL_STATUSES = new Set(['closed', 'referred', 'rejected']);
+    if (TERMINAL_STATUSES.has(data.status as string)) {
+      res.status(409).json({ error: 'request_terminal' });
+      return;
+    }
+
     const prevVolunteerId = data.assignedVolunteerId ?? null;
 
     // Denormalize the display name so list views never need an N+1 lookup

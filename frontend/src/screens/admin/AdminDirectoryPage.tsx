@@ -37,6 +37,8 @@ interface AnswerRow {
   audience: Bilingual
   sourceName: string | null
   sourceUrl: string | null
+  phone: string | null
+  email: string | null
   orgType: OrgType
   status: string | null
   createdAt: string | null
@@ -85,6 +87,12 @@ function isValidHttpUrl(value: string): boolean {
   } catch {
     return false
   }
+}
+
+// Mirrors the backend z.string().email() guard on answer.email so an admin
+// gets an inline message instead of a generic 400 toast. Empty = no email.
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
 // Distinct chip tone per org type (shape + label carry the meaning too).
@@ -138,6 +146,10 @@ function DirectoryFormDialog({ catalog, item, busy, onClose, onSubmit }: FormDia
   const [orgType, setOrgType] = useState<OrgType>(answer?.orgType ?? 'ngo')
   const [sourceName, setSourceName] = useState(answer?.sourceName ?? '')
   const [sourceUrl, setSourceUrl] = useState(answer?.sourceUrl ?? '')
+  // Contact fields (NPO org import) — the public org card renders these as
+  // Call / Send-email actions, so the admin form must be able to set/edit them.
+  const [answerPhone, setAnswerPhone] = useState(answer?.phone ?? '')
+  const [answerEmail, setAnswerEmail] = useState(answer?.email ?? '')
 
   // ── Business fields ────────────────────────────────────────────
   const [name, setName] = useState(L(business?.name, lang))
@@ -176,6 +188,11 @@ function DirectoryFormDialog({ catalog, item, busy, onClose, onSubmit }: FormDia
         setFormError(dm.invalidUrl)
         return
       }
+      const emailTrim = answerEmail.trim()
+      if (emailTrim && !isValidEmail(emailTrim)) {
+        setFormError(dm.invalidEmail)
+        return
+      }
       const payload: Record<string, unknown> = {
         title: { he: titleHe.trim(), en: titleEn.trim() },
         body: { he: bodyHe.trim(), en: bodyEn.trim() },
@@ -185,6 +202,9 @@ function DirectoryFormDialog({ catalog, item, busy, onClose, onSubmit }: FormDia
         audience: { he: audienceHe.trim(), en: audienceEn.trim() },
         sourceName: sourceName.trim(),
         sourceUrl: url,
+        // Empty string clears the value (backend treats '' as "clear").
+        phone: answerPhone.trim(),
+        email: emailTrim,
       }
       if (item) payload.status = status
       onSubmit(payload)
@@ -341,6 +361,10 @@ function DirectoryFormDialog({ catalog, item, busy, onClose, onSubmit }: FormDia
             <div className="admin-dir-bi-grid" style={{ marginBlockStart: 'var(--sp-3)' }}>
               {field('dir-source-name', dm.fieldSourceName, sourceName, setSourceName)}
               {field('dir-source-url', dm.fieldSourceUrl, sourceUrl, setSourceUrl, { type: 'url', placeholder: 'https://example.org' })}
+            </div>
+            <div className="admin-dir-bi-grid" style={{ marginBlockStart: 'var(--sp-3)' }}>
+              {field('dir-answer-phone', dm.fieldAnswerPhone, answerPhone, setAnswerPhone, { type: 'tel' })}
+              {field('dir-answer-email', dm.fieldAnswerEmail, answerEmail, setAnswerEmail, { type: 'email', placeholder: 'name@example.org' })}
             </div>
           </>
         ) : (

@@ -374,15 +374,32 @@ export default function ChatListPage() {
     }
 
     if (visibleChats.length === 0) {
+      // If we arrived via ?requestId= with no chat for it, explain that rather
+      // than showing the generic tab-empty copy.
+      const focusHasNoChatHere =
+        !!focusRequestId && chats.every((ch) => ch.requestId !== focusRequestId);
       return renderState({
         tone: "info",
         icon: <MessagesSquare size={26} strokeWidth={1.75} />,
-        body: tab === "active" ? c.activeEmpty : c.pastEmpty,
+        body: focusHasNoChatHere
+          ? c.focusNoChat
+          : tab === "active" ? c.activeEmpty : c.pastEmpty,
       });
     }
 
+    // Arrived via ?requestId= but no chat exists for it yet (e.g. a still-
+    // pending request). The auto-open effect can't navigate anywhere, so show a
+    // clear notice instead of silently dropping the user on the full list.
+    const focusHasNoChat =
+      !!focusRequestId && chats.every((ch) => ch.requestId !== focusRequestId);
+
     return (
       <div className="chat-list-card">
+        {focusHasNoChat && (
+          <p className="chat-state__body" role="status" style={{ padding: "12px 16px", margin: 0 }}>
+            {c.focusNoChat}
+          </p>
+        )}
         <ul className="chat-list-card__ul">
           {visibleChats.map((chat) => {
             const highlighted =

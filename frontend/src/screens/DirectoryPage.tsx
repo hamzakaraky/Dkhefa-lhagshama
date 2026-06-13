@@ -10,6 +10,7 @@ import Reveal from '../components/motion/Reveal'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useCategories } from '../hooks/useCategories'
 import { apiJson } from '../lib/apiClient'
+import { safeHref } from '../lib/safeUrl'
 import type { CaughtError, TNode, Lang } from '@/types'
 
 const PER_PAGE = 6
@@ -106,7 +107,10 @@ export default function DirectoryPage() {
   const openBusinessModal = useCallback((biz: DirRecord) => {
     const name = L(biz.name)
     const phone = biz.phone ? String(biz.phone) : ''
-    const website = biz.website ? String(biz.website) : ''
+    // safeHref gates the link to http(s) at render time (defense-in-depth on
+    // top of the server-side scheme validation); a non-http value renders no
+    // link instead of an injectable href.
+    const website = safeHref(biz.website)
     const categoryLabel = (d.categories as Record<string, string>)?.[biz.category as string] || String(biz.category ?? '')
     const callLabel = String(d.modal.call)
     const visitLabel = String(d.modal.visitWebsite)
@@ -154,7 +158,8 @@ export default function DirectoryPage() {
     // card/modal styling.
     const phone = answer.phone ? String(answer.phone) : ''
     const email = answer.email ? String(answer.email) : ''
-    const website = answer.sourceUrl ? String(answer.sourceUrl) : ''
+    // safeHref gates the link to http(s) at render time (see business modal).
+    const website = safeHref(answer.sourceUrl)
     const startLabel = String(d.modal.startRequest)
     const callLabel = String(d.modal.call)
     const emailLabel = String(d.modal.email)
@@ -305,14 +310,16 @@ export default function DirectoryPage() {
     setAnswersLoading(true)
     setAnswersError(null)
     try {
-      // `category` is an enum key the API can still filter on server-side, and
-      // `orgType` scopes the catalog to the active tab (ngo vs partner).
-      // region/audience are bilingual objects and are filtered client-side.
+      // Fetch the FULL orgType catalog once (no server-side `category` filter):
+      // `orgType` scopes the answers to the active tab (ngo vs partner), and
+      // category/region/audience are all filtered client-side. Keeping the
+      // fetch category-agnostic means the loaded `answers` set always holds
+      // every category for the tab, so the NGO_AREAS chip row stays complete
+      // and a user can jump directly between categories (the chip set is
+      // derived from this unfiltered set, not from a narrowed result).
       const query = new URLSearchParams()
-      if (answerCategory !== 'all') query.set('category', answerCategory)
       query.set('orgType', answerOrgType)
-      const queryString = query.toString()
-      const path = `/api/answers${queryString ? `?${queryString}` : ''}`
+      const path = `/api/answers?${query.toString()}`
       const data = await apiJson(path) as { items?: DirRecord[] }
       if (live.current && data?.items) {
         setAnswers(data.items)
@@ -324,7 +331,7 @@ export default function DirectoryPage() {
     } finally {
       if (live.current) setAnswersLoading(false)
     }
-  }, [answerCategory, answerOrgType])
+  }, [answerOrgType])
 
   // Tab switch helper: any tab change restarts the answers pagination,
   // because moving between ngo/partner (directly or via the business tab)
@@ -358,9 +365,12 @@ export default function DirectoryPage() {
   // Deep-link from the URL (request form → directory). Once the router is ready
   // and the taxonomy has loaded, read ?category=<id> and optional
   // ?tab=ngo|partner: a valid category sets the answer-category filter and lands
-  // on the chosen org tab (default 'ngo' / עמותות). Unknown or absent params are
-  // a silent no-op (keeps the default 'business' tab + 'all' filter). Applied
-  // once so a later manual tab/filter change is never overridden.
+  // on the chosen org tab. An explicit ?tab=partner honors that tab; otherwise
+  // (no/other tab param) we land on whichever org tab actually has answers in
+  // the deep-linked category so partner-only matches are never hidden behind an
+  // empty עמותות tab. ngo wins ties (it is the larger default catalog). Unknown
+  // or absent params are a silent no-op (keeps 'business' tab + 'all' filter).
+  // Applied once so a later manual tab/filter change is never overridden.
   const deepLinkApplied = useRef(false)
   useEffect(() => {
     if (deepLinkApplied.current) return
@@ -375,18 +385,56 @@ export default function DirectoryPage() {
 
     const rawTab = router.query.tab
     const tab = Array.isArray(rawTab) ? rawTab[0] : rawTab
-    const nextTab = tab === 'partner' ? 'partner' : 'ngo'
 
-    setActiveTab(nextTab)
-    setAnswerCategory(category)
-    setAnswerPage(1)
+    const applyDeepLink = (nextTab: 'ngo' | 'partner') => {
+      setActiveTab(nextTab)
+      setAnswerCategory(category)
+      setAnswerPage(1)
+    }
+
+    // Explicit partner request — honor it as-is.
+    if (tab === 'partner') {
+      applyDeepLink('partner')
+      return
+    }
+    // Explicit ngo request — honor it as-is.
+    if (tab === 'ngo') {
+      applyDeepLink('ngo')
+      return
+    }
+
+    // No tab hint: probe both org types for the category and land on the one
+    // with results (ngo preferred on a tie / when both empty). A lightweight
+    // count-only check keeps the deep-link from dead-ending on an empty tab.
+    let alive = true
+    const probe = async () => {
+      const countFor = async (orgType: 'ngo' | 'partner') => {
+        try {
+          const data = await apiJson(
+            `/api/answers?orgType=${orgType}&category=${encodeURIComponent(category)}`
+          ) as { items?: DirRecord[] }
+          return data?.items?.length ?? 0
+        } catch {
+          return 0
+        }
+      }
+      const [ngoCount, partnerCount] = await Promise.all([countFor('ngo'), countFor('partner')])
+      if (!alive) return
+      // ngo wins unless it is empty and partner has matches.
+      applyDeepLink(ngoCount === 0 && partnerCount > 0 ? 'partner' : 'ngo')
+    }
+    void probe()
+    return () => { alive = false }
   }, [router.isReady, router.query, ngoCategories])
 
   const BIZ_CATS = ['all', 'food', 'services', 'health', 'education', 'beauty', 'tech']
   // NGO area chips reflect REAL data, not the full taxonomy: the union of
   // categories actually present in the loaded answers, ordered by the taxonomy,
-  // with a leading `all` chip. Before answers load (or when none match) only the
-  // `all` chip shows — no flash of dead chips for taxonomy ids that never match.
+  // with a leading `all` chip. `answers` is the full orgType set (category is
+  // filtered client-side, never server-side), so the chip row stays complete
+  // after a category is picked — the user can switch directly between
+  // categories. Before answers load (or when none match) only the `all` chip
+  // shows — no flash of dead chips for taxonomy ids that never match.
   // Mirrors how the volunteer pool derives its byCategory chips.
   const NGO_AREAS = useMemo(() => {
     const present = new Set<string>()

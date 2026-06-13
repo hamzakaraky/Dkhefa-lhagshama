@@ -1,15 +1,36 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { CSSProperties, ReactNode, KeyboardEvent } from 'react'
 import { useRouter } from 'next/router'
 import { ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, Star, Check, HeartHandshake } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
 import { useLanguage } from '../contexts/LanguageContext'
-import { mockStories, mockStats, mockNGOs } from '../data/mockData'
+import { useCategories } from '../hooks/useCategories'
+import { apiJson } from '../lib/apiClient'
+import { mockStories, mockStats } from '../data/mockData'
 import StatCard from '@/components/data-display/StatCard'
 import AssetImage from '@/components/layout/AssetImage'
 import type { AssetSlotKey } from '@/assets/manifest'
 import Reveal from '../components/motion/Reveal'
 import MagneticButton from '../components/motion/MagneticButton'
+
+// A partner org as rendered in the homepage marquee. Built from the real
+// `answers` catalog (orgType=partner), the same source the /directory page uses
+// — no fabricated organizations.
+interface MarqueePartner {
+  id: string
+  name: string
+  area: string
+  mark: string
+}
+
+// Bilingual field passthrough: answers return `{ he, en }` objects (or plain
+// strings on legacy docs); render the active-language value.
+type BilingualValue = string | { he?: string; en?: string } | null | undefined
+function pickLang(value: BilingualValue, lang: string): string {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  return (lang === 'he' ? value.he : value.en) || value.he || value.en || ''
+}
 
 const useNavigate = () => {
   const router = useRouter()
@@ -30,6 +51,41 @@ export default function HomePage() {
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight
 
   const serviceEntries = Object.entries(t.services.items)
+
+  // Real partner organizations for the marquee — fetched from the live answers
+  // catalog (orgType=partner), so the homepage advertises the NGO's actual
+  // partners rather than fabricated ones. The marquee is hidden when there are
+  // none (or the fetch fails).
+  const { labelFor } = useCategories()
+  const [partners, setPartners] = useState<MarqueePartner[]>([])
+  useEffect(() => {
+    let alive = true
+    apiJson<{ items?: Array<{ id: string; title?: BilingualValue; category?: string | null; region?: BilingualValue }> }>(
+      '/api/answers?orgType=partner'
+    )
+      .then((data) => {
+        if (!alive) return
+        const items = Array.isArray(data.items) ? data.items : []
+        const mapped = items
+          .map((item) => {
+            const name = pickLang(item.title, lang).trim()
+            if (!name) return null
+            // Area: prefer the category label, fall back to the region text.
+            const area = item.category ? labelFor(item.category) : pickLang(item.region, lang)
+            return {
+              id: item.id,
+              name,
+              area: area || '',
+              // Mark = first character of the name (no logo asset on answers).
+              mark: Array.from(name)[0] ?? '·',
+            }
+          })
+          .filter((p): p is MarqueePartner => p !== null)
+        setPartners(mapped)
+      })
+      .catch(() => { if (alive) setPartners([]) })
+    return () => { alive = false }
+  }, [lang, labelFor])
 
   // Success-stories gallery: one panel is the highlight at a time. It behaves
   // as an ARIA tablist — roving tabindex + arrow/Home/End keys (RTL-aware).
@@ -315,29 +371,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── PARTNERS — an auto-scrolling trail of partner organisations ─────── */}
-      <section style={{ background: 'var(--sky-2)', paddingBlock: 'clamp(48px, 6vw, 72px)', overflow: 'hidden' }}>
-        <div className="page-container">
-          <Reveal>
-            <h2 className="section-display" style={{ fontSize: 'var(--fs-h2)', margin: '0 0 24px' }}>
-              {t.partners.title}
-            </h2>
-          </Reveal>
-        </div>
-        <div className="home-marquee" data-reduce={reduce ? 'true' : 'false'}>
-          <div className="home-marquee-track">
-            {[...mockNGOs, ...mockNGOs].map((ngo, i) => (
-              <div key={`${ngo.id}-${i}`} className="home-partner" aria-hidden={i >= mockNGOs.length ? 'true' : undefined}>
-                <span className="home-partner-mark">{ngo.logo}</span>
-                <span>
-                  <span className="home-partner-name">{lang === 'he' ? ngo.name : ngo.nameEn}</span>
-                  <span className="home-partner-area">{lang === 'he' ? ngo.area : ngo.areaEn}</span>
-                </span>
-              </div>
-            ))}
+      {/* ── PARTNERS — an auto-scrolling trail of real partner organisations ── */}
+      {partners.length > 0 && (
+        <section style={{ background: 'var(--sky-2)', paddingBlock: 'clamp(48px, 6vw, 72px)', overflow: 'hidden' }}>
+          <div className="page-container">
+            <Reveal>
+              <h2 className="section-display" style={{ fontSize: 'var(--fs-h2)', margin: '0 0 24px' }}>
+                {t.partners.title}
+              </h2>
+            </Reveal>
           </div>
-        </div>
-      </section>
+          <div className="home-marquee" data-reduce={reduce ? 'true' : 'false'}>
+            <div className="home-marquee-track">
+              {[...partners, ...partners].map((p, i) => (
+                <div key={`${p.id}-${i}`} className="home-partner" aria-hidden={i >= partners.length ? 'true' : undefined}>
+                  <span className="home-partner-mark">{p.mark}</span>
+                  <span>
+                    <span className="home-partner-name">{p.name}</span>
+                    {p.area && <span className="home-partner-area">{p.area}</span>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── FINAL CTA — full-bleed ink band ───────────────────────────────── */}
       <section style={{ background: 'var(--ink)', paddingBlock: 'clamp(56px, 8vw, 88px)' }}>

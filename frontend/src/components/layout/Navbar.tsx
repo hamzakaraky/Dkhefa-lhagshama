@@ -147,7 +147,7 @@ export default function Navbar() {
   );
 
   return (
-    <nav className="navbar" role="navigation" aria-label="Main navigation">
+    <nav className="navbar" role="navigation" aria-label={t.nav.ariaMain}>
       <div
         className="page-container"
         style={{

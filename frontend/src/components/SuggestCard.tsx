@@ -2,6 +2,7 @@ import { Sparkles, ExternalLink, X } from "lucide-react";
 
 import type { CSSProperties } from "react";
 import type { Suggestion } from "@/types";
+import { safeHref } from "@/lib/safeUrl";
 
 // ── Suggest-alternatives card (UC-01 A1, simple If-Then) ──────
 // Surfaces up to 3 approved community answers for a category. Bilingual text
@@ -93,6 +94,9 @@ export default function SuggestCard({ items, lang, heading, subtitle, openLabel,
         {items.slice(0, 3).map((item) => {
           const title = pickLangValue(item.title, lang) || pickLangValue(item.sourceName, lang);
           const source = pickLangValue(item.sourceName, lang);
+          // safeHref gates the link to http(s) at render time (defense-in-depth
+          // over the server-side scheme validation); non-http renders no link.
+          const href = safeHref(item.sourceUrl);
           return (
             <li
               key={item.id}
@@ -118,9 +122,9 @@ export default function SuggestCard({ items, lang, heading, subtitle, openLabel,
                   </div>
                 )}
               </div>
-              {item.sourceUrl && (
+              {href && (
                 <a
-                  href={item.sourceUrl}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-ghost btn-sm"

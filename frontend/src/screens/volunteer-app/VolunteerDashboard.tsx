@@ -46,6 +46,12 @@ export default function VolunteerDashboard() {
   const d = v.dash
   // Admin-managed taxonomy: category-permission picker + chip labels.
   const { categories: allCategories, labelFor } = useCategories()
+  // The pool buckets requests with no category under a synthetic
+  // 'uncategorized' id that is NOT in the taxonomy, so labelFor would leak the
+  // raw English 'uncategorized' into the Hebrew UI. Resolve it to the localized
+  // label (mirrors the VolunteerPoolPage catLabel wrapper).
+  const catLabel = (id: string): string =>
+    id === 'uncategorized' ? t.common.uncategorized : labelFor(id)
 
   const [me, setMe] = useState<VolunteerMe | null>(null)
   const [assigned, setAssigned] = useState<AssignedItem[]>([])
@@ -331,7 +337,7 @@ export default function VolunteerDashboard() {
             {pool.byCategory.map((b) => (
               <span key={b.category} className="volapp-count-chip">
                 <Tag size={14} aria-hidden="true" />
-                {labelFor(b.category)}
+                {catLabel(b.category)}
                 <span className="volapp-count-num">{b.count}</span>
               </span>
             ))}

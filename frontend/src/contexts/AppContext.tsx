@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
-import { mockRequests, mockUsers, mockVolunteers, mockBusinesses } from '../data/mockData'
-import type { Request, AdminUser, Volunteer, Business } from '@/types'
+import { mockVolunteers } from '../data/mockData'
+import type { Volunteer } from '@/types'
 
 /** A transient toast notification. */
 export interface Toast {
@@ -17,17 +17,8 @@ export interface AppContextValue {
   toasts: Toast[]
   toast: (message: string, type?: ToastType, duration?: number) => void
   removeToast: (id: number) => void
-  requests: Request[]
-  addRequest: (req: Partial<Request>) => string
-  updateRequest: (id: string, updates: Partial<Request>) => void
-  deleteRequest: (id: string) => void
-  users: AdminUser[]
-  deleteUser: (id: AdminUser['id']) => void
+  // Public volunteer roster (read-only fixture consumed by VolunteerPage).
   volunteers: Volunteer[]
-  addVolunteer: (vol: Partial<Volunteer>) => Volunteer['id']
-  businesses: Business[]
-  addBusiness: (biz: Partial<Business>) => void
-  approveBusiness: (id: Business['id']) => void
   modal: ReactNode
   openModal: (content: ReactNode) => void
   closeModal: () => void
@@ -51,63 +42,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setToasts(prev => prev.filter(t => t.id !== id))
   }, [])
 
-  // ── REQUESTS ───────────────────────────────────────────
-  const [requests, setRequests] = useState<Request[]>(mockRequests as Request[])
-
-  const addRequest = useCallback((req: Partial<Request>) => {
-    const newReq = {
-      ...req,
-      id: `PFF-${new Date().getFullYear()}-${String(requests.length + 248).padStart(4, '0')}`,
-      status: 'pending',
-      date: new Date().toISOString().split('T')[0],
-      handler: null,
-      notes: '',
-    } as Request
-    setRequests(prev => [newReq, ...prev])
-    return newReq.id
-  }, [requests.length])
-
-  const updateRequest = useCallback((id: string, updates: Partial<Request>) => {
-    setRequests(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r))
-  }, [])
-
-  const deleteRequest = useCallback((id: string) => {
-    setRequests(prev => prev.filter(r => r.id !== id))
-  }, [])
-
-  // ── USERS ──────────────────────────────────────────────
-  const [users, setUsers] = useState<AdminUser[]>(mockUsers as AdminUser[])
-
-  const deleteUser = useCallback((id: AdminUser['id']) => {
-    setUsers(prev => prev.filter(u => u.id !== id))
-  }, [])
-
-  // ── VOLUNTEERS ─────────────────────────────────────────
-  const [volunteers, setVolunteers] = useState<Volunteer[]>(mockVolunteers as Volunteer[])
-
-  const addVolunteer = useCallback((vol: Partial<Volunteer>) => {
-    const newVol = {
-      ...vol,
-      id: volunteers.length + 1,
-      status: 'available',
-      joinedDate: new Date().toISOString().slice(0, 7),
-      assignedTo: null,
-    } as Volunteer
-    setVolunteers(prev => [...prev, newVol])
-    return newVol.id
-  }, [volunteers.length])
-
-  // ── BUSINESSES ─────────────────────────────────────────
-  const [businesses, setBusinesses] = useState<Business[]>(mockBusinesses as Business[])
-
-  const addBusiness = useCallback((biz: Partial<Business>) => {
-    const newBiz = { ...biz, id: businesses.length + 1, approved: false, rating: 0, reviews: 0 } as Business
-    setBusinesses(prev => [...prev, newBiz])
-  }, [businesses.length])
-
-  const approveBusiness = useCallback((id: Business['id']) => {
-    setBusinesses(prev => prev.map(b => b.id === id ? { ...b, approved: true } : b))
-  }, [])
+  // ── VOLUNTEERS — public roster fixture (VolunteerPage) ──
+  const [volunteers] = useState<Volunteer[]>(mockVolunteers as Volunteer[])
 
   // ── MODAL ──────────────────────────────────────────────
   const [modal, setModal] = useState<ReactNode>(null)
@@ -117,10 +53,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       toasts, toast, removeToast,
-      requests, addRequest, updateRequest, deleteRequest,
-      users, deleteUser,
-      volunteers, addVolunteer,
-      businesses, addBusiness, approveBusiness,
+      volunteers,
       modal, openModal, closeModal,
     }}>
       {children}

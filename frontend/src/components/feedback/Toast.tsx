@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 
 /** A single transient toast notification (mirrors AppContext's toast shape). */
 interface ToastItem {
@@ -18,6 +19,9 @@ const ICONS: Record<ToastItem['type'], ReactNode> = {
 
 export default function ToastContainer() {
   const { toasts, removeToast } = useApp()
+  // Note: the map var below is also named `t` (a toast item), so the language
+  // table is aliased to `tr` to keep the dismiss label localized.
+  const { t: tr } = useLanguage()
 
   return (
     <div className="toast-container no-print" role="region" aria-live="polite">
@@ -28,7 +32,7 @@ export default function ToastContainer() {
           <button
             onClick={() => removeToast(t.id)}
             style={{ background:'none', border:'none', color:'rgba(244,238,224,0.7)', cursor:'pointer', padding:'2px', display:'flex', flexShrink:0 }}
-            aria-label="Close"
+            aria-label={tr.common.close}
           >
             <X size={14} />
           </button>

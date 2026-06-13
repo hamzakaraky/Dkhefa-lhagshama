@@ -515,6 +515,15 @@ export default function AdminRequestDetailPage() {
   const canArchive =
     !request?.archived && (request?.status === 'closed' || request?.status === 'referred')
 
+  // Assigning a volunteer to a terminal request (closed/referred/rejected)
+  // would create an active chat on a dead request and fire a misleading
+  // "assigned" notification, so the assign control is disabled for those
+  // states (the backend also rejects it with 409 as a hard guard).
+  const isTerminal =
+    request?.status === 'closed' ||
+    request?.status === 'referred' ||
+    request?.status === 'rejected'
+
   const EMPTY = '·' // middle dot placeholder for missing values
 
   const fmt = (ts: string | number | Date | undefined): string => {
@@ -1004,6 +1013,7 @@ export default function AdminRequestDetailPage() {
                   id="assign"
                   className="form-select"
                   value={assignTo}
+                  disabled={isTerminal}
                   onChange={(e) => {
                     setAssignTo(e.target.value)
                     setDismissedLangWarn(false)
@@ -1016,6 +1026,16 @@ export default function AdminRequestDetailPage() {
                     </option>
                   ))}
                 </select>
+                {isTerminal && (
+                  <p
+                    className="admin-notice admin-notice-warn"
+                    role="status"
+                    style={{ marginBlockStart: 'var(--sp-3)' }}
+                  >
+                    <AlertTriangle size={16} aria-hidden="true" />
+                    <span>{a.reqDetail.assignTerminalHint}</span>
+                  </p>
+                )}
                 {/* #95 — non-blocking language-mismatch warning */}
                 {langMismatch && !dismissedLangWarn && (
                   <div
@@ -1037,7 +1057,7 @@ export default function AdminRequestDetailPage() {
                 <button
                   type="button"
                   className="btn btn-primary admin-side-btn"
-                  disabled={saving || !assignTo}
+                  disabled={saving || !assignTo || isTerminal}
                   aria-busy={saving || undefined}
                   onClick={handleAssign}
                 >

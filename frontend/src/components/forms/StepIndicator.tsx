@@ -1,14 +1,17 @@
 import { Check } from 'lucide-react'
 
-// API preserved: { steps: string[], currentStep: number (1-indexed) }
+// API preserved: { steps: string[], currentStep: number (1-indexed) }.
+// `progressLabel` localizes the progress landmark's aria-label (callers pass a
+// translated string); falls back to the English literal when omitted.
 interface StepIndicatorProps {
   steps: string[]
   currentStep: number
+  progressLabel?: string
 }
 
-export default function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+export default function StepIndicator({ steps, currentStep, progressLabel = 'Progress' }: StepIndicatorProps) {
   return (
-    <div className="stepper" role="list" aria-label="Progress">
+    <div className="stepper" role="list" aria-label={progressLabel}>
       {steps.map((label, i) => {
         const num = i + 1
         const isDone = num < currentStep

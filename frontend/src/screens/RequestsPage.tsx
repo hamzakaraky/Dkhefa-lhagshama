@@ -476,7 +476,7 @@ export default function RequestsPage() {
             </div>
           </Reveal>
           <div className="req-header-stepper">
-            <StepIndicator steps={steps} currentStep={step} />
+            <StepIndicator steps={steps} currentStep={step} progressLabel={rq.progressLabel} />
           </div>
         </div>
       </section>
@@ -585,7 +585,7 @@ export default function RequestsPage() {
                     <Label htmlFor="idNumber">{rq.step1.idNumber}</Label>
                     <Input id="idNumber" name="idNumber" value={values.idNumber} onChange={handleChange}
                       autoComplete="off" spellCheck={false} aria-invalid={!!errors.idNumber}
-                      placeholder="AB123456" maxLength={40} error={errors.idNumber} />
+                      placeholder={rq.step1.passportPH} maxLength={40} error={errors.idNumber} />
                   </FormGroup>
                 )}
                 <FormGroup style={values.idType === 'none' ? {} : {}}>
@@ -731,10 +731,14 @@ export default function RequestsPage() {
             )}
 
             {/* Link to the full directory, pre-filtered by the chosen category —
-                shown whenever a category is picked (with or without inline
-                suggestions above), so the beneficiary can browse every matching
-                organization before submitting. */}
-            {values.category && (
+                gated on orgSuggestions.length > 0 so it only renders when the
+                category actually has at least one matching organization
+                (suggestions query both org types). This stops the CTA from
+                promising "all organizations that can help" and then landing the
+                beneficiary on an empty directory for categories with no orgs
+                (e.g. absorption/youth in the current dataset). No `tab` param:
+                DirectoryPage picks whichever org tab holds the category. */}
+            {values.category && orgSuggestions.length > 0 && (
               <button
                 type="button"
                 className="btn btn-ghost btn-sm"

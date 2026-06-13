@@ -104,6 +104,10 @@ export default function VolunteerInsightsPage() {
   }, [load])
 
   const statusLabel = (status: string): string => {
+    // The volunteer-insights backend emits a synthetic 'unknown' status for
+    // requests with no status; it is not in lifecycle.statusLabels, so resolve
+    // it to a bilingual label rather than leaking the raw English id.
+    if (status === 'unknown') return t.common.unknown
     const labels = lifecycle.statusLabels as Record<string, string>
     return labels[status] ?? status
   }
@@ -120,14 +124,17 @@ export default function VolunteerInsightsPage() {
   )
 
   // Mirror the statusLabel approach for categories: ids resolve through the
-  // admin-managed taxonomy (labelFor) before the data reaches recharts.
+  // admin-managed taxonomy (labelFor) before the data reaches recharts. The
+  // backend emits a synthetic 'uncategorized' id (not in the taxonomy) for
+  // requests with no category, so resolve it to the localized label first.
   const byCategoryData = useMemo(
     () =>
       (data?.byCategory ?? []).map((d) => ({
         ...d,
-        label: labelFor(d.category),
+        label: d.category === 'uncategorized' ? t.common.uncategorized : labelFor(d.category),
       })),
-    [data, labelFor],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, labelFor, lang],
   )
 
   const hasData = useMemo(() => {

@@ -43,10 +43,14 @@ router.get('/pending', async (req: Request, res: Response): Promise<void> => {
       )
     );
 
+    // Newest-first by `createdAt` — the field both pending collections
+    // (businesses, answers) actually write at creation (serverTimestamp). The
+    // previous key `submittedAt` was never written, so every item scored 0 and
+    // the queue fell back to Firestore's arbitrary insertion order.
     const items = (snapshots.flat() as Array<Record<string, unknown>>).sort(
       (a, b) => {
-        const aTime = (a.submittedAt as { _seconds?: number })?._seconds ?? 0;
-        const bTime = (b.submittedAt as { _seconds?: number })?._seconds ?? 0;
+        const aTime = (a.createdAt as { _seconds?: number })?._seconds ?? 0;
+        const bTime = (b.createdAt as { _seconds?: number })?._seconds ?? 0;
         return bTime - aTime;
       }
     );

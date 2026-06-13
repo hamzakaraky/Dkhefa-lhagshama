@@ -478,16 +478,22 @@ function RequestCard({ item, t, lang, expandedId, onToggle, isFocused, focusRef 
         </span>
         {/* req 12 — chat link sits at the logical end (right in LTR) of the
             files indicator. Resolves the chat via ?requestId= (handled by
-            ChatListPage). */}
-        <Link
-          href={`/chats?requestId=${encodeURIComponent(item.id)}`}
-          className="btn btn-ghost btn-sm myreq-card-chat"
-          aria-label={mr.openChat}
-          title={mr.openChat}
-        >
-          <MessageCircle size={15} aria-hidden="true" />
-          <span className="myreq-card-chat-label">{mr.openChat}</span>
-        </Link>
+            ChatListPage). A chat only exists once a volunteer is assigned, so
+            it is shown only for statuses that have one (in_progress /
+            awaiting_review / closed). For pending/rejected/referred there is no
+            chat, so the link is omitted instead of dead-ending on the chat
+            list. */}
+        {["in_progress", "awaiting_review", "closed"].includes(item.status) && (
+          <Link
+            href={`/chats?requestId=${encodeURIComponent(item.id)}`}
+            className="btn btn-ghost btn-sm myreq-card-chat"
+            aria-label={mr.openChat}
+            title={mr.openChat}
+          >
+            <MessageCircle size={15} aria-hidden="true" />
+            <span className="myreq-card-chat-label">{mr.openChat}</span>
+          </Link>
+        )}
       </div>
 
       {/* Expanded panel */}

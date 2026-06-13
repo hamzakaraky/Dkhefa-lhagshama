@@ -13,13 +13,8 @@ const nextConfig = {
     '10.0.0.0/8',
     '172.16.0.0/12',
   ],
-  // Allow the AssetImage slots to load community photography from Unsplash.
-  // Swap these for the NGO's own /public/photos/* before production launch.
-  images: {
-    remotePatterns: [
-      { protocol: 'https', hostname: 'images.unsplash.com' },
-    ],
-  },
+  // All AssetImage slots now load the NGO's own /public/photos/* assets, so no
+  // remote image allow-list is needed.
 };
 
 module.exports = nextConfig;
