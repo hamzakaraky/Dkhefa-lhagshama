@@ -93,14 +93,21 @@ export default function Footer() {
           <div>
             <h4 style={colHeadStyle}>{f.contact}</h4>
             {[
-              { Icon: Phone, text: '03-000-0000' },
-              { Icon: Mail,  text: 'info@push4ful.org.il' },
-              { Icon: MapPin,text: t.lang === 'he' ? 'תל אביב, ישראל' : 'Tel Aviv, Israel' },
+              { Icon: Phone, text: f.phone, href: 'tel:+972546720113' },
+              { Icon: Mail,  text: 'info@push4ful.org.il', href: 'mailto:info@push4ful.org.il' },
+              { Icon: MapPin,text: f.address },
               { Icon: Clock, text: t.lang === 'he' ? 'א׳–ה׳ 9:00–18:00' : 'Sun–Thu 9:00–18:00' },
-            ].map(({ Icon, text }, i) => (
+            ].map(({ Icon, text, href }, i) => (
               <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:'8px', marginBottom:'10px' }}>
                 <Icon size={14} style={{ color:'var(--ember)', marginTop:'3px', flexShrink:0 }} />
-                <span style={{ fontSize:'13.5px' }}>{text}</span>
+                {href ? (
+                  <a href={href} style={{ ...linkStyle, fontSize:'13.5px' }}
+                    onMouseEnter={e => e.currentTarget.style.color='var(--ember)'}
+                    onMouseLeave={e => e.currentTarget.style.color='rgba(244,238,224,0.78)'}
+                  >{text}</a>
+                ) : (
+                  <span style={{ fontSize:'13.5px' }}>{text}</span>
+                )}
               </div>
             ))}
           </div>

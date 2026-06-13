@@ -39,7 +39,8 @@ export type AssetSlotKey =
   | 'story1'
   | 'story2'
   | 'story3'
-  | 'story4';
+  | 'story4'
+  | 'storyWisdomLetter';
 
 // Unsplash delivery URL helper. Verified IDs (HTTP 200) chosen for warm,
 // community-centred imagery that matches the brand's editorial palette.
@@ -82,13 +83,13 @@ export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
     ratio: '16 / 9',
   },
   heroBackground: {
-    // Reuses the verified `hero`/`heroMontageA` community photo so the
-    // full-bleed hero resolves immediately. A wider crop (w=2000) suits the
-    // full-bleed background; swap for the NGO's own /public/photos/* later.
-    src: u('photo-1582213782179-e0d53f98f2ca', 2000),
+    // The NGO's own full-bleed hero artwork (a hand reaching out to the
+    // community). Local /public path resolves immediately and avoids the
+    // Unsplash remote dependency for this slot.
+    src: '/photos/hero-community.jpg',
     alt: {
-      he: 'מתנדבים מסדרים ומחלקים תרומות במרכז קהילתי',
-      en: 'Volunteers sorting and handing out donations at a community centre',
+      he: 'יד מושטת לקהילה — סיוע והגשמה',
+      en: 'A hand reaching out to the community',
     },
     ratio: '16 / 9',
   },
@@ -117,10 +118,12 @@ export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
     ratio: '4 / 3',
   },
   story1: {
-    src: u('photo-1607746882042-944635dfe10e'),
+    // The NGO's real success story: the 7 students it sponsors at Wisdom
+    // Academy (Mekelle, Ethiopia). Local /public path.
+    src: '/photos/story-wisdom-academy.jpg',
     alt: {
-      he: 'דיוקן של סטודנט צעיר ומחייך',
-      en: 'Portrait of a young, smiling student',
+      he: 'התלמידים שדחיפה להגשמה תומכת בהם באקדמיית Wisdom',
+      en: 'The students sponsored by Push for Fulfillment at Wisdom Academy',
     },
     ratio: '4 / 5',
   },
@@ -147,6 +150,16 @@ export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
       en: 'Portrait of a smiling program graduate',
     },
     ratio: '4 / 5',
+  },
+  storyWisdomLetter: {
+    // Scanned letter of appreciation from Wisdom Academy — shown as a small
+    // proof figure within the success-stories section. Local /public path.
+    src: '/photos/story-wisdom-academy-letter.jpg',
+    alt: {
+      he: 'מכתב הוקרה מאקדמיית Wisdom',
+      en: 'Letter of appreciation from Wisdom Academy',
+    },
+    ratio: '3 / 4',
   },
 };
 

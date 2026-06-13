@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { CSSProperties, ReactNode, KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { Search, Star, Phone, MapPin, Store, HeartHandshake, Handshake, ArrowRight, ArrowLeft, Plus, X, AlertTriangle, Globe, LayoutGrid, Utensils, Wrench, HeartPulse, GraduationCap, Sparkles, Laptop, Briefcase, Scale, Users, Home } from 'lucide-react'
+import { Search, Star, Phone, Mail, MapPin, Store, HeartHandshake, Handshake, ArrowRight, ArrowLeft, Plus, X, AlertTriangle, Globe, LayoutGrid, Utensils, Wrench, HeartPulse, GraduationCap, Sparkles, Laptop, Briefcase, Scale, Users, Home } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/router'
 import Pagination from '@/components/data-display/Pagination'
@@ -143,7 +143,17 @@ export default function DirectoryPage() {
     const title = L(answer.title) || String(d.questionFallback)
     const region = L(answer.region)
     const audience = L(answer.audience)
+    // Contact details now arrive on the answer (NGO data import): phone is a
+    // free string (tel: action), email a mailto:, website the existing http(s)
+    // link. All optional — only rendered when present, mirroring the business
+    // card/modal styling.
+    const phone = answer.phone ? String(answer.phone) : ''
+    const email = answer.email ? String(answer.email) : ''
+    const website = answer.sourceUrl ? String(answer.sourceUrl) : ''
     const startLabel = String(d.modal.startRequest)
+    const callLabel = String(d.modal.call)
+    const emailLabel = String(d.modal.email)
+    const visitLabel = String(d.modal.visitWebsite)
     const content = (
       <div className="dir-modal-content">
         {(region || audience) && (
@@ -157,13 +167,30 @@ export default function DirectoryPage() {
       </div>
     )
     const footer = (
-      <button
-        className="btn btn-ember btn-sm dir-modal-cta"
-        onClick={() => { closeModal(); router.push('/requests') }}
-      >
-        {startLabel}
-        <ArrowIcon size={14} aria-hidden="true" />
-      </button>
+      <>
+        {phone && (
+          <a href={`tel:${phone}`} className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+            <Phone size={14} aria-hidden="true" /> {callLabel}
+          </a>
+        )}
+        {email && (
+          <a href={`mailto:${email}`} className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+            <Mail size={14} aria-hidden="true" /> {emailLabel}
+          </a>
+        )}
+        {website && (
+          <a href={website} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+            <Globe size={14} aria-hidden="true" /> {visitLabel}
+          </a>
+        )}
+        <button
+          className="btn btn-ember btn-sm dir-modal-cta"
+          onClick={() => { closeModal(); router.push('/requests') }}
+        >
+          {startLabel}
+          <ArrowIcon size={14} aria-hidden="true" />
+        </button>
+      </>
     )
     openModal({ title, content, footer } as unknown as ReactNode)
   }, [L, d, openModal, closeModal, router, ArrowIcon])
@@ -322,6 +349,33 @@ export default function DirectoryPage() {
     loadAnswers(live)
     return () => { live.current = false }
   }, [loadAnswers])
+
+  // Deep-link from the URL (request form → directory). Once the router is ready
+  // and the taxonomy has loaded, read ?category=<id> and optional
+  // ?tab=ngo|partner: a valid category sets the answer-category filter and lands
+  // on the chosen org tab (default 'ngo' / עמותות). Unknown or absent params are
+  // a silent no-op (keeps the default 'business' tab + 'all' filter). Applied
+  // once so a later manual tab/filter change is never overridden.
+  const deepLinkApplied = useRef(false)
+  useEffect(() => {
+    if (deepLinkApplied.current) return
+    if (!router.isReady) return
+    // Wait for the taxonomy so we can validate the category against live ids.
+    if (ngoCategories.length === 0) return
+    deepLinkApplied.current = true
+
+    const rawCategory = router.query.category
+    const category = Array.isArray(rawCategory) ? rawCategory[0] : rawCategory
+    if (!category || !ngoCategories.some((c) => c.id === category)) return
+
+    const rawTab = router.query.tab
+    const tab = Array.isArray(rawTab) ? rawTab[0] : rawTab
+    const nextTab = tab === 'partner' ? 'partner' : 'ngo'
+
+    setActiveTab(nextTab)
+    setAnswerCategory(category)
+    setAnswerPage(1)
+  }, [router.isReady, router.query, ngoCategories])
 
   const BIZ_CATS = ['all', 'food', 'services', 'health', 'education', 'beauty', 'tech']
   // NGO areas come from the live taxonomy; ids without a dedicated icon fall

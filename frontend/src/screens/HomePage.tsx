@@ -237,6 +237,34 @@ export default function HomePage() {
               })}
             </div>
           </Reveal>
+
+          {/* Proof — a small "letter of appreciation" figure from Wisdom Academy. */}
+          <Reveal delay={0.15}>
+            <figure
+              style={{
+                margin: 'clamp(36px, 6vw, 56px) 0 0',
+                maxWidth: '360px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '14px',
+              }}
+            >
+              <AssetImage
+                slot="storyWisdomLetter"
+                rounded="var(--radius-md)"
+                border="1px solid rgba(244,238,224,0.16)"
+                shadow="var(--shadow-lg)"
+              />
+              <figcaption style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <span className="home-eyebrow-onink" style={{ marginBlockEnd: 0 }}>
+                  {t.stories.letterCaption}
+                </span>
+                <span style={{ fontSize: '13.5px', color: 'rgba(244,238,224,0.62)' }}>
+                  {t.stories.letterSource}
+                </span>
+              </figcaption>
+            </figure>
+          </Reveal>
         </div>
       </section>
 

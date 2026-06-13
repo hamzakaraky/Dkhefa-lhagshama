@@ -133,6 +133,7 @@ export interface NGO {
   tags?: string[];
   tagsEn?: string[];
   phone?: string;
+  email?: string;
   website?: string;
 }
 
@@ -340,6 +341,12 @@ export interface Suggestion {
   audience?: string | { he?: string; en?: string } | null;
   sourceName?: string | { he?: string; en?: string } | null;
   sourceUrl?: string | null;
+  /**
+   * Contact details (NGO data import). Optional, free-string phone (rendered as
+   * a tel: action) and email (mailto:); absent on pre-import / suggestion docs.
+   */
+  phone?: string | null;
+  email?: string | null;
   /**
    * Directory organization type: 'ngo' (עמותה) vs admin-added 'partner'
    * (שותף). /api/answers defaults pre-field docs to 'ngo' server-side;

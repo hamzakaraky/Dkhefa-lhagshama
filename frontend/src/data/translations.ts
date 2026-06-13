@@ -116,6 +116,8 @@ const base = {
       title:   'סיפורי הצלחה',
       eyebrow: 'קולות מהקהילה',
       subtitle:'מה אומרים המטופלים שלנו',
+      letterCaption: 'מכתב הוקרה',
+      letterSource:  'אקדמיית Wisdom, אתיופיה',
     },
 
     // ── CTA SECTION ───────────────────────────────────────────
@@ -193,6 +195,8 @@ const base = {
         // Matching organizations helper (feedback round 2) — pre-submit phrasing
         suggestHeading:  'ארגונים שיכולים לעזור',
         suggestSubtitle: 'עמותות מהמאגר שמטפלות בתחום הזה - אפשר לפנות אליהן גם ישירות.',
+        // Link to the full directory, pre-filtered by the chosen category.
+        seeAllOrgs:      'לכל הארגונים שיכולים לעזור',
         // Taxonomy load failure / stale-draft category (step 2)
         catsLoadError: 'לא ניתן לטעון את הקטגוריות כרגע. בדקו את החיבור ונסו שוב.',
         catsRetry:     'ניסיון חוזר',
@@ -287,6 +291,7 @@ const base = {
       modal: {
         details:       'פרטים',
         call:          'התקשרו',
+        email:         'שלחו אימייל',
         visitWebsite:  'מעבר לאתר',
         startRequest:  'הגשת בקשה',
         websiteLabel:  'אתר אינטרנט',
@@ -885,6 +890,8 @@ const base = {
       quickLinks: 'קישורים מהירים',
       services:   'שירותים',
       contact:    'צור קשר',
+      phone:      '054-672-0113',
+      address:    'אברהם אוליצור 4, ארנונה, ירושלים',
       legal:      'מידע משפטי',
       privacy:    'מדיניות פרטיות',
       terms:      'תנאי שימוש',
@@ -1274,6 +1281,8 @@ const base = {
       title:   'Success Stories',
       eyebrow: 'Voices from the community',
       subtitle:'What our beneficiaries say about us',
+      letterCaption: 'Letter of appreciation',
+      letterSource:  'Wisdom Academy, Ethiopia',
     },
 
     cta: {
@@ -1348,6 +1357,8 @@ const base = {
         // Matching organizations helper (feedback round 2) — pre-submit phrasing
         suggestHeading:  'Organizations that can help',
         suggestSubtitle: 'Community organizations in our catalog that work in this area - you can also reach out to them directly.',
+        // Link to the full directory, pre-filtered by the chosen category.
+        seeAllOrgs:      'See all organizations that can help',
         // Taxonomy load failure / stale-draft category (step 2)
         catsLoadError: 'Could not load the categories right now. Check your connection and try again.',
         catsRetry:     'Try again',
@@ -1441,6 +1452,7 @@ const base = {
       modal: {
         details:       'Details',
         call:          'Call',
+        email:         'Send email',
         visitWebsite:  'Visit website',
         startRequest:  'Start a request',
         websiteLabel:  'Website',
@@ -2030,6 +2042,8 @@ const base = {
       quickLinks: 'Quick Links',
       services:   'Services',
       contact:    'Contact',
+      phone:      '054-672-0113',
+      address:    'Avraham Olitzur 4, Arnona, Jerusalem',
       legal:      'Legal',
       privacy:    'Privacy Policy',
       terms:      'Terms of Use',

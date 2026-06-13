@@ -726,6 +726,22 @@ export default function RequestsPage() {
               </Reveal>
             )}
 
+            {/* Link to the full directory, pre-filtered by the chosen category —
+                shown whenever a category is picked (with or without inline
+                suggestions above), so the beneficiary can browse every matching
+                organization before submitting. */}
+            {values.category && (
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                style={{ marginBottom:'24px' }}
+                onClick={() => navigate(`/directory?category=${encodeURIComponent(values.category)}`)}
+              >
+                {rq.step2.seeAllOrgs} · {labelFor(values.category)}
+                <NextArrow size={14} aria-hidden="true" />
+              </button>
+            )}
+
             <FormGroup>
               <Label htmlFor="description" required>{rq.step2.description}</Label>
               <Textarea id="description" name="description" value={values.description}
