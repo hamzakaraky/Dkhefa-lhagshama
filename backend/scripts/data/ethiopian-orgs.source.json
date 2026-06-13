@@ -1,0 +1,200 @@
+[
+  {
+    "name": "עולים ביחד",
+    "serviceType": "תעסוקה, חינוך, מנהיגות",
+    "description": "פיתוח מנהיגות ושילוב צעירים יוצאי אתיופיה באקדמיה ובתעסוקה איכותית",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": "https://olim-beyahad.org.il"
+  },
+  {
+    "name": "הפרויקט הלאומי לקהילה האתיופית (ENP)",
+    "serviceType": "חינוך, נוער",
+    "description": "תכניות חינוכיות, חונכות, מניעת נשירה והעצמה",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "03-5184052",
+    "email": "info@enp.org.il",
+    "website": "https://www.enp.org.il"
+  },
+  {
+    "name": "טנא בריאות",
+    "serviceType": "בריאות",
+    "description": "קידום בריאות, תרגום רפואי, סדנאות בריאות",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "04-6211891",
+    "email": "tenebriut@tene-briut.org.il",
+    "website": "https://tene-briut.org.il"
+  },
+  {
+    "name": "אגודת יהודי אתיופיה",
+    "serviceType": "זכויות, מדיניות",
+    "description": "מאבק באפליה, ייצוג ציבורי, שינוי מדיניות",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": "https://iaej.co.il"
+  },
+  {
+    "name": "מרכז קהילתי יוצאי אתיופיה – ירושלים",
+    "serviceType": "קהילה, רווחה",
+    "description": "חוגים, ליווי משפחות, סיוע חברתי",
+    "level": "מקומי",
+    "region": "ירושלים",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "מרכז צעירים יוצאי אתיופיה – נתניה",
+    "serviceType": "תעסוקה, צעירים",
+    "description": "הכוונה תעסוקתית, סדנאות קריירה, מנטורינג",
+    "level": "מקומי",
+    "region": "נתניה",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "מרכז מורשת יהדות אתיופיה – רחובות",
+    "serviceType": "תרבות, חינוך",
+    "description": "שימור מורשת, חינוך תרבותי, פעילות קהילתית",
+    "level": "מקומי",
+    "region": "רחובות",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "עמותת פידל",
+    "serviceType": "חינוך",
+    "description": "ליווי ילדים ובני נוער במערכת החינוך",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "מרכז קהילתי יוצאי אתיופיה – קריית גת",
+    "serviceType": "רווחה, קהילה",
+    "description": "תמיכה במשפחות, פעילות קהילתית וחוגים",
+    "level": "מקומי",
+    "region": "קריית גת",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "טנא בריאות",
+    "serviceType": "בריאות",
+    "description": "תרגום רפואי, קידום בריאות, סדנאות, ליווי חולים",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "04-6211891",
+    "email": "tenebriut@tene-briut.org.il",
+    "website": "https://tene-briut.org.il"
+  },
+  {
+    "name": "נט\"ל – סיוע נפשי",
+    "serviceType": "בריאות נפש",
+    "description": "סיוע נפשי לנפגעי טראומה, כולל יוצאי אתיופיה",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "3362*",
+    "email": "info@natal.org.il",
+    "website": "https://www.natal.org.il"
+  },
+  {
+    "name": "עמותת עתים",
+    "serviceType": "זכויות דתיות",
+    "description": "סיוע מול הרבנות, גיור, נישואין, אפליה דתית",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": null,
+    "email": "info@itim.org.il",
+    "website": "https://www.itim.org.il"
+  },
+  {
+    "name": "האגודה לזכויות האזרח",
+    "serviceType": "סיוע משפטי וזכויות",
+    "description": "ייצוג משפטי, מאבק באפליה ממסדית",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "03-3453188",
+    "email": "mail@acri.org.il",
+    "website": "https://www.acri.org.il"
+  },
+  {
+    "name": "קליניקות משפטיות – אוניברסיטאות",
+    "serviceType": "סיוע משפטי",
+    "description": "ייעוץ וייצוג חינמי, זכויות חברתיות",
+    "level": "ארצי",
+    "region": "אוניברסיטאות",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "מרכז קהילתי בריאות – ירושלים",
+    "serviceType": "בריאות קהילתית",
+    "description": "הסברה רפואית, חיבור לשירותי בריאות",
+    "level": "מקומי",
+    "region": "ירושלים",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "מרכז סיוע משפטי קהילתי – אשדוד",
+    "serviceType": "סיוע משפטי",
+    "description": "ייעוץ זכויות, עבודה, דיור",
+    "level": "מקומי",
+    "region": "אשדוד",
+    "manager": null,
+    "phone": null,
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "עמותת הנני",
+    "serviceType": "חינוך, קהילה, העצמה",
+    "description": "פיתוח קהילתי וחינוכי בקרב אוכלוסיות מוחלשות ובפרט בני העדה האתיופית; חונכות ילדים ובני נוער, ליווי משפחות, העצמת הורים, עבודה קהילתית בפריפריה וצמצום פערים חברתיים",
+    "level": "ארצי",
+    "region": "פריפריה חברתית וגאוגרפית בישראל",
+    "manager": null,
+    "phone": "02-XXXXXXX",
+    "email": null,
+    "website": "info@hineni.org.il"
+  },
+  {
+    "name": "עמותת טבקה",
+    "serviceType": "סיוע משפטי וזכויות",
+    "description": "עמותה מרכזית למאבק באפליה וגזענות כלפי יוצאי אתיופיה; סיוע משפטי פרטני (עבודה, חינוך, דיור, אלימות משטרתית), ליווי נפגעי גזענות, עתירות ציבוריות, שינוי מדיניות, הסברה והכשרות זכויות",
+    "level": "ארצי",
+    "region": "כל הארץ",
+    "manager": null,
+    "phone": "03-XXXXXXX",
+    "email": null,
+    "website": "info@tebeka.org.il"
+  }
+]
