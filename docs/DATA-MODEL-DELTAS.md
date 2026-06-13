@@ -162,6 +162,50 @@ Apply these in app.diagrams.net, then export PNG/SVG and update the wiki.
 - [ ] **`messages` entity** — add `+ targetUid: string (system messages only)` and `+ targetName: string (denormalized display name, system messages only)`.
 - [ ] **Re-export** — `File ▸ Export as` PNG and SVG, replace the images on the wiki Architecture & Design page.
 
+## Round 3 — NPO org import + answer contact fields (2026-06-13)
+
+The NPO handed over 18 real Ethiopian-community organizations
+(`backend/scripts/data/ethiopian-orgs.source.json`, derived from
+`ארגונים_לעדה_האתיופית_מסווג.xlsx`). They are imported into `answers` and the
+schema gains two optional contact fields. Still **additive** — no existing field
+changed type or meaning; absent values read as `null` everywhere.
+
+### New / changed fields by collection
+
+| Collection | Field | Type | Purpose |
+|---|---|---|---|
+| `answers` | `phone` | string \| null | Free-form contact phone (covers Israeli formats and short codes like `3362*`). Rendered as a `tel:` action on the public directory org card. **Absent = `null`.** Backend create/edit accept it as `z.string().trim().max(40).optional()` (empty string clears it); the seed populates it from the xlsx, skipping placeholders that contain `XXXX`. |
+| `answers` | `email` | string \| null | Contact email. Rendered as a `mailto:` action on the org card. **Absent = `null`.** Backend create/edit validate it (`z.string().trim().email().optional()`, empty string clears it); the seed populates it only when the source value looks valid. |
+
+### New script — `backend/scripts/seedOrgs.ts`
+
+- Idempotent upsert into `answers`, keyed by a deterministic slug of the org name
+  (`org-<name>`), so re-running never duplicates. The source lists `טנא בריאות`
+  twice; both map to the same slug → one doc.
+- Each org becomes `status: 'approved'`, `orgType: 'ngo'`, `createdBy: 'seed'`,
+  `createdAt` server timestamp on first insert (preserved on update). `title`/`body`/
+  `region` use the bilingual `{ he, en }` contract (EN falls back to HE). The full
+  multi-service Hebrew `serviceType` string is preserved verbatim in `audience` so
+  nothing is lost.
+- `category` maps the PRIMARY (first comma-separated) service token to a managed
+  taxonomy id from `seed.ts` CATEGORIES
+  (employment/education/legal/housing/health/social/welfare/absorption/community/youth);
+  unknown tokens fall back to `social`. `sourceUrl` is set from `website` only when
+  it is an http(s) URL (two source rows hold an email in the `website` field — dropped
+  rather than rendered as a broken link).
+- Run standalone: `npm run seed:orgs` (ts-node, same as `npm run seed`). Also
+  imported and called by `scripts/seed.ts` so a fresh full seed includes the orgs;
+  the shared upsert keeps the two paths from duplicating.
+
+### TODO — edit `db-design.drawio` then re-export (human step)
+
+Apply these in app.diagrams.net, then export PNG/SVG and update the wiki.
+
+- [ ] **`answers` entity** — add `+ phone: string | null` and `+ email: string | null`,
+  matching the existing `+ name: type` style.
+- [ ] **Re-export** — `File ▸ Export as` PNG and SVG, replace the images on the wiki
+  Architecture & Design page.
+
 ## Notes
 
 - No schema change here requires a new Firestore composite index — the volunteer pool, assigned, and admin request lists use single-field queries plus in-memory sort/filter (`lib/requestSort.ts`).

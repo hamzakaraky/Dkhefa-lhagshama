@@ -12,6 +12,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "type-check": "tsc --noEmit",
     "seed": "ts-node --project tsconfig.scripts.json scripts/seed.ts",
+    "seed:orgs": "ts-node --project tsconfig.scripts.json scripts/seedOrgs.ts",
     "set-admin": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setAdminClaim.ts",
     "set-volunteer": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setVolunteerClaim.ts",
     "set-roles": "ts-node --project tsconfig.scripts.json -r tsconfig-paths/register scripts/setRoles.ts"

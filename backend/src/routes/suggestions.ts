@@ -49,6 +49,9 @@ router.get('/', async (req: Request, res: Response) => {
         category: data.category ?? null,
         region: data.region ?? null,
         audience: data.audience ?? null,
+        // Optional contact fields (NPO org import) — same shape as answers.ts.
+        phone: data.phone ?? null,
+        email: data.email ?? null,
         sourceName: data.sourceName ?? null,
         sourceUrl: data.sourceUrl ?? null,
         acceptsInAppRequest: data.acceptsInAppRequest ?? false,

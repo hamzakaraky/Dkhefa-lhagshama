@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { Timestamp } from 'firebase-admin/firestore';
 import { initializeFirebaseAdmin, db } from '../src/lib/firebaseAdmin';
+import { seedOrgs } from './seedOrgs';
 
 initializeFirebaseAdmin();
 const firestore = db();
@@ -486,6 +487,11 @@ async function main(): Promise<void> {
   await seedTaxonomy('categories', CATEGORIES, { archived: false });
   await seedTaxonomy('regions', REGIONS);
   await seedAnswers();
+  // The 18 real NPO organizations (idempotent upsert by slug) — shares the
+  // transform/upsert logic in seedOrgs.ts so a fresh full seed and the
+  // standalone `npm run seed:orgs` never duplicate.
+  const orgCount = await seedOrgs(firestore);
+  console.log(`  ✓ answers: ${orgCount} NPO organizations upserted`);
   await seedBusinesses();
   console.log('Done.');
   process.exit(0);

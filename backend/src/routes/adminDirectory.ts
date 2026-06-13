@@ -73,6 +73,11 @@ const answerFieldsSchema = z.object({
   orgType: orgTypeSchema,
   region: optionalBilingualSchema,
   audience: optionalBilingualSchema,
+  // Optional contact fields (NPO org import). Phone is a free string (covers
+  // local formats + short codes like '3362*'); email is validated. Empty string
+  // means "clear the value".
+  phone: z.string().trim().max(40).optional().or(z.literal('')),
+  email: z.string().trim().email().optional().or(z.literal('')),
   sourceName: z.string().trim().max(160),
   sourceUrl: httpUrlSchema,
 });
@@ -104,6 +109,8 @@ router.get('/answers', async (req: Request, res: Response): Promise<void> => {
           category: data.category ?? null,
           region: data.region ?? null,
           audience: data.audience ?? null,
+          phone: data.phone ?? null,
+          email: data.email ?? null,
           sourceName: data.sourceName ?? null,
           sourceUrl: data.sourceUrl ?? null,
           // Absent orgType counts as 'ngo' (pre-field docs).
@@ -135,6 +142,8 @@ router.post('/answers', async (req: Request, res: Response): Promise<void> => {
 
   try {
     const sourceUrl = input.sourceUrl?.trim() ? input.sourceUrl.trim() : null;
+    const phone = input.phone?.trim() ? input.phone.trim() : null;
+    const email = input.email?.trim() ? input.email.trim() : null;
 
     const docRef = await db().collection('answers').add({
       title: input.title,
@@ -143,6 +152,8 @@ router.post('/answers', async (req: Request, res: Response): Promise<void> => {
       orgType: input.orgType,
       region: input.region ?? null,
       audience: input.audience ?? null,
+      phone,
+      email,
       sourceName: input.sourceName ?? null,
       sourceUrl,
       status: 'approved',
@@ -184,6 +195,12 @@ router.patch('/answers/:id', async (req: Request, res: Response): Promise<void> 
   if (input.orgType !== undefined) updates.orgType = input.orgType;
   if (input.region !== undefined) updates.region = input.region;
   if (input.audience !== undefined) updates.audience = input.audience;
+  if (input.phone !== undefined) {
+    updates.phone = input.phone.trim() ? input.phone.trim() : null;
+  }
+  if (input.email !== undefined) {
+    updates.email = input.email.trim() ? input.email.trim() : null;
+  }
   if (input.sourceName !== undefined) updates.sourceName = input.sourceName;
   if (input.sourceUrl !== undefined) {
     updates.sourceUrl = input.sourceUrl.trim() ? input.sourceUrl.trim() : null;

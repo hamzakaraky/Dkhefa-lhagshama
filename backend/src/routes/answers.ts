@@ -49,6 +49,10 @@ router.get('/', async (req: Request, res: Response) => {
         category: data.category ?? null,
         region: data.region ?? null,
         audience: data.audience ?? null,
+        // Optional contact fields (NPO org import). Rendered as tel:/mailto:
+        // actions on the directory org card; default null when absent.
+        phone: data.phone ?? null,
+        email: data.email ?? null,
         sourceName: data.sourceName ?? null,
         sourceUrl: data.sourceUrl ?? null,
         // Org type: 'partner' (שותף) vs 'ngo' (עמותה). Docs created before the
