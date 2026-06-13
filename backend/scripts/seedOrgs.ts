@@ -76,6 +76,160 @@ function categoryForServiceType(serviceType: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────
+//  English content for the imported orgs.
+//
+//  The source rows are Hebrew-only, so without this an English directory
+//  visitor sees Hebrew in every title/body/region/audience. The maps below
+//  give faithful English equivalents. Anything not covered falls back to the
+//  Hebrew string (the original behavior), so nothing ever renders blank.
+// ─────────────────────────────────────────────────────────────
+
+/** Hebrew region label → English. Unknown regions fall back to Hebrew. */
+const REGION_HE_TO_EN: Record<string, string> = {
+  'כל הארץ': 'Nationwide',
+  ירושלים: 'Jerusalem',
+  נתניה: 'Netanya',
+  רחובות: 'Rehovot',
+  'קריית גת': 'Kiryat Gat',
+  אשדוד: 'Ashdod',
+  אוניברסיטאות: 'Universities',
+  'פריפריה חברתית וגאוגרפית בישראל': 'Social and geographic periphery of Israel',
+};
+
+/** Translate a Hebrew region label, falling back to the original Hebrew. */
+function regionToEnglish(regionHe: string): string {
+  return REGION_HE_TO_EN[regionHe] ?? regionHe;
+}
+
+/** Single Hebrew service-type token → English. */
+const SERVICE_TYPE_HE_TO_EN: Record<string, string> = {
+  תעסוקה: 'Employment',
+  חינוך: 'Education',
+  מנהיגות: 'Leadership',
+  נוער: 'Youth',
+  צעירים: 'Young adults',
+  בריאות: 'Health',
+  'בריאות נפש': 'Mental health',
+  'בריאות קהילתית': 'Community health',
+  זכויות: 'Rights',
+  מדיניות: 'Policy',
+  'זכויות דתיות': 'Religious rights',
+  'סיוע משפטי': 'Legal aid',
+  'סיוע משפטי וזכויות': 'Legal aid and rights',
+  קהילה: 'Community',
+  רווחה: 'Welfare',
+  תרבות: 'Culture',
+  העצמה: 'Empowerment',
+};
+
+/**
+ * Translate a (possibly multi-token, comma-separated) Hebrew service-type
+ * string token-by-token. Any token without a known translation keeps its
+ * Hebrew form so the audience string is never lost.
+ */
+function serviceTypeToEnglish(serviceType: string): string {
+  return serviceType
+    .split(',')
+    .map((token) => {
+      const trimmed = token.trim();
+      if (!trimmed) return trimmed;
+      return SERVICE_TYPE_HE_TO_EN[trimmed] ?? trimmed;
+    })
+    .filter((token) => token.length > 0)
+    .join(', ');
+}
+
+interface OrgTranslation {
+  titleEn: string;
+  bodyEn: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Per-org English title + body, keyed by the deterministic slug
+//  (slugifyOrgName). Titles use the orgs' OFFICIAL English names; bodies are
+//  faithful, factual translations of the Hebrew activity description (no
+//  embellishment). The duplicate `טנא בריאות` source row collapses to the same
+//  slug, so one entry covers both. regionEn / audienceEn are derived
+//  generically from the maps above, so they are NOT repeated here.
+// ─────────────────────────────────────────────────────────────
+const TRANSLATIONS: Record<string, OrgTranslation> = {
+  'org-עולים-ביחד': {
+    titleEn: 'Olim Beyahad',
+    bodyEn:
+      'Leadership development and integration of young Ethiopian-Israelis into academia and quality employment',
+  },
+  'org-הפרויקט-הלאומי-לקהילה-האתיופית-ENP': {
+    titleEn: 'Ethiopian National Project (ENP)',
+    bodyEn: 'Educational programs, mentoring, dropout prevention and empowerment',
+  },
+  'org-טנא-בריאות': {
+    titleEn: 'Tene Briut',
+    // Body taken from the fuller of the two duplicate source rows.
+    bodyEn: 'Medical translation, health promotion, workshops and patient support',
+  },
+  'org-אגודת-יהודי-אתיופיה': {
+    titleEn: 'Israeli Association for Ethiopian Jews (IAEJ)',
+    bodyEn: 'Combating discrimination, public representation and policy change',
+  },
+  'org-מרכז-קהילתי-יוצאי-אתיופיה-ירושלים': {
+    titleEn: 'Ethiopian Community Center - Jerusalem',
+    bodyEn: 'Activity groups, family support and social assistance',
+  },
+  'org-מרכז-צעירים-יוצאי-אתיופיה-נתניה': {
+    titleEn: 'Ethiopian Youth Center - Netanya',
+    bodyEn: 'Employment guidance, career workshops and mentoring',
+  },
+  'org-מרכז-מורשת-יהדות-אתיופיה-רחובות': {
+    titleEn: 'Ethiopian Jewry Heritage Center - Rehovot',
+    bodyEn: 'Heritage preservation, cultural education and community activity',
+  },
+  'org-עמותת-פידל': {
+    titleEn: 'Fidel Association',
+    bodyEn: 'Supporting children and youth within the education system',
+  },
+  'org-מרכז-קהילתי-יוצאי-אתיופיה-קריית-גת': {
+    titleEn: 'Ethiopian Community Center - Kiryat Gat',
+    bodyEn: 'Family support, community activity and activity groups',
+  },
+  'org-נטל-סיוע-נפשי': {
+    titleEn: 'NATAL - Israel Trauma and Resiliency Center',
+    bodyEn:
+      'Psychological support for trauma victims, including Ethiopian-Israelis',
+  },
+  'org-עמותת-עתים': {
+    titleEn: 'ITIM',
+    bodyEn:
+      'Assistance with the Rabbinate, conversion, marriage and religious discrimination',
+  },
+  'org-האגודה-לזכויות-האזרח': {
+    titleEn: 'Association for Civil Rights in Israel (ACRI)',
+    bodyEn: 'Legal representation and the struggle against institutional discrimination',
+  },
+  'org-קליניקות-משפטיות-אוניברסיטאות': {
+    titleEn: 'University Legal Clinics',
+    bodyEn: 'Free legal advice and representation, social rights',
+  },
+  'org-מרכז-קהילתי-בריאות-ירושלים': {
+    titleEn: 'Community Health Center - Jerusalem',
+    bodyEn: 'Health education and connection to health services',
+  },
+  'org-מרכז-סיוע-משפטי-קהילתי-אשדוד': {
+    titleEn: 'Community Legal Aid Center - Ashdod',
+    bodyEn: 'Rights advice, employment, housing',
+  },
+  'org-עמותת-הנני': {
+    titleEn: 'Hineni Association',
+    bodyEn:
+      'Community and educational development among disadvantaged populations, and the Ethiopian community in particular; mentoring of children and youth, family support, parent empowerment, community work in the periphery and reducing social gaps',
+  },
+  'org-עמותת-טבקה': {
+    titleEn: 'Tebeka',
+    bodyEn:
+      'A leading association fighting discrimination and racism against Ethiopian-Israelis; individual legal aid (employment, education, housing, police violence), support for victims of racism, public petitions, policy change, advocacy and rights training',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────
 //  Partner classification.
 //
 //  Most imported orgs are local service NGOs (orgType 'ngo'). A few are
@@ -169,16 +323,27 @@ export function orgToAnswer(org: OrgSource): { id: string; doc: OrgAnswerDoc } {
   const region = org.region?.trim() ?? '';
   const serviceType = org.serviceType?.trim() ?? '';
 
+  const id = slugifyOrgName(name);
+  // English content keyed by slug. Missing entry → fall back to the Hebrew
+  // string (original behavior) so a partially-translated map never renders
+  // blank. region/audience English are derived generically from the maps.
+  const translation = TRANSLATIONS[id];
+  const titleEn = translation?.titleEn ?? name;
+  const bodyEn = translation?.bodyEn ?? description;
+  const regionEn = region ? regionToEnglish(region) : region;
+  const audienceEn = serviceType ? serviceTypeToEnglish(serviceType) : serviceType;
+
   return {
-    id: slugifyOrgName(name),
+    id,
     doc: {
-      title: { he: name, en: name },
-      body: { he: description, en: description },
+      title: { he: name, en: titleEn },
+      body: { he: description, en: bodyEn },
       category: categoryForServiceType(serviceType),
       orgType: orgTypeForName(name),
-      region: { he: region, en: region },
-      // Preserve the original multi-service Hebrew string so nothing is lost.
-      audience: { he: serviceType, en: serviceType },
+      region: { he: region, en: regionEn },
+      // Preserve the original multi-service Hebrew string so nothing is lost;
+      // the English side is the same tokens translated one-by-one.
+      audience: { he: serviceType, en: audienceEn },
       phone: cleanPhone(org.phone),
       // Two source rows (Hineni, Tebeka) carry their email in the `website`
       // column with a placeholder phone, so fall back to a website that is

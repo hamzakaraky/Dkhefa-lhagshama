@@ -21,11 +21,6 @@ export const isValidPhone = (phone) =>
 export const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
-export const isValidAge = (age) => {
-  const n = parseInt(age)
-  return !isNaN(n) && n >= 1 && n <= 120
-}
-
 // ── STEP VALIDATORS ──────────────────────────────────────────
 
 export const validateStep1 = (data, t) => {

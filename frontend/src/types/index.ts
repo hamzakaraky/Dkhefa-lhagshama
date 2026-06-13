@@ -118,28 +118,6 @@ export interface Business {
   featured?: boolean;
 }
 
-/** A partner NGO / organization in the "answers" catalog (UC-02). */
-export interface NGO {
-  id: number | string;
-  name: string;
-  nameEn?: string;
-  logo?: string;
-  logoColor?: string;
-  area?: string;
-  areaEn?: string;
-  areas?: Area[];
-  desc?: string;
-  descEn?: string;
-  tags?: string[];
-  tagsEn?: string[];
-  phone?: string;
-  email?: string;
-  website?: string;
-}
-
-/** Alias kept for readability at NGO/partner call sites. */
-export type Partner = NGO;
-
 /** A registered volunteer (UC-04 / volunteer directory). */
 export interface Volunteer {
   id: number | string;
