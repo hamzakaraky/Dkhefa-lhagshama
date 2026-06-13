@@ -385,10 +385,15 @@ export default function VolunteerAssignedPage() {
                     )}
                     {/* Link into the request chat where the propose/approve-close
                         handshake (and the beneficiary's close proposal) lives.
-                        Shown for the volunteer's actionable states; resolved via
-                        ?requestId= by ChatListPage (same convention as
-                        MyRequestsPage). */}
-                    {(item.status === 'in_progress' || item.status === 'awaiting_review') && (
+                        The chat exists as soon as a volunteer is assigned (the
+                        request stays 'pending' until an admin presses Start), so
+                        'pending' is included here — matching the beneficiary side
+                        (MyRequestsPage) — otherwise the volunteer has no link to
+                        an already-active conversation. Resolved via ?requestId=
+                        by ChatListPage. */}
+                    {(item.status === 'pending' ||
+                      item.status === 'in_progress' ||
+                      item.status === 'awaiting_review') && (
                       <Link
                         href={`/chats?requestId=${encodeURIComponent(item.id)}`}
                         className="btn btn-outline btn-sm"

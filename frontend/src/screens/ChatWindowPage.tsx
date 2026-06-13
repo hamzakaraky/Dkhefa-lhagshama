@@ -839,6 +839,19 @@ export default function ChatWindowPage() {
     return "chat-status__dot--open";
   })();
 
+  // Role-aware destination for the "Open request" link (see usage below). The
+  // beneficiary's request lives on /my-requests; staff/volunteer never see it
+  // there, so route them to a surface that does.
+  const openRequestHref = (() => {
+    const id = linkedRequest?.id ?? "";
+    if (linkedRequest && user && linkedRequest.beneficiaryId === user.uid) {
+      return `/my-requests?focus=${encodeURIComponent(id)}`;
+    }
+    if (hasRole("admin")) return `/admin/requests/${encodeURIComponent(id)}`;
+    // Assigned volunteer / handler — their work surface is the assigned board.
+    return "/volunteer-hub/assigned";
+  })();
+
   return (
     <div className="page-container chat-window-shell">
       {/* ── Slim top bar: back to list + open linked request ── */}
@@ -849,9 +862,14 @@ export default function ChatWindowPage() {
         </Link>
         {linkedRequest && (
           <div className="chat-window-bar__actions">
-            {/* req 9 — bidirectional link back to the request in my-requests. */}
+            {/* req 9 — bidirectional link back to the request. Role-aware: the
+                beneficiary owns the request on /my-requests, but the assigned
+                volunteer and an admin never see it there (GET /requests/mine is
+                beneficiary-scoped), so route them to the surface that actually
+                shows the request — admin detail for admins, the volunteer hub
+                assigned board for the assigned volunteer/handler. */}
             <Link
-              href={`/my-requests?focus=${encodeURIComponent(linkedRequest.id)}`}
+              href={openRequestHref}
               className="btn btn-ghost btn-sm"
               aria-label={c.openRequest}
               title={c.openRequest}

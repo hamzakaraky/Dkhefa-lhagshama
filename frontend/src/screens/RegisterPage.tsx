@@ -332,6 +332,12 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
   const areasRef = useRef<HTMLDivElement>(null)
   const langRef = useRef<HTMLInputElement>(null)
   const consentRef = useRef<HTMLInputElement>(null)
+  // Tracks whether the Firebase account was already created in THIS session.
+  // The two-step submit creates the account first and only then POSTs the
+  // application; if the apply call fails, the account already exists. On retry
+  // we must skip register() (it would throw email-already-in-use and strand the
+  // user) and re-POST only the application.
+  const accountCreatedRef = useRef(false)
 
   const toggleArea = (area: string) => {
     setSelectedAreas((prev) =>
@@ -367,11 +373,17 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
     try {
       // Step A: Firebase Auth sign-up + set beneficiary claim (same as beneficiary tab)
       // The admin will later promote to 'volunteer' after reviewing the application.
-      await register(accountData.email, accountData.password)
+      // Skip on retry: if a previous attempt created the account but the apply
+      // POST failed, re-running register() would throw email-already-in-use and
+      // dead-end the user. Re-POST only the application instead.
+      if (!accountCreatedRef.current) {
+        await register(accountData.email, accountData.password)
+        accountCreatedRef.current = true
 
-      // Step A2: force a token refresh so freshly-minted claims are reflected
-      // without a re-login (pragmatic refresh per the role-model contract).
-      await refreshClaims()
+        // Step A2: force a token refresh so freshly-minted claims are reflected
+        // without a re-login (pragmatic refresh per the role-model contract).
+        await refreshClaims()
+      }
 
       // Step A3 (Note 11): optional profile photo. An upload failure must NOT
       // block the application — catch, surface a non-blocking notice, continue.

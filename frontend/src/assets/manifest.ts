@@ -37,12 +37,16 @@ export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
     ratio: '1 / 1',
   },
   volunteerInvite: {
-    src: '/photos/hero-community.jpg',
+    // No distinct volunteers photo exists yet, and the hero already uses the
+    // only community shot — pointing this slot at the hero made the same image
+    // appear twice on one scroll of the homepage. Leave `src` undefined so
+    // AssetImage renders its calm placeholder until a real volunteers photo is
+    // supplied; the alt text describes the placeholder's intent, not a photo.
     alt: {
-      he: 'חברי קהילה ומתנדבים יחד',
-      en: 'Community members and volunteers together',
+      he: 'הצטרפות כמתנדב/ת לדחיפה להגשמה',
+      en: 'Join Push for Fulfillment as a volunteer',
     },
-    ratio: '16 / 9',
+    ratio: '4 / 5',
   },
   heroBackground: {
     // The NGO's own full-bleed hero artwork (a hand reaching out to the

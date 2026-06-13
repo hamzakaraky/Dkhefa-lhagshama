@@ -145,6 +145,17 @@ router.post('/:id/approve', async (req: Request, res: Response): Promise<void> =
     }
 
     const appData = appSnap.data()!;
+    // One-shot guard: approve/reject only acts on a still-pending application.
+    // Without this, re-POSTing approve on an already-approved app would re-grant
+    // the volunteer claim + re-activate volunteers/{uid} — silently resurrecting
+    // a deactivated volunteer — and approve could flip a rejected app (and reject
+    // an approved one) to the opposite terminal state. The happy-path admin UI
+    // only surfaces status=='pending' rows, but the endpoint must reject stale
+    // clients and direct calls.
+    if (appData.status !== 'pending') {
+      res.status(409).json({ error: 'already_decided', status: appData.status });
+      return;
+    }
     // The uid may be stored as 'uid' or the doc id may BE the uid (Stream 3 decides).
     // We check both defensively.
     const volunteerUid: string = (appData.uid as string) ?? applicationId;
@@ -208,8 +219,17 @@ router.post('/:id/reject', async (req: Request, res: Response): Promise<void> =>
 
   try {
     const appRef = db().collection('volunteerApplications').doc(applicationId);
-    if (!(await appRef.get()).exists) {
+    const appSnap = await appRef.get();
+    if (!appSnap.exists) {
       res.status(404).json({ error: 'not_found' });
+      return;
+    }
+
+    // One-shot guard (mirrors approve): only a still-pending application can be
+    // rejected, so reject can't flip an already-approved volunteer to rejected.
+    const appData = appSnap.data()!;
+    if (appData.status !== 'pending') {
+      res.status(409).json({ error: 'already_decided', status: appData.status });
       return;
     }
 

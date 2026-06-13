@@ -51,6 +51,12 @@ export default function Navbar() {
   const router = useRouter();
   const navigate = (to: string) => router.push(to);
   const isAdmin = role === "admin";
+  const isVolunteer = role === "volunteer";
+  // Only a beneficiary can submit a request and owns a /my-requests board.
+  // Admins land on a refusal screen at /requests and an empty /my-requests;
+  // volunteers see an empty /my-requests. Gate those surfaces accordingly and
+  // give staff/volunteers a CTA that actually does something for them.
+  const isBeneficiary = role === "beneficiary";
 
   // Build link set conditional on auth state.
   // Only pages that actually exist — /about, /contact, /track are not built.
@@ -88,6 +94,15 @@ export default function Navbar() {
     await logout();
     router.push("/");
   };
+
+  // Role-appropriate primary CTA. Beneficiaries get "+ Submit Request"; admins
+  // and volunteers can't submit (the form refuses admins and /my-requests is
+  // empty for them), so they get a CTA into their actual workspace instead.
+  const primaryCta = isAdmin
+    ? { label: t.nav.menuAdmin, to: "/admin" }
+    : isVolunteer
+      ? { label: t.volunteerApp.navHub, to: "/volunteer-hub" }
+      : { label: t.nav.submitBtn, to: "/requests" };
 
   const activeLang = languages.find((l) => l.code === lang) ?? languages[0];
   const accountInitial = (user?.email || "?").charAt(0);
@@ -132,9 +147,16 @@ export default function Navbar() {
         </span>
       }
     >
-      <MenuItem icon={<UserIcon size={16} />} onSelect={() => navigate("/my-requests")}>
-        {t.nav.menuMyRequests}
-      </MenuItem>
+      {isBeneficiary && (
+        <MenuItem icon={<UserIcon size={16} />} onSelect={() => navigate("/my-requests")}>
+          {t.nav.menuMyRequests}
+        </MenuItem>
+      )}
+      {(isVolunteer || isAdmin) && (
+        <MenuItem icon={<UserIcon size={16} />} onSelect={() => navigate("/volunteer-hub")}>
+          {t.volunteerApp.navHub}
+        </MenuItem>
+      )}
       {isAdmin && (
         <MenuItem icon={<Shield size={16} />} onSelect={() => navigate("/admin")}>
           {t.nav.menuAdmin}
@@ -256,12 +278,13 @@ export default function Navbar() {
               <>
                 {/* Account menu — chip trigger; My Requests / Admin / Sign Out. */}
                 {accountMenu}
-                {/* Primary CTA stays OUTSIDE the account menu. */}
+                {/* Primary CTA stays OUTSIDE the account menu. Role-aware so it
+                    never lands on a refusal/empty page (see primaryCta above). */}
                 <button
                   className="btn btn-nav-primary btn-sm"
-                  onClick={() => navigate("/requests")}
+                  onClick={() => navigate(primaryCta.to)}
                 >
-                  {t.nav.submitBtn}
+                  {primaryCta.label}
                 </button>
               </>
             ) : (
@@ -410,16 +433,21 @@ export default function Navbar() {
                   {t.nav.menuAdmin}
                 </NavLink>
               )}
-              <button
-                className="btn btn-primary btn-full"
-                style={{ marginTop: "12px" }}
-                onClick={() => {
-                  navigate("/requests");
-                  setMenuOpen(false);
-                }}
-              >
-                {t.nav.submitBtn}
-              </button>
+              {/* Primary action. Admins already have a dedicated Admin link
+                  above, so skip a redundant CTA for them; beneficiaries get
+                  "+ Submit Request" and volunteers get the Volunteer hub. */}
+              {!isAdmin && (
+                <button
+                  className="btn btn-primary btn-full"
+                  style={{ marginTop: "12px" }}
+                  onClick={() => {
+                    navigate(primaryCta.to);
+                    setMenuOpen(false);
+                  }}
+                >
+                  {primaryCta.label}
+                </button>
+              )}
               <button
                 className="btn btn-outline btn-full"
                 style={{ marginTop: "8px" }}

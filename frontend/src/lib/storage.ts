@@ -22,13 +22,14 @@ export interface UploadHandle {
   task: XMLHttpRequest;
 }
 
-/** Sanitize a filename so it's safe as a Storage path segment. */
-function safeName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]+/g, '_');
-}
-
 export function uploadAttachment(file: File, requestId: string): UploadHandle {
-  const path = `requests/${requestId}/${safeName(file.name)}`;
+  // The caller (UploadArea) already passes a File whose name was run through the
+  // shared `sanitizeFilename` (utils/sanitizeFilename.ts), and the backend
+  // sanitizes the `?filename=` param once more as the single source of truth for
+  // the stored name. We do NOT re-sanitize here — a third client-side sanitizer
+  // double-prefixed uploads (UI name != stored name). Send the name as-is and
+  // treat this `path` as optimistic; the real path comes back in the response.
+  const path = `requests/${requestId}/${file.name}`;
   const listeners = new Set<(p: number) => void>();
   const xhr = new XMLHttpRequest();
   let rejectDone: (reason?: unknown) => void = () => {};
@@ -69,7 +70,7 @@ export function uploadAttachment(file: File, requestId: string): UploadHandle {
         return;
       }
 
-      const url = `${API_BASE}/api/uploads/requests/${encodeURIComponent(requestId)}?filename=${encodeURIComponent(safeName(file.name))}`;
+      const url = `${API_BASE}/api/uploads/requests/${encodeURIComponent(requestId)}?filename=${encodeURIComponent(file.name)}`;
       xhr.open('POST', url, true);
       xhr.responseType = 'text';
       xhr.setRequestHeader('Authorization', `Bearer ${idToken}`);
