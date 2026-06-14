@@ -126,3 +126,89 @@
   height: 220px;
   border-radius: var(--radius);
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   WS-10 — Admin Insights regroup: KPI strip + grouped sections +
+   promoted hero chart. NEW variant classes scoped under
+   `.admin-insights` so none of the shared `.insights-*` chrome (reused
+   by the volunteer-hub insights page) is altered.
+═══════════════════════════════════════════════════════════════ */
+
+.admin-insights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+/* — Compact KPI strip: small numbers, several per row, no big cards — */
+.insights-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-3);
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(16px, 2.4vw, 24px);
+}
+
+.insights-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-inline: var(--sp-3);
+  border-inline-start: 1px solid var(--hair);
+}
+
+/* The first KPI in each visual row should not carry a leading divider; the
+   strip wraps, so suppress the divider only on the very first item and rely on
+   the hairline elsewhere (a light, acceptable approximation for a wrapping
+   grid). */
+.insights-kpi:first-child {
+  border-inline-start: none;
+}
+
+.insights-kpi-label {
+  font-size: var(--fs-xs);
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+
+.insights-kpi-value {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.1rem);
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The headline KPI (total) gets ember weight to read as "most important". */
+.insights-kpi--lead .insights-kpi-value {
+  color: var(--ember);
+}
+
+/* — Grouped chart sections with a small heading above each group — */
+.insights-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.insights-section-title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-align: start;
+}
+
+/* — Hero chart: the promoted "Requests over time" runs taller than a normal
+   card so it reads as the lead chart. Applies to the inner chart only; the
+   card chrome stays the shared `.insights-card`. — */
+.insights-card--hero .insights-card-title {
+  font-size: var(--fs-h2);
+}
