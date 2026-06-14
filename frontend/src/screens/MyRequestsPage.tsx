@@ -772,7 +772,7 @@ export default function MyRequestsPage() {
     <>
       {/* ── COMPACT INLINE HEADER — eyebrow → serif title → lede + CTA (start-aligned) ── */}
       <section className="myreq-header">
-        <div className="page-container myreq-header-container">
+        <div className="page-container myreq-header-container myreq-header-container-compact">
           <Reveal>
             <div className="myreq-header-inner">
               <div className="myreq-header-copy">
@@ -789,7 +789,7 @@ export default function MyRequestsPage() {
         </div>
       </section>
 
-      <div className="page-container" style={{ maxWidth: "1180px", padding: "clamp(32px, 5vw, 56px) 1.5rem 80px" }}>
+      <div className="page-container myreq-shell-compact">
 
         {/* UC-01 A1 — suggest-alternatives card (dismissible, top of page) */}
         {!suggestDismissed && suggestions.length > 0 && (
