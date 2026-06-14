@@ -12,6 +12,8 @@ import {
   ClipboardCheck,
   HandHeart,
   ShieldCheck,
+  FolderCheck,
+  Sparkles,
   ArrowUpRight,
   BarChart3,
 } from 'lucide-react'
@@ -50,6 +52,7 @@ interface KpiItem {
   label: string
   tone: string
   icon: LucideIcon
+  href: string
 }
 
 // An actionable "needs attention" row: a count of items that, when non-zero,
@@ -91,12 +94,14 @@ export default function AdminDashboard() {
 
   const n = (key: string): number => (stats ? stats[key] ?? 0 : 0)
 
-  // ── KPI row — the live numbers an admin opens this page to scan. ──────────
+  // ── KPI strip — every number links to its filtered list (WS-4). ──────────
   const kpis: KpiItem[] = [
-    { key: 'openRequests', label: a.dash.s.openRequests, tone: 'amber', icon: Inbox },
-    { key: 'inProgressRequests', label: a.dash.s.inProgress, tone: 'blue', icon: Clock },
-    { key: 'helped', label: a.dash.s.helped, tone: 'green', icon: CheckCircle2 },
-    { key: 'activeVolunteers', label: a.dash.s.activeVolunteers, tone: 'green', icon: HeartHandshake },
+    { key: 'openRequests', label: a.dash.s.openRequests, tone: 'amber', icon: Inbox, href: '/admin/requests?status=pending' },
+    { key: 'inProgressRequests', label: a.dash.s.inProgress, tone: 'blue', icon: Clock, href: '/admin/requests?status=in_progress' },
+    { key: 'awaitingReviewRequests', label: a.dash.s.awaitingReview, tone: 'amber', icon: ClipboardCheck, href: '/admin/requests?status=awaiting_review' },
+    { key: 'helped', label: a.dash.s.helped, tone: 'green', icon: CheckCircle2, href: '/admin/requests?status=closed' },
+    { key: 'activeVolunteers', label: a.dash.s.activeVolunteers, tone: 'green', icon: HeartHandshake, href: '/admin/volunteers?tab=active' },
+    { key: 'totalUsers', label: a.dash.s.usersLink, tone: 'default', icon: Users, href: '/admin/users' },
   ]
 
   // ── Needs attention — actionable queues, each links to its working area. ──
@@ -104,7 +109,7 @@ export default function AdminDashboard() {
     {
       key: 'unassigned',
       label: ops.items.unassigned,
-      count: n('openRequests'),
+      count: n('unassignedRequests'),
       href: '/admin/requests?status=pending',
       icon: Inbox,
       cta: ops.open,
@@ -118,14 +123,6 @@ export default function AdminDashboard() {
       cta: ops.review,
     },
     {
-      key: 'pendingVol',
-      label: ops.items.pendingVol,
-      count: n('pendingVolunteers'),
-      href: '/admin/volunteers',
-      icon: UserPlus,
-      cta: ops.review,
-    },
-    {
       key: 'withClaims',
       label: ops.items.withClaims,
       count: n('requestsWithClaims'),
@@ -134,26 +131,42 @@ export default function AdminDashboard() {
       cta: ops.review,
     },
     {
+      key: 'pendingVol',
+      label: ops.items.pendingVol,
+      count: n('pendingVolunteers'),
+      href: '/admin/volunteers?tab=pending',
+      icon: UserPlus,
+      cta: ops.review,
+    },
+    {
       key: 'pendingCategory',
       label: ops.items.pendingCategory,
       count: n('pendingCategoryRequests'),
-      href: '/admin/volunteers',
+      href: '/admin/volunteers?tab=pending',
       icon: ShieldCheck,
       cta: ops.review,
+    },
+    {
+      key: 'pendingDirectory',
+      label: ops.items.pendingDirectory,
+      count: n('pendingDirectory'),
+      href: '/admin/directory',
+      icon: FolderCheck,
+      cta: ops.review,
+    },
+    {
+      key: 'todayNew',
+      label: ops.items.todayNew,
+      count: n('todayNewRequests'),
+      href: '/admin/requests?status=pending',
+      icon: Sparkles,
+      cta: ops.view,
     },
   ]
 
   // Only items with at least one outstanding entry are surfaced; when nothing
   // is open the section shows a calm "all clear" message.
   const liveAttention = attention.filter((item) => item.count > 0)
-
-  // Compact insights strip — a few headline community totals that link to the
-  // full charts. Kept numeric + label so it stays language-neutral per tile.
-  const insightTiles: KpiItem[] = [
-    { key: 'totalUsers', label: a.dash.s.totalUsers, tone: 'default', icon: Users },
-    { key: 'activeVolunteers', label: a.dash.s.activeVolunteers, tone: 'green', icon: HeartHandshake },
-    { key: 'helped', label: a.dash.s.helped, tone: 'green', icon: CheckCircle2 },
-  ]
 
   const Arrow = ArrowUpRight
 
@@ -165,30 +178,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* ── TOP KPI ROW ──────────────────────────────────────────────────── */}
+      {/* ── NEEDS ATTENTION — actionable queue, first and bold ──────────────── */}
       <Reveal>
-        <section style={{ marginBlockEnd: 'var(--sp-7)' }}>
-          <header style={{ maxWidth: '42rem', marginBlockEnd: 'var(--sp-5)', textAlign: 'start' }}>
-            <span style={eyebrowStyle}>{ops.kpiEyebrow}</span>
-            <h2 style={sectionHeadingStyle}>{ops.kpiTitle}</h2>
-          </header>
-          <div className="stat-grid">
-            {kpis.map((c) => (
-              <StatCard
-                key={c.key + c.label}
-                label={c.label}
-                value={n(c.key)}
-                loading={loading}
-                tone={c.tone}
-                icon={c.icon}
-              />
-            ))}
-          </div>
-        </section>
-      </Reveal>
-
-      {/* ── NEEDS ATTENTION — actionable queues ──────────────────────────── */}
-      <Reveal delay={0.06}>
         <section
           style={{
             background: 'var(--white)',
@@ -196,12 +187,12 @@ export default function AdminDashboard() {
             borderRadius: 'var(--radius-lg)',
             boxShadow: 'var(--shadow-sm)',
             padding: 'clamp(20px, 3vw, 32px)',
-            marginBlockEnd: 'var(--sp-7)',
+            marginBlockEnd: 'var(--sp-6)',
           }}
         >
           <header style={{ maxWidth: '42rem', marginBlockEnd: 'var(--sp-5)', textAlign: 'start' }}>
             <span style={{ ...eyebrowStyle, color: 'var(--ember)' }}>{ops.attentionEyebrow}</span>
-            <h2 style={{ ...sectionHeadingStyle, fontSize: 'var(--fs-h3)' }}>{ops.attentionTitle}</h2>
+            <h2 style={sectionHeadingStyle}>{ops.attentionTitle}</h2>
           </header>
 
           {loading ? (
@@ -258,17 +249,9 @@ export default function AdminDashboard() {
         </section>
       </Reveal>
 
-      {/* ── INSIGHTS STRIP — headline totals + a link to the full charts ──── */}
-      <Reveal delay={0.1}>
-        <section
-          style={{
-            background: 'var(--white)',
-            border: '1px solid var(--hair)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)',
-            padding: 'clamp(20px, 3vw, 32px)',
-          }}
-        >
+      {/* ── KPI STRIP — compact, every number links to its list ─────────────── */}
+      <Reveal delay={0.06}>
+        <section style={{ marginBlockEnd: 'var(--sp-5)' }}>
           <header
             style={{
               display: 'flex',
@@ -276,12 +259,12 @@ export default function AdminDashboard() {
               alignItems: 'baseline',
               justifyContent: 'space-between',
               gap: 'var(--sp-3)',
-              marginBlockEnd: 'var(--sp-5)',
+              marginBlockEnd: 'var(--sp-4)',
             }}
           >
             <div style={{ textAlign: 'start' }}>
-              <span style={{ ...eyebrowStyle, color: 'var(--gray-500)' }}>{ops.insightsEyebrow}</span>
-              <h2 style={{ ...sectionHeadingStyle, fontSize: 'var(--fs-h3)' }}>{ops.insightsTitle}</h2>
+              <span style={{ ...eyebrowStyle, color: 'var(--gray-500)' }}>{ops.kpiEyebrow}</span>
+              <h2 style={{ ...sectionHeadingStyle, fontSize: 'var(--fs-h3)' }}>{ops.kpiStripTitle}</h2>
             </div>
             <Link
               href="/admin/insights"
@@ -292,16 +275,15 @@ export default function AdminDashboard() {
               {ops.viewInsights}
             </Link>
           </header>
-
           <div className="stat-grid">
-            {insightTiles.map((c) => (
+            {kpis.map((c) => (
               <StatCard
                 key={c.key + c.label}
                 label={c.label}
                 value={n(c.key)}
                 loading={loading}
                 tone={c.tone}
-                icon={c.icon}
+                href={c.href}
               />
             ))}
           </div>
