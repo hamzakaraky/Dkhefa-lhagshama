@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { Inbox, ChevronLeft, ChevronRight, Plus, HandHeart, X, Search, ArrowUp, ArrowDown, ChevronsUpDown } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -84,48 +84,66 @@ export default function AdminRequestsListPage() {
   const a = t.admin
   // Bilingual category labels from the admin-managed taxonomy.
   const { labelFor } = useCategories()
-  const [filter, setFilter] = useState<FilterKey>('')
+  // Read URL params eagerly (before first render) so state is initialised from
+  // the deep-link on mount. The inline function runs only once at component
+  // creation; SSR returns the default because window is not available there.
+  function readUrlParams(): { filter: FilterKey; claimsOnly: boolean; sort: SortKey; volunteerId: string } {
+    if (typeof window === 'undefined') return { filter: '', claimsOnly: false, sort: 'newest', volunteerId: '' }
+    const p = new URLSearchParams(window.location.search)
+    const rawStatus = p.get('status') ?? ''
+    const filter: FilterKey =
+      ([...STATUS_FILTERS, ARCHIVED_FILTER] as readonly string[]).includes(rawStatus)
+        ? (rawStatus as FilterKey)
+        : ''
+    return {
+      filter,
+      claimsOnly: p.get('claims') === 'true',
+      sort: p.get('sort') === 'priority' ? 'priority' : 'newest',
+      volunteerId: p.get('volunteerId') ?? '',
+    }
+  }
+
+  const urlInit = readUrlParams()
+  const [filter, setFilter] = useState<FilterKey>(urlInit.filter)
   const [items, setItems] = useState<RequestRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [taskOpen, setTaskOpen] = useState(false)
   // When linked from the dashboard with ?claims=true, narrow the list to
   // requests that have interested volunteers (req 22 surfacing).
-  const [claimsOnly, setClaimsOnly] = useState(false)
+  const [claimsOnly, setClaimsOnly] = useState(urlInit.claimsOnly)
   // Server-side sort order: newest (default) or priority (urgency/deadline).
-  const [sort, setSort] = useState<SortKey>('newest')
+  const [sort, setSort] = useState<SortKey>(urlInit.sort)
   // ?volunteerId= deep link (e.g. from the volunteers roster): narrow the list
   // to one volunteer's assigned requests, server-side.
-  const [volunteerId, setVolunteerId] = useState('')
+  const [volunteerId, setVolunteerId] = useState(urlInit.volunteerId)
   // WS-5: live client-side search over the already-loaded items[].
   const [search, setSearch] = useState('')
   // WS-5: one client-side sort model. The Newest/Priority presets seed the
   // initial column+direction; a header click overrides. 'created' = Newest,
   // 'priority' is server-ordered (we keep server order when col === 'priority').
   type SortCol = 'requester' | 'category' | 'city' | 'interested' | 'status' | 'priority' | 'created'
-  const [sortCol, setSortCol] = useState<SortCol>('created')
+  const [sortCol, setSortCol] = useState<SortCol>(urlInit.sort === 'priority' ? 'priority' : 'created')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+
+  // Guard: the URL-sync effect must not run on the very first render (before any
+  // user interaction), because the initial state IS the URL — rewriting it with
+  // replaceState would be a no-op in theory but triggers an unnecessary history
+  // entry on strict-mode double-invoke environments.  We flip the ref to true
+  // after the first render so subsequent state changes (user tab clicks, etc.)
+  // do update the URL normally.
+  const didMountRef = useRef(false)
 
   const ManageArrow = isRTL ? ChevronLeft : ChevronRight
 
-  // Read ?claims=true from the URL once on mount so the dashboard's
-  // "requests with claimants" card lands on a pre-filtered view.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const params = new URLSearchParams(window.location.search)
-    setClaimsOnly(params.get('claims') === 'true')
-    const status = params.get('status')
-    if (status && ([...STATUS_FILTERS, ARCHIVED_FILTER] as readonly string[]).includes(status)) {
-      setFilter(status as FilterKey)
-    }
-    if (params.get('sort') === 'priority') setSort('priority')
-    const vid = params.get('volunteerId')
-    if (vid) setVolunteerId(vid)
-  }, [])
-
   // Reflect the active filter in the URL so the view is bookmarkable, shareable,
   // and survives a refresh. replaceState (not push) keeps history clean per click.
+  // Skipped on the very first render: initial state already came from the URL.
   useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true
+      return
+    }
     if (typeof window === 'undefined') return
     const params = new URLSearchParams()
     if (filter) params.set('status', filter)
