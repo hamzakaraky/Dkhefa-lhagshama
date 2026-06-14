@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import {
   ClipboardList,
-  Clock,
-  CheckCircle2,
-  Layers,
   MessagesSquare,
   ArrowUpRight,
   Tag,
@@ -16,7 +12,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import type { VolunteerMe } from '@/types'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
-import { StatCard, ErrorState } from '@/components/admin/AdminUI'
+import { ErrorState } from '@/components/admin/AdminUI'
 import Reveal from '@/components/motion/Reveal'
 
 interface AssignedItem {
@@ -134,13 +130,6 @@ export default function VolunteerDashboard() {
     return { assigned: assigned.length, inProgress, done, poolAvailable, nextDeadline }
   }, [assigned, pool])
 
-  const tiles: { key: string; label: string; value: number; tone: string; icon: LucideIcon }[] = [
-    { key: 'assigned', label: d.kpis.assigned, value: kpis.assigned, tone: 'info', icon: ClipboardList },
-    { key: 'inProgress', label: d.kpis.inProgress, value: kpis.inProgress, tone: 'pending', icon: Clock },
-    { key: 'done', label: d.kpis.done, value: kpis.done, tone: 'success', icon: CheckCircle2 },
-    { key: 'poolAvailable', label: d.kpis.poolAvailable, value: kpis.poolAvailable, tone: 'default', icon: Layers },
-  ]
-
   const setWorkStatus = async (status: VolunteerMe['workStatus']) => {
     if (statusBusy || me?.workStatus === status) return
     setStatusBusy(true)
@@ -220,18 +209,45 @@ export default function VolunteerDashboard() {
         </div>
       )}
 
-      {/* ── KPI tiles ─────────────────────────────────────────── */}
-      <Reveal className="stat-grid" y={16}>
-        {tiles.map((tile) => (
-          <StatCard
-            key={tile.key}
-            label={tile.label}
-            value={tile.value}
-            loading={loading}
-            tone={tile.tone}
-            icon={tile.icon}
-          />
-        ))}
+      {/* ── Hero signals: active load · next deadline · availability ── */}
+      <Reveal className="voldash-hero" y={16}>
+        <section className="card voldash-hero-card">
+          <p className="voldash-hero-label">{d.hero.assignedLabel}</p>
+          <span className="voldash-hero-value">{loading ? '—' : kpis.assigned}</span>
+          <p className="voldash-hero-sub">{`${kpis.inProgress} ${d.hero.openTasks}`}</p>
+        </section>
+
+        <section className="card voldash-hero-card">
+          <p className="voldash-hero-label">{d.hero.nextDeadlineLabel}</p>
+          <span className="voldash-hero-value">
+            {loading ? '—' : kpis.nextDeadline ? fmtDate(kpis.nextDeadline) : '—'}
+          </span>
+          <p className="voldash-hero-sub">
+            {kpis.nextDeadline ? '' : d.hero.noDeadline}
+          </p>
+        </section>
+
+        <section className="card voldash-hero-card">
+          <p className="voldash-hero-label">{d.hero.availabilityLabel}</p>
+          <span
+            className="voldash-avail"
+            role="status"
+            aria-label={d.availability.ariaPill}
+          >
+            <span
+              className={`voldash-avail-dot is-${me?.workStatus ?? 'free'}`}
+              aria-hidden="true"
+            />
+            {d.availability[(me?.workStatus ?? 'free') as 'free' | 'working' | 'unavailable']}
+          </span>
+          {me?.workStatus === 'unavailable' && availableAgainOn && (
+            <p className="voldash-hero-sub">{d.availability.backOn(fmtDate(availableAgainOn))}</p>
+          )}
+          <Link href="/volunteer-hub/calendar" className="voldash-avail-manage">
+            <ClipboardList size={14} aria-hidden="true" />
+            {d.availability.manage}
+          </Link>
+        </section>
       </Reveal>
 
       <Reveal className="volapp-columns" y={16} delay={0.05}>
