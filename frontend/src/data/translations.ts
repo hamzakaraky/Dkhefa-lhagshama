@@ -434,6 +434,8 @@ const base = {
         approve:    'אישור',
         reject:     'דחייה',
         deactivate: 'השבתה',
+        searchPlaceholder: 'חיפוש לפי שם או אימייל',
+        noMatches:         'אין מתנדבים תואמים לחיפוש',
       },
       // Volunteer drill-down (/admin/volunteers/[uid])
       volDetail: {
@@ -561,6 +563,8 @@ const base = {
         disable:  'השבתה',
         disableConfirmTitle: 'להשבית את חשבון המשתמש?',
         disableConfirmBody:  'המשתמש לא יוכל להתחבר עד שתפעילו מחדש את החשבון.',
+        searchPlaceholder: 'חיפוש לפי שם, אימייל או תפקיד',
+        noMatches:         'אין משתמשים תואמים לחיפוש',
       },
       approvals: {
         title:    'תור אישורים',
@@ -643,6 +647,8 @@ const base = {
         updateSuccess: 'הפריט עודכן',
         deleteSuccess: 'הפריט נמחק',
         actionError:   'הפעולה נכשלה, נסה שוב',
+        searchPlaceholder: 'חיפוש לפי שם, קטגוריה או מקור',
+        noMatches:         'אין פריטים תואמים לחיפוש',
       },
       // Admin category management (/admin/categories): the shared help-
       // category taxonomy (Firestore `categories` docs with bilingual labels).
