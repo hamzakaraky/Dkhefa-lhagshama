@@ -24,6 +24,10 @@ import {
   Archive,
   FileText,
   ExternalLink,
+  Sparkles,
+  Languages,
+  Gauge,
+  ChevronDown,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useApp } from '@/contexts/AppContext'
@@ -117,19 +121,57 @@ interface ActiveVolunteer {
   [key: string]: unknown
 }
 
+// A ranked match candidate from GET /api/admin/requests/:id/candidates (WS-6).
+interface MatchReason {
+  key: 'sameCategory' | 'relatedArea' | 'speaksLanguage' | 'currentlyFree' | 'lowLoad' | 'availableBeforeDeadline'
+  lang?: string
+  count?: number
+}
+interface Candidate {
+  uid: string
+  name: string
+  score: number
+  reasons: MatchReason[]
+  workStatus: string
+  openLoad: number
+  languages: string[]
+  hasClaimed: boolean
+}
+
+// WS-6 — the ranked-matching i18n sub-block nested under reqDetail. Spelled out
+// so the candidate UI can read it without an `any` cast.
+type MatchingCopy = {
+  heading: string
+  subtitle: string
+  score: string
+  why: string
+  showAll: string
+  hideAll: string
+  assign: string
+  assigning: string
+  empty: string
+  loadError: string
+  claimedTag: string
+  openTasks: string
+  reasons: Record<string, string>
+  langLabels: Record<string, string>
+}
+
 // The translation bundle slice consumed here (t.admin). Loose so we don't
-// duplicate the full translation typing that lives elsewhere.
+// duplicate the full translation typing that lives elsewhere. `reqDetail`
+// carries flat strings plus the nested `matching` block (WS-6).
 type AdminCopy = {
   statusLabels: Record<string, string>
   roleLabels: Record<string, string>
-  reqDetail: Record<string, string>
+  reqDetail: { [key: string]: string | MatchingCopy }
   [key: string]: unknown
 }
 
-// Normalize a language token to a comparable lowercase code (e.g. 'Hebrew' →
-// 'he' is out of scope; we compare the raw stored codes like 'he'/'am'/'en').
-function normLang(v: unknown): string {
-  return String(v ?? '').trim().toLowerCase()
+// Read a flat (string) reqDetail key, narrowing away the nested MatchingCopy
+// (WS-6) so timeline labels stay typed as plain strings.
+function rdStr(a: AdminCopy, key: string): string {
+  const v = a.reqDetail[key]
+  return typeof v === 'string' ? v : ''
 }
 
 function eventLabel(ev: RequestEvent, a: AdminCopy, volunteers: ActiveVolunteer[]): string {
@@ -149,7 +191,7 @@ function eventLabel(ev: RequestEvent, a: AdminCopy, volunteers: ActiveVolunteer[
         (ev.details && ev.details.to && a.statusLabels[ev.details.to]) || (ev.details && ev.details.to) || ''
       }`
     case 'note_added':
-      return (ev.details && ev.details.note) || a.reqDetail.addNote
+      return (ev.details && ev.details.note) || rdStr(a, 'addNote')
     // req 25 — consent-close handshake trail: details carry
     // { action: 'proposed'|'approved'|'declined', role: 'volunteer'|'beneficiary' }.
     case 'close_consent': {
@@ -157,10 +199,10 @@ function eventLabel(ev: RequestEvent, a: AdminCopy, volunteers: ActiveVolunteer[
       const role = typeof ev.details?.role === 'string' ? ev.details.role : ''
       const base =
         action === 'declined'
-          ? a.reqDetail.closeConsentDeclined
+          ? rdStr(a, 'closeConsentDeclined')
           : action === 'approved'
-            ? a.reqDetail.closeConsentApproved
-            : a.reqDetail.closeConsentProposed
+            ? rdStr(a, 'closeConsentApproved')
+            : rdStr(a, 'closeConsentProposed')
       const roleLabel = (role && a.roleLabels[role]) || role
       return roleLabel ? `${base} (${roleLabel})` : base
     }
@@ -271,10 +313,12 @@ export default function AdminRequestDetailPage() {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const [assignTo, setAssignTo] = useState('')
   const [note, setNote] = useState('')
   const [dismissedFormer, setDismissedFormer] = useState(false)
-  const [dismissedLangWarn, setDismissedLangWarn] = useState(false)
+  // WS-6 — ranked match candidates for this request.
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [candidatesError, setCandidatesError] = useState(false)
+  const [showAllCandidates, setShowAllCandidates] = useState(false)
 
   // Lifecycle transition confirmation (Note 6).
   const [pendingTransition, setPendingTransition] = useState<PendingTransition | null>(null)
@@ -300,8 +344,17 @@ export default function AdminRequestDetailPage() {
         apiJson('/api/admin/volunteers') as Promise<{ active?: ActiveVolunteer[] }>,
       ])
       setRequest(reqData)
-      setAssignTo(reqData.assignedVolunteerId || '')
       setVolunteers((volData && volData.active) || [])
+      // WS-6 — ranked candidates. Non-fatal: a failure just hides the list and
+      // surfaces a quiet error; the manual override below still works.
+      try {
+        const cand = (await apiJson(`/api/admin/requests/${id}/candidates`)) as { candidates?: Candidate[] }
+        setCandidates(Array.isArray(cand.candidates) ? cand.candidates : [])
+        setCandidatesError(false)
+      } catch {
+        setCandidates([])
+        setCandidatesError(true)
+      }
     } catch {
       setError(a.ui.loading)
     } finally {
@@ -345,8 +398,33 @@ export default function AdminRequestDetailPage() {
     }
   }
 
-  const handleAssign = () => {
-    if (assignTo) post('assign', { volunteerId: assignTo })
+  // WS-6 — assign directly from a ranked candidate card. Goes through the same
+  // POST /assign endpoint as the claimant path, so every backend assign guard
+  // (active check, terminal-request 409, chat-on-assign, beneficiary notify) is
+  // preserved unchanged.
+  const [assigningUid, setAssigningUid] = useState<string | null>(null)
+  const m = a.reqDetail.matching as unknown as {
+    heading: string; subtitle: string; score: string; why: string
+    showAll: string; hideAll: string; assign: string; assigning: string
+    empty: string; loadError: string; claimedTag: string; openTasks: string
+    reasons: Record<string, string>; langLabels: Record<string, string>
+  }
+  const handleAssignCandidate = async (uid: string) => {
+    setAssigningUid(uid)
+    const ok = await post('assign', { volunteerId: uid })
+    setAssigningUid(null)
+    if (ok) toast(a.claims.assignSuccess, 'success')
+    else toast(a.claims.assignError, 'error')
+  }
+  const reasonChipLabel = (r: MatchReason): string => {
+    if (r.key === 'speaksLanguage') {
+      const langName = (r.lang && m.langLabels[r.lang]) || r.lang || ''
+      return `${m.reasons.speaksLanguage}: ${langName}`
+    }
+    if (r.key === 'lowLoad') {
+      return `${m.reasons.lowLoad} (${r.count ?? 0})`
+    }
+    return m.reasons[r.key] || r.key
   }
 
   // req 22 — assign the request to a specific claimant. The backend assign
@@ -579,25 +657,7 @@ export default function AdminRequestDetailPage() {
     ? (assignedVolunteer && assignedVolunteer.fullName) ||
       request.assignedVolunteerName ||
       request.assignedVolunteerId
-    : a.reqDetail.unassigned
-
-  // #95 — non-blocking language-match check for the volunteer being *picked* in
-  // the assign dropdown. Requests don't yet carry a language field, so we treat
-  // Hebrew ('he') as the community default and warn if the chosen volunteer's
-  // languages don't include the beneficiary's language. If language data is
-  // missing on either side we stay silent (no warning).
-  const langMismatch = useMemo(() => {
-    if (!assignTo || !request) return false
-    const candidate = volunteers.find((v) => v.uid === assignTo)
-    if (!candidate) return false
-    const volLangs = (candidate.languages || []).map(normLang).filter(Boolean)
-    if (volLangs.length === 0) return false
-    const beneficiaryLang = normLang(
-      request.language || request.preferredLanguage || 'he',
-    )
-    if (!beneficiaryLang) return false
-    return !volLangs.includes(beneficiaryLang)
-  }, [assignTo, volunteers, request])
+    : rdStr(a, 'unassigned')
 
   return (
     <AdminLayout title={a.reqDetail.title}>
@@ -1024,31 +1084,17 @@ export default function AdminRequestDetailPage() {
               </span>
 
               <div className="field" style={{ marginBlockStart: 'var(--sp-2)' }}>
-                <label
+                <span
                   className="form-label"
-                  htmlFor="assign"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}
                 >
-                  <UserPlus size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
-                  {a.reqDetail.assign}
-                </label>
-                <select
-                  id="assign"
-                  className="form-select"
-                  value={assignTo}
-                  disabled={isTerminal}
-                  onChange={(e) => {
-                    setAssignTo(e.target.value)
-                    setDismissedLangWarn(false)
-                  }}
-                >
-                  <option value="">{a.reqDetail.chooseVol}</option>
-                  {volunteers.map((v) => (
-                    <option key={v.uid} value={v.uid}>
-                      {v.fullName || v.uid}
-                    </option>
-                  ))}
-                </select>
+                  <Sparkles size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+                  {m.heading}
+                </span>
+                <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                  {m.subtitle}
+                </p>
+
                 {isTerminal && (
                   <p
                     className="admin-notice admin-notice-warn"
@@ -1059,33 +1105,71 @@ export default function AdminRequestDetailPage() {
                     <span>{a.reqDetail.assignTerminalHint}</span>
                   </p>
                 )}
-                {/* #95 — non-blocking language-mismatch warning */}
-                {langMismatch && !dismissedLangWarn && (
-                  <div
-                    className="admin-notice admin-notice-warn"
-                    role="status"
-                    style={{ marginBlockStart: 'var(--sp-3)' }}
-                  >
-                    <AlertTriangle size={16} aria-hidden="true" />
-                    <span>{a.reqDetail.langMismatchWarning}</span>
-                    <button
-                      type="button"
-                      className="admin-notice-action"
-                      onClick={() => setDismissedLangWarn(true)}
-                    >
-                      {a.reqDetail.dismiss}
-                    </button>
-                  </div>
+
+                {candidatesError ? (
+                  <p style={{ margin: 'var(--sp-3) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                    {m.loadError}
+                  </p>
+                ) : candidates.length === 0 ? (
+                  <p style={{ margin: 'var(--sp-3) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+                    {m.empty}
+                  </p>
+                ) : (
+                  <>
+                    <ul className="match-list">
+                      {(showAllCandidates ? candidates : candidates.slice(0, 3)).map((c, i) => {
+                        const busy = assigningUid === c.uid
+                        return (
+                          <li
+                            key={c.uid}
+                            className={`match-card${i === 0 && !showAllCandidates ? ' match-card--top' : ''}`}
+                          >
+                            <div className="match-card-body">
+                              <span className="match-card-name">{c.name}</span>
+                              <p className="match-card-meta">
+                                {m.score}: {c.score} · {c.openLoad} {m.openTasks}
+                                {c.hasClaimed ? ` · ${m.claimedTag}` : ''}
+                              </p>
+                              <div className="match-chips" aria-label={m.why}>
+                                {c.reasons.map((r, ri) => (
+                                  <span
+                                    key={`${r.key}-${ri}`}
+                                    className={`match-chip${r.key === 'sameCategory' ? ' match-chip--strong' : ''}`}
+                                  >
+                                    {r.key === 'speaksLanguage' && <Languages size={12} aria-hidden="true" />}
+                                    {r.key === 'lowLoad' && <Gauge size={12} aria-hidden="true" />}
+                                    {reasonChipLabel(r)}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              disabled={saving || busy || isTerminal}
+                              aria-busy={busy || undefined}
+                              aria-label={`${m.assign}: ${c.name}`}
+                              onClick={() => handleAssignCandidate(c.uid)}
+                            >
+                              {busy ? m.assigning : m.assign}
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {candidates.length > 3 && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm match-toggle"
+                        onClick={() => setShowAllCandidates((v) => !v)}
+                        aria-expanded={showAllCandidates}
+                      >
+                        <ChevronDown size={14} aria-hidden="true" />
+                        {showAllCandidates ? m.hideAll : m.showAll}
+                      </button>
+                    )}
+                  </>
                 )}
-                <button
-                  type="button"
-                  className="btn btn-primary admin-side-btn"
-                  disabled={saving || !assignTo || isTerminal}
-                  aria-busy={saving || undefined}
-                  onClick={handleAssign}
-                >
-                  {a.reqDetail.assignBtn}
-                </button>
               </div>
 
               {/* ── Lifecycle transitions (Note 6 + 8) — only legal moves from
