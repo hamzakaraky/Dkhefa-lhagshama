@@ -154,6 +154,12 @@ export default function HomePage() {
                 {t.hero.cta}
                 <ArrowIcon size={16} />
               </MagneticButton>
+              <button type="button" className="btn btn-nav-outline btn-lg" onClick={() => navigate('/volunteer-hub')}>
+                {t.hero.ctaVolunteer}
+              </button>
+              <button type="button" className="btn btn-nav-outline btn-lg hero-action-quiet" onClick={() => navigate('/admin')}>
+                {t.hero.ctaStaff}
+              </button>
             </div>
 
             {/* Inline stat strip — woven into the hero, not a separate metric band */}
