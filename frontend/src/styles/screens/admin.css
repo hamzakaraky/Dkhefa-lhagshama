@@ -262,6 +262,50 @@
 
 .admin-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-block-end: 1rem; }
 
+/* ── WS-9: search box for admin people/directory list screens. A scoped
+   variant (not the public .dir-search) so admin toolbar spacing stays
+   independent. RTL-safe via logical properties; clear button sits at the
+   inline-end. ── */
+.admin-search {
+  position: relative;
+  margin-block-end: var(--sp-4);
+  max-inline-size: 420px;
+}
+.admin-search-icon {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inset-inline-start: 14px;
+  color: var(--gray-500);
+  pointer-events: none;
+}
+.admin-search-input {
+  padding-inline-start: 40px;
+  padding-inline-end: 40px;
+  block-size: 44px;
+  border-radius: var(--radius);
+  text-align: start;
+  inline-size: 100%;
+}
+.admin-search-clear {
+  position: absolute;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  inset-inline-end: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 26px;
+  block-size: 26px;
+  border: none;
+  background: transparent;
+  color: var(--gray-500);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.admin-search-clear:hover { color: var(--ink); background: var(--gray-100); }
+.admin-search-clear:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+
 .admin-filter-tab {
   padding: 0.45rem 0.9rem;
   border-radius: 999px;
