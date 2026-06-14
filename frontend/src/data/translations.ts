@@ -78,7 +78,9 @@ const base = {
       titleHighlight: 'ראוי',
       title2:    'להגשים את עצמו',
       subtitle:  'עמותת דחיפה להגשמה מלווה את בני הקהילה האתיופית בישראל בחינוך, תעסוקה, סיוע משפטי ושילוב חברתי. אנחנו כאן בשבילך.',
-      cta:       'הגש בקשת סיוע',
+      cta:       'בקשת עזרה',
+      ctaVolunteer: 'התנדבות',
+      ctaStaff:  'כניסת צוות',
       ctaSecondary: 'השירותים שלנו',
       stats: {
         beneficiaries: 'נהנו מהשירות',
@@ -1354,7 +1356,9 @@ const base = {
       titleHighlight: 'deserves',
       title2:         'to fulfill their potential',
       subtitle:       'Push for Fulfillment supports the Ethiopian community in Israel with education, employment, legal aid, and social integration. We are here for you.',
-      cta:            'Submit a Request',
+      cta:            'Request Help',
+      ctaVolunteer:   'Volunteer',
+      ctaStaff:       'Staff login',
       ctaSecondary:   'Our Services',
       stats: {
         beneficiaries: 'People Served',
