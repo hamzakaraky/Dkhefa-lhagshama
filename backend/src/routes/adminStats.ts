@@ -87,19 +87,34 @@ async function countUnassignedRequests(): Promise<number> {
 
 /**
  * Count requests created since local midnight today. Uses the pure
- * localMidnightUtc helper against the server clock + its timezone offset, then
- * a Firestore aggregate count() with createdAt >= that instant.
+ * localMidnightUtc helper against the server clock + its timezone offset.
+ *
+ * Primary query: status=='pending' AND createdAt>=midnight (requires composite
+ * index status ASC + createdAt ASC). If that composite index is not yet
+ * deployed it will throw; we catch and retry with a createdAt-only query
+ * (single-field index, always available) so the dashboard always returns 200.
  */
 async function countTodayNewRequests(): Promise<number> {
   const now = new Date();
   const midnight = localMidnightUtc(now, now.getTimezoneOffset());
-  const snap = await db()
-    .collection('requests')
-    .where('status', '==', 'pending')
-    .where('createdAt', '>=', Timestamp.fromDate(midnight))
-    .count()
-    .get();
-  return snap.data().count;
+  const midnightTs = Timestamp.fromDate(midnight);
+  try {
+    const snap = await db()
+      .collection('requests')
+      .where('status', '==', 'pending')
+      .where('createdAt', '>=', midnightTs)
+      .count()
+      .get();
+    return snap.data().count;
+  } catch (err) {
+    console.warn('[adminStats] todayNew fallback — composite index missing, using createdAt-only count', err);
+    const snap = await db()
+      .collection('requests')
+      .where('createdAt', '>=', midnightTs)
+      .count()
+      .get();
+    return snap.data().count;
+  }
 }
 
 // ── GET /api/admin/stats ───────────────────────────────────────────────────
@@ -132,7 +147,10 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       count('volunteerApplications', 'status', '==', 'pending'),
       count('users'),
       count('requests', 'hasClaims', '==', true),
-      countUnassignedRequests(),
+      countUnassignedRequests().catch((err) => {
+        console.warn('[adminStats] unassigned fallback', err);
+        return 0;
+      }),
       countPendingCategoryRequests(),
       count('answers', 'status', '==', 'pending'),
       count('businesses', 'status', '==', 'pending'),
