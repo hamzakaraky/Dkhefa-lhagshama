@@ -1664,6 +1664,8 @@ const base = {
         approve:    'Approve',
         reject:     'Reject',
         deactivate: 'Deactivate',
+        searchPlaceholder: 'Search by name or email',
+        noMatches:         'No volunteers match your search',
       },
       // Volunteer drill-down (/admin/volunteers/[uid])
       volDetail: {
@@ -1791,6 +1793,8 @@ const base = {
         disable:  'Disable',
         disableConfirmTitle: 'Disable this user account?',
         disableConfirmBody:  'The user will not be able to sign in until you re-enable the account.',
+        searchPlaceholder: 'Search by name, email or role',
+        noMatches:         'No users match your search',
       },
       approvals: {
         title:    'Approval queue',
@@ -1873,6 +1877,8 @@ const base = {
         updateSuccess: 'Item updated',
         deleteSuccess: 'Item deleted',
         actionError:   'Action failed, please try again',
+        searchPlaceholder: 'Search by name, category or source',
+        noMatches:         'No items match your search',
       },
       // Admin category management (/admin/categories): the shared help-
       // category taxonomy (Firestore `categories` docs with bilingual labels).
