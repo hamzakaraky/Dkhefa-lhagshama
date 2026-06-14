@@ -281,6 +281,35 @@
   border: 1px solid var(--hair);
 }
 
+/* ── WS-2: compact interior header ──────────────────────────────
+   Round-4 density pass. A scoped variant of the directory header band
+   that compresses the vertical rhythm so the first row of cards rises
+   near the top. Applied to the cream <section>'s inner container so the
+   shared .page-container padding is NOT mutated. Pairs with
+   .dir-shell-compact (the content container) to remove the double-padding
+   seam between the band and the results. */
+.dir-band-compact {
+  padding-block: clamp(20px, 3vw, 32px) clamp(12px, 2vw, 20px);
+}
+
+/* Drop the interior H1 from --fs-display to --fs-h2 (variant only — the
+   shared .section-display-bold used on home is untouched). */
+.dir-band-compact .section-display-bold {
+  font-size: var(--fs-h2);
+  margin-block-end: 0;
+}
+
+/* Tighten the tab track's lead-in so the tabs sit close under the title. */
+.dir-band-compact .dir-tabs {
+  margin-block-start: clamp(12px, 2vw, 18px);
+}
+
+/* The content container directly follows the band: collapse its top
+   padding to a small fixed value so the two paddings no longer stack. */
+.dir-shell-compact {
+  padding-block: 20px 72px;
+}
+
 /* ── Controls block: search + chips + secondary filters sit in a stack
    with consistent rhythm (no spacer-div hacks). ── */
 .dir-controls { margin-block-end: clamp(28px, 4vw, 36px); }
