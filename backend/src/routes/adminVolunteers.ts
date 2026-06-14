@@ -103,6 +103,10 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         approvedCategories: (data.approvedCategories as string[] | undefined) ?? [],
         requestedCategories:
           (data.requestedCategories as Array<Record<string, unknown>> | undefined) ?? [],
+        // Availability (WS-7): recurring weekly windows + optional return date.
+        availabilityWindows:
+          (data.availabilityWindows as Array<{ day: number; start: string; end: string }> | undefined) ?? [],
+        availableAgainOn: (data.availableAgainOn as string | null | undefined) ?? null,
       };
     });
 
