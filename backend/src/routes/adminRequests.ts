@@ -29,6 +29,7 @@ import { REQUEST_STATUSES, type RequestStatus } from '@/routes/requests';
 import { canTransition, canArchive } from '@/lib/requestTransitions';
 import { sortByPriority } from '@/lib/requestSort';
 import { volunteerDisplayName } from '@/lib/displayName';
+import { needsNameResolution } from '@/lib/assignedName';
 import { ensureChatForRequest } from '@/lib/chatOnAssign';
 import { scoreVolunteers, type MatchVolunteer } from '@/lib/matchVolunteers';
 
@@ -83,8 +84,28 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       return archivedMode === 'true' ? isArchived : !isArchived;
     });
 
-    const toRow = (d: (typeof docs)[number]) => {
+    // Priority sort keys read straight off the doc (urgency/deadline/taken) so
+    // sorting stays synchronous even though row projection is now async (WS-5).
+    const sortKey = (d: (typeof docs)[number]) => {
+      const dd = d.data();
+      return {
+        urgency: dd.urgency ?? null,
+        deadline: (dd.deadline as string | null | undefined) ?? null,
+        wasPreviouslyTaken: dd.wasPreviouslyTaken === true,
+      };
+    };
+
+    const toRow = async (d: (typeof docs)[number]) => {
       const data = d.data();
+      // Name-vs-id fix (WS-5): never emit a raw uid in the assigned cell. When
+      // the denormalized name is missing, empty, or equal to the uid (legacy
+      // rows), resolve a human name live through the shared display-name chain.
+      const assignedUid = (data.assignedVolunteerId as string | null | undefined) ?? null;
+      const storedName = (data.assignedVolunteerName as string | null | undefined) ?? null;
+      const resolvedAssignedName =
+        assignedUid && needsNameResolution(storedName, assignedUid)
+          ? await volunteerDisplayName(assignedUid)
+          : storedName;
       // Compact close-handshake state (req 25) so the admin list can flag
       // pending consent-close proposals without a detail fetch.
       const cr = (data.closeRequest as Record<string, unknown> | null | undefined) ?? null;
@@ -103,7 +124,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         archived:             data.archived === true,
         description:          data.description,
         assignedVolunteerId:  data.assignedVolunteerId ?? null,
-        assignedVolunteerName: data.assignedVolunteerName ?? null,
+        assignedVolunteerName: resolvedAssignedName ?? null,
         handler:              data.handler ?? null,
         deadline:             data.deadline ?? null,
         notes:                data.notes ?? '',
@@ -132,18 +153,17 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     };
 
     // sort=priority reuses the canonical urgency/deadline order (req 19);
-    // the default stays createdAt descending ('newest').
-    const items =
+    // the default stays createdAt descending ('newest'). toRow is async (it may
+    // resolve a legacy assigned name live), so map then Promise.all.
+    const ordered =
       sort === 'priority'
-        ? sortByPriority(docs.map(toRow)).slice(0, limit)
-        : docs
-            .sort((a, b) => {
-              const ta = a.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
-              const tb = b.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
-              return tb - ta; // newest first
-            })
-            .slice(0, limit)
-            .map(toRow);
+        ? sortByPriority(docs.map((d) => ({ ref: d, ...sortKey(d) }))).map((x) => x.ref)
+        : [...docs].sort((a, b) => {
+            const ta = a.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
+            const tb = b.data().createdAt?.toDate?.()?.getTime?.() ?? 0;
+            return tb - ta; // newest first
+          });
+    const items = (await Promise.all(ordered.slice(0, limit).map(toRow)));
 
     res.json({ items });
   } catch (err) {
