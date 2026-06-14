@@ -593,6 +593,21 @@
   align-items: center;
 }
 
+/* Tertiary hero button (Staff login): quieter than the Volunteer outline so
+   the ember "Request Help" stays dominant. New variant — does NOT mutate the
+   shared .btn-nav-outline used in the navbar / final-CTA band. */
+.hero-action-quiet {
+  border-color: rgba(244, 238, 224, 0.22);
+  color: rgba(244, 238, 224, 0.82);
+  font-weight: 500;
+}
+
+.hero-action-quiet:hover:not(:disabled),
+.hero-action-quiet:focus-visible {
+  border-color: var(--cream);
+  color: var(--cream);
+}
+
 .hero-stats-onphoto {
   display: flex;
   flex-wrap: wrap;
