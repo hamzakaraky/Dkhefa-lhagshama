@@ -1,6 +1,7 @@
-import { Inbox, AlertCircle } from 'lucide-react'
+import { Inbox, AlertCircle, ArrowUpRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import type { Lang } from '@/types'
 
 type StatTone = 'default' | 'pending' | 'success' | 'danger' | 'info' | string
@@ -30,14 +31,20 @@ interface StatCardProps {
   tone?: StatTone
   hint?: ReactNode
   icon?: LucideIcon
+  /** When set, the whole card becomes a link to this route (WS-4). */
+  href?: string
 }
 
-export function StatCard({ label, value, loading, tone = 'default', hint, icon: Icon }: StatCardProps) {
-  return (
-    <div className={`stat-card stat-card--${tone}`}>
+export function StatCard({ label, value, loading, tone = 'default', hint, icon: Icon, href }: StatCardProps) {
+  const inner = (
+    <>
       <div className="stat-card-head">
         <span className="stat-card-label">{label}</span>
-        {Icon ? <Icon size={18} aria-hidden="true" className="stat-card-icon" /> : null}
+        {href ? (
+          <ArrowUpRight size={16} aria-hidden="true" className="stat-card-link-arrow" />
+        ) : Icon ? (
+          <Icon size={18} aria-hidden="true" className="stat-card-icon" />
+        ) : null}
       </div>
       {loading ? (
         <span className="skeleton skeleton-stat" aria-hidden="true" />
@@ -45,8 +52,18 @@ export function StatCard({ label, value, loading, tone = 'default', hint, icon: 
         <span className="stat-card-value">{value}</span>
       )}
       {hint && !loading ? <span className="stat-card-hint">{hint}</span> : null}
-    </div>
+    </>
   )
+
+  if (href) {
+    return (
+      <Link href={href} className={`stat-card stat-card--${tone} stat-card--link`}>
+        {inner}
+      </Link>
+    )
+  }
+
+  return <div className={`stat-card stat-card--${tone}`}>{inner}</div>
 }
 
 interface EmptyStateProps {
