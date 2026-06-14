@@ -24,6 +24,7 @@ interface AssignedItem {
   title?: string
   category?: string
   status?: string
+  deadline?: string | null
 }
 
 interface PoolByCategory {
@@ -100,7 +101,21 @@ export default function VolunteerDashboard() {
       (a) => a.status === 'closed' || a.status === 'awaiting_review',
     ).length
     const poolAvailable = pool?.items.length ?? 0
-    return { assigned: assigned.length, inProgress, done, poolAvailable }
+    // Earliest non-terminal deadline at/after today (the signal the volunteer
+    // most needs to see). Terminal requests (closed/awaiting_review) are
+    // excluded so a stale past job never surfaces as "next".
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const nextDeadline = assigned
+      .filter((a) => a.status !== 'closed' && a.status !== 'awaiting_review')
+      .map((a) => a.deadline)
+      .filter((dl): dl is string => typeof dl === 'string' && dl.length > 0)
+      .filter((dl) => {
+        const dt = new Date(dl)
+        return !Number.isNaN(dt.getTime()) && dt.getTime() >= today.getTime()
+      })
+      .sort()[0] ?? null
+    return { assigned: assigned.length, inProgress, done, poolAvailable, nextDeadline }
   }, [assigned, pool])
 
   const tiles: { key: string; label: string; value: number; tone: string; icon: LucideIcon }[] = [
