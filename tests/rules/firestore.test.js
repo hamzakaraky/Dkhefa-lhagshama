@@ -107,6 +107,15 @@ describe('/requests', () => {
     );
   });
 
+  test('denies a client writing preferredLanguage onto a request (server-only field)', async () => {
+    await assertFails(
+      setDoc(doc(asUser('alice'), 'requests/req3'), {
+        beneficiaryId: 'alice',
+        preferredLanguage: 'am',
+      }),
+    );
+  });
+
   test('client delete is always denied', async () => {
     await assertFails(deleteDoc(doc(asAdmin(), 'requests/req1')));
   });
