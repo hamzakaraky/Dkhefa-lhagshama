@@ -184,14 +184,14 @@ export default function VolunteerDashboard() {
       <Reveal className="voldash-hero" y={16}>
         <section className="card voldash-hero-card">
           <p className="voldash-hero-label">{d.hero.assignedLabel}</p>
-          <span className="voldash-hero-value">{loading ? '—' : kpis.assigned}</span>
+          <span className="voldash-hero-value">{loading ? '–' : kpis.assigned}</span>
           <p className="voldash-hero-sub">{`${kpis.inProgress} ${d.hero.openTasks}`}</p>
         </section>
 
         <section className="card voldash-hero-card">
           <p className="voldash-hero-label">{d.hero.nextDeadlineLabel}</p>
           <span className="voldash-hero-value">
-            {loading ? '—' : kpis.nextDeadline ? fmtDate(kpis.nextDeadline) : '—'}
+            {loading ? '–' : kpis.nextDeadline ? fmtDate(kpis.nextDeadline) : '–'}
           </span>
           <p className="voldash-hero-sub">
             {kpis.nextDeadline ? '' : d.hero.noDeadline}
