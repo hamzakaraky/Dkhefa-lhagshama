@@ -21,10 +21,14 @@ interface AssignedResponse {
 }
 
 export default function VolunteerCalendarPage() {
-  const { t, lang } = useLanguage()
+  const { t, lang, isRTL } = useLanguage()
   const v = t.volunteerApp
   const c = v.calendar
   const { labelFor } = useCategories()
+  // Mirror the chevrons in RTL so "previous" always points to the start of the
+  // reading direction (matches Pagination's pattern).
+  const PrevIcon = isRTL ? ChevronRight : ChevronLeft
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight
 
   const [me, setMe] = useState<VolunteerMe | null>(null)
   const [assigned, setAssigned] = useState<AssignedItem[]>([])
@@ -121,7 +125,7 @@ export default function VolunteerCalendarPage() {
               aria-label={c.monthsBack}
               onClick={() => shiftMonth(-1)}
             >
-              <ChevronLeft size={16} aria-hidden="true" />
+              <PrevIcon size={16} aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -129,7 +133,7 @@ export default function VolunteerCalendarPage() {
               aria-label={c.monthsFwd}
               onClick={() => shiftMonth(1)}
             >
-              <ChevronRight size={16} aria-hidden="true" />
+              <NextIcon size={16} aria-hidden="true" />
             </button>
           </div>
         </div>
