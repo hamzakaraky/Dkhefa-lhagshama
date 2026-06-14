@@ -95,6 +95,7 @@ async function countTodayNewRequests(): Promise<number> {
   const midnight = localMidnightUtc(now, now.getTimezoneOffset());
   const snap = await db()
     .collection('requests')
+    .where('status', '==', 'pending')
     .where('createdAt', '>=', Timestamp.fromDate(midnight))
     .count()
     .get();
