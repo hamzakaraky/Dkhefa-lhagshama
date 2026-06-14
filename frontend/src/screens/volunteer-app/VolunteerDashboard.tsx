@@ -42,7 +42,7 @@ interface AssignedResponse {
 }
 
 export default function VolunteerDashboard() {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const v = t.volunteerApp
   const d = v.dash
   // Admin-managed taxonomy: category-permission picker + chip labels.
@@ -53,6 +53,17 @@ export default function VolunteerDashboard() {
   // label (mirrors the VolunteerPoolPage catLabel wrapper).
   const catLabel = (id: string): string =>
     id === 'uncategorized' ? t.common.uncategorized : labelFor(id)
+
+  // Short, locale-aware date for the hero "next deadline" and the
+  // "available again on" pill. RTL handled by the surrounding flow.
+  const fmtDate = (iso: string): string => {
+    const dt = new Date(iso)
+    if (Number.isNaN(dt.getTime())) return iso
+    return dt.toLocaleDateString(lang === 'he' ? 'he-IL' : 'en-GB', {
+      day: 'numeric',
+      month: 'short',
+    })
+  }
 
   const [me, setMe] = useState<VolunteerMe | null>(null)
   const [assigned, setAssigned] = useState<AssignedItem[]>([])
@@ -69,6 +80,11 @@ export default function VolunteerDashboard() {
   const [catBusy, setCatBusy] = useState(false)
   const [catMsg, setCatMsg] = useState<string | null>(null)
   const [catErr, setCatErr] = useState(false)
+
+  // WS-7 adds `availableAgainOn` to the volunteer doc; read it defensively so
+  // this screen compiles whether or not WS-7's type extension has landed yet.
+  const availableAgainOn =
+    (me as { availableAgainOn?: string | null } | null)?.availableAgainOn ?? null
 
   const load = useCallback(async () => {
     setLoading(true)
