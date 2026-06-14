@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { Users, ShieldCheck, UserCheck, UserX, Lock } from 'lucide-react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { Users, ShieldCheck, UserCheck, UserX, Lock, Search, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
@@ -48,6 +48,7 @@ export default function AdminUsersPage() {
   // Disabling an account is destructive (locks them out), so it goes through a
   // branded confirm dialog. Re-enabling is non-destructive and stays one-click.
   const [confirmDisableUid, setConfirmDisableUid] = useState<string | null>(null)
+  const [query, setQuery] = useState('') // WS-9 client-side search (name + email + role label)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -114,6 +115,18 @@ export default function AdminUsersPage() {
   const activeCount = items.filter((u) => !u.disabled).length
   const disabledCount = items.filter((u) => u.disabled).length
 
+  const q = query.trim().toLowerCase()
+  const filtered = useMemo(() => {
+    if (!q) return items
+    return items.filter((u) => {
+      const name = String(u.displayName || u.email || u.uid || '').toLowerCase()
+      const email = String(u.email || '').toLowerCase()
+      const roleKey = String(u.role || 'beneficiary').toLowerCase()
+      const roleLabel = String((a.roleLabels as Record<string, string>)[u.role || 'beneficiary'] || '').toLowerCase()
+      return name.includes(q) || email.includes(q) || roleKey.includes(q) || roleLabel.includes(q)
+    })
+  }, [items, q, a.roleLabels])
+
   const confirmTarget = confirmDisableUid ? items.find((u) => u.uid === confirmDisableUid) : null
   const confirmName = confirmTarget?.displayName || confirmTarget?.email || confirmDisableUid || ''
 
@@ -139,12 +152,41 @@ export default function AdminUsersPage() {
         </Reveal>
       )}
 
+      {!loading && !error && items.length > 0 && (
+        <div className="admin-search">
+          <Search size={16} aria-hidden="true" className="admin-search-icon" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={a.userMgmt.searchPlaceholder}
+            aria-label={a.userMgmt.searchPlaceholder}
+            className="form-input admin-search-input"
+            autoComplete="off"
+            spellCheck={false}
+            enterKeyHint="search"
+          />
+          {query && (
+            <button
+              type="button"
+              className="admin-search-clear"
+              aria-label={t.common.cancel}
+              onClick={() => setQuery('')}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )}
+
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
 
       {loading ? (
         <TableSkeleton rows={6} cols={4} />
       ) : items.length === 0 ? (
         <EmptyState icon={Users} title={a.userMgmt.empty} />
+      ) : filtered.length === 0 ? (
+        <EmptyState icon={Search} title={a.userMgmt.noMatches} />
       ) : (
         <Reveal delay={0.05}>
           <div
@@ -168,7 +210,7 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((u) => {
+                  {filtered.map((u) => {
                     const role = u.role || 'beneficiary'
                     const name = u.displayName || u.email || u.uid
                     const sub = u.displayName && u.email ? u.email : null
