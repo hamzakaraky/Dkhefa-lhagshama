@@ -507,6 +507,29 @@ describe('/categories', () => {
   });
 });
 
+// ── /counters — server-only sequence counters (WS-3) ─────────────────────────
+describe('/counters (server-only, fully denied to clients)', () => {
+  beforeEach(() =>
+    seed((db) => setDoc(doc(db, 'counters/requests'), { next: 7 })),
+  );
+
+  test('anon read is denied', async () => {
+    await assertFails(getDoc(doc(anon(), 'counters/requests')));
+  });
+
+  test('admin read is denied (Admin SDK only)', async () => {
+    await assertFails(getDoc(doc(asAdmin(), 'counters/requests')));
+  });
+
+  test('volunteer read is denied', async () => {
+    await assertFails(getDoc(doc(asVolunteer(), 'counters/requests')));
+  });
+
+  test('client write is denied even for admin', async () => {
+    await assertFails(setDoc(doc(asAdmin(), 'counters/requests'), { next: 99 }));
+  });
+});
+
 // ── catch-all ───────────────────────────────────────────────────────────────
 describe('catch-all deny', () => {
   test('undeclared collection is fully denied', async () => {

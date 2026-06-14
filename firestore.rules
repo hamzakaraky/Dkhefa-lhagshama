@@ -211,6 +211,16 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ── /counters — server-only sequence counters (WS-3) ────────────────────
+    // Holds counters/requests.next, used ONLY by the Admin SDK (POST
+    // /api/requests + backfillDisplayId.ts) to allocate friendly REQ-#### ids.
+    // No client ever reads or writes it — deny everything explicitly (the
+    // catch-all would also cover this, but an explicit rule documents intent
+    // and gives the rules suite a stable target).
+    match /counters/{counterId} {
+      allow read, write: if false;
+    }
+
     // Catch-all: deny everything not explicitly allowed above.
     match /{document=**} {
       allow read, write: if false;
