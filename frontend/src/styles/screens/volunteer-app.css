@@ -5,6 +5,96 @@
    Only .volapp-* additions live here. RTL via logical properties.
 ═════════════════════════════════════════════════════════════ */
 
+/* ═══ Dashboard declutter (WS-8) — new variant classes, additive only.
+   Promotes the three signals the volunteer cares about most (active load,
+   next deadline, availability) above the existing panels. Shared
+   .volapp-* / .stat-grid classes are untouched so Pool/Assigned/Insights
+   render unchanged. RTL via logical properties. ═══ */
+.voldash-hero {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-block-end: 1.5rem;
+}
+
+.voldash-hero-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: clamp(18px, 2.6vw, 26px);
+}
+
+.voldash-hero-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  margin: 0;
+}
+
+.voldash-hero-value {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.voldash-hero-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--gray-500);
+}
+
+/* Compact availability pill — links to the WS-7 calendar page. */
+.voldash-avail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  align-self: start;
+  margin-block-start: 0.15rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--hair);
+  background: var(--white);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.voldash-avail-dot {
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  border-radius: 999px;
+  background: var(--gray-400);
+  flex-shrink: 0;
+}
+
+.voldash-avail-dot.is-free { background: var(--success); }
+.voldash-avail-dot.is-working { background: var(--ember); }
+.voldash-avail-dot.is-unavailable { background: var(--gray-400); }
+
+.voldash-avail-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 44px;
+  margin-block-start: 0.2rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--ember);
+  text-decoration: none;
+}
+
+.voldash-avail-manage:hover { text-decoration: underline; }
+.voldash-avail-manage:focus-visible {
+  outline: 2px solid var(--ember);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
 /* Dashboard: two-up panel row that stacks on narrow screens. */
 .volapp-columns {
   display: grid;
