@@ -1426,16 +1426,124 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Table card: owns the frame (hairline + radius + shadow) and the horizontal
-   scroll. The inner .admin-table-wrap (globals.css chrome) is neutralised in
-   the markup so only one confident object renders with no nested corners. */
+/* Table card: owns the frame (hairline + radius + shadow). Round-4 widened the
+   table to 8 columns; instead of a horizontal scrollbar the inner table is a
+   fixed layout that always fits 100% (see the scoped column hierarchy below),
+   so the card clips any sub-pixel overflow rather than scrolling. */
 .admin-reqlist-table-card {
   background: var(--white);
   border: 1px solid var(--hair);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  overflow-x: auto;
+  overflow-x: clip;
   overflow-y: hidden;
+}
+
+/* ── Round-4: fit the 8-column requests table to its card, no h-scroll ───────
+   Everything here is scoped to `.admin-reqlist-table-card .admin-data-table`,
+   so the shared .admin-data-table base (used by /admin/users, /admin/volunteers,
+   /admin/directory) is untouched. A fixed layout + a column-width hierarchy
+   keeps the table at exactly 100%; long text wraps or ellipsis-truncates inside
+   its column rather than forcing the table wider. Logical properties for RTL.
+
+   Gated at min-width 821px so it applies ONLY to the desktop grid table: at
+   ≤820px the shared base flips thead/tbody/tr/td to block + data-label cards
+   (see the ≤820px block above), and these fixed-layout/wrap rules must NOT
+   touch that stacked layout (they crushed the label + value into 1-char
+   columns otherwise). */
+@media (min-width: 821px) {
+  .admin-reqlist-table-card .admin-data-table {
+    table-layout: fixed;
+    width: 100%;
+    font-size: 0.9rem;
+  }
+
+  /* Headers may wrap to two lines (the shared base forces nowrap, which is what
+     pushed the table past its card). Tighter cell padding reclaims width. */
+  .admin-reqlist-table-card .admin-data-table thead th {
+    white-space: normal;
+    padding: 0.7rem 0.6rem;
+    vertical-align: bottom;
+  }
+  .admin-reqlist-table-card .admin-data-table tbody td {
+    padding: 0.7rem 0.6rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* Column-width hierarchy (sums to 100%). nth-child targets both the header row
+     and every body row, so widths stay locked under table-layout: fixed.
+     1 Requester · 2 Description · 3 Category · 4 City · 5 Assigned ·
+     6 Interested · 7 Status · 8 Actions. */
+  .admin-reqlist-table-card .admin-data-table th:nth-child(1),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(1) { width: 15%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(2),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(2) { width: 20%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(3),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(3) { width: 11%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(4),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(4) { width: 9%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(5),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(5) { width: 15%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(6),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(6) { width: 9%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(7),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(7) { width: 11%; }
+  .admin-reqlist-table-card .admin-data-table th:nth-child(8),
+  .admin-reqlist-table-card .admin-data-table td:nth-child(8) { width: 10%; }
+
+  /* Actions column: keep the Manage control inside its 10% slot. Tighter inline
+     padding + the chevron-only affordance means it never widens the table. */
+  .admin-reqlist-table-card .admin-reqlist-manage {
+    padding-inline: 0.55rem;
+    gap: 4px;
+    max-inline-size: 100%;
+  }
+
+  /* The Interested-volunteer header help bubble lives at the top edge of a card
+     that now clips both axes. Open it DOWNWARD (into the table body, inside the
+     card) and pin it to the trigger's inline-end so it can never poke past the
+     card edge and inflate the scroll area. Stays visible on hover/focus. */
+  .admin-reqlist-table-card .tooltip-bubble {
+    inset-block-start: calc(100% + 8px);
+    inset-block-end: auto;
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+    transform: translateY(-4px);
+    max-inline-size: 190px;
+  }
+  [dir='rtl'] .admin-reqlist-table-card .tooltip-bubble {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+    transform: translateY(-4px);
+  }
+  .admin-reqlist-table-card .tooltip:hover .tooltip-bubble,
+  .admin-reqlist-table-card .tooltip:focus-within .tooltip-bubble {
+    transform: translateY(0);
+  }
+  /* Pointer now sits on the bubble's top edge (it opens below the trigger). */
+  .admin-reqlist-table-card .tooltip-bubble::after {
+    inset-block-start: auto;
+    inset-block-end: 100%;
+    inset-inline-start: auto;
+    inset-inline-end: 12px;
+    transform: none;
+    border-block-start-color: transparent;
+    border-block-end-color: var(--ink);
+  }
+  [dir='rtl'] .admin-reqlist-table-card .tooltip-bubble::after {
+    inset-inline-start: 12px;
+    inset-inline-end: auto;
+  }
+
+  /* Assigned-volunteer name: ellipsis-truncate so a long name never widens the
+     column. The link is the cell's only child, so clamp the inner name span. */
+  .admin-reqlist-table-card .admin-reqlist-vollink { display: block; min-inline-size: 0; }
+  .admin-reqlist-table-card .admin-reqlist-vollink .admin-reqlist-meta {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* Primary cell label (beneficiary name / task title). Long titles wrap
