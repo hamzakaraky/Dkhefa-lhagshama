@@ -611,7 +611,7 @@ export default function DirectoryPage() {
     <main>
       {/* ── EDITORIAL HEADER — eyebrow → serif display → lede ──────── */}
       <section style={{ background: 'var(--cream)', borderBlockEnd: '1px solid var(--hair)' }}>
-        <div className="page-container" style={{ paddingBlock: 'clamp(40px, 6vw, 64px) clamp(16px, 2vw, 22px)' }}>
+        <div className="page-container dir-band-compact">
           <Reveal>
             <div className="dir-header-row">
               <div className="dir-header-copy">
@@ -685,7 +685,7 @@ export default function DirectoryPage() {
         </div>
       </section>
 
-      <div className="page-container" style={{ paddingBlock: 'clamp(40px, 5vw, 56px) 72px' }}>
+      <div className="page-container dir-shell-compact">
         {/* ── CONTROLS: search + chips + secondary filters in one block ── */}
         <div
           className="dir-controls"
