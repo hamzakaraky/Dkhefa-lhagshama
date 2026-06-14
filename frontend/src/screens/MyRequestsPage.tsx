@@ -799,7 +799,9 @@ export default function MyRequestsPage() {
               <CheckCircle size={18} aria-hidden="true" className="myreq-new-banner-icon" />
               <div className="myreq-new-banner-body">
                 <div className="myreq-new-banner-title">{t.stream2.newRequestBadge}</div>
-                <div className="myreq-new-banner-ref">{newId}</div>
+                <div className="myreq-new-banner-ref">
+                  {formatRequestRef(items.find((it) => it.id === newId) ?? { id: newId })}
+                </div>
               </div>
               {/* #67 — save-to-profile offer, folded into the same banner. */}
               {saveOffer && (
