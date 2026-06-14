@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { Building2, Store, Plus, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { Building2, Store, Plus, Pencil, Trash2, Search, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useApp } from '@/contexts/AppContext'
 import { useCategories } from '@/hooks/useCategories'
@@ -479,6 +479,7 @@ export default function AdminDirectoryPage() {
   // Row pending delete confirmation.
   const [confirmDelete, setConfirmDelete] = useState<{ catalog: Catalog; item: DirectoryRow } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [query, setQuery] = useState('') // WS-9 bilingual client-side search
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -560,7 +561,26 @@ export default function AdminDirectoryPage() {
     businesses: businesses.length,
   }
 
-  const rows: DirectoryRow[] = tab === 'answers' ? answers : businesses
+  const q = query.trim().toLowerCase()
+  const baseRows: DirectoryRow[] = tab === 'answers' ? answers : businesses
+  const rows: DirectoryRow[] = useMemo(() => {
+    if (!q) return baseRows
+    return baseRows.filter((row) => {
+      if (tab === 'answers') {
+        const r = row as AnswerRow
+        const title = L(r.title, lang).toLowerCase()
+        const cat = (r.category ? labelFor(r.category) : '').toLowerCase()
+        const source = String(r.sourceName || '').toLowerCase()
+        return title.includes(q) || cat.includes(q) || source.includes(q)
+      }
+      const r = row as BusinessRow
+      const name = L(r.name, lang).toLowerCase()
+      const cat = ((dir.categories as Record<string, string>)[r.category || ''] || r.category || '').toLowerCase()
+      const source = String(r.ownerName || '').toLowerCase()
+      return name.includes(q) || cat.includes(q) || source.includes(q)
+    })
+  }, [baseRows, q, tab, lang, labelFor, dir.categories])
+
   const deleteName = confirmDelete
     ? (confirmDelete.catalog === 'answers'
         ? L((confirmDelete.item as AnswerRow).title, lang)
@@ -605,14 +625,39 @@ export default function AdminDirectoryPage() {
         </button>
       </div>
 
+      <div className="admin-search">
+        <Search size={16} aria-hidden="true" className="admin-search-icon" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={dm.searchPlaceholder}
+          aria-label={dm.searchPlaceholder}
+          className="form-input admin-search-input"
+          autoComplete="off"
+          spellCheck={false}
+          enterKeyHint="search"
+        />
+        {query && (
+          <button
+            type="button"
+            className="admin-search-clear"
+            aria-label={t.common.cancel}
+            onClick={() => setQuery('')}
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
 
       {loading ? (
         <TableSkeleton rows={6} cols={tab === 'answers' ? 6 : 5} />
       ) : !error && rows.length === 0 ? (
         <EmptyState
-          icon={tab === 'answers' ? Building2 : Store}
-          title={tab === 'answers' ? dm.emptyAnswers : dm.emptyBusinesses}
+          icon={q ? Search : tab === 'answers' ? Building2 : Store}
+          title={q ? dm.noMatches : tab === 'answers' ? dm.emptyAnswers : dm.emptyBusinesses}
         />
       ) : !error ? (
         <Reveal>
@@ -640,7 +685,7 @@ export default function AdminDirectoryPage() {
                 </thead>
                 <tbody>
                   {tab === 'answers'
-                    ? answers.map((row) => {
+                    ? (rows as AnswerRow[]).map((row) => {
                         const title = L(row.title, lang) || row.id
                         return (
                           <tr key={row.id}>
@@ -691,7 +736,7 @@ export default function AdminDirectoryPage() {
                           </tr>
                         )
                       })
-                    : businesses.map((row) => {
+                    : (rows as BusinessRow[]).map((row) => {
                         const name = L(row.name, lang) || row.id
                         return (
                           <tr key={row.id}>
