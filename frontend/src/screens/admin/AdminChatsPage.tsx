@@ -5,6 +5,7 @@ import { MessagesSquare, MessageCircle, ExternalLink, PauseCircle, PlayCircle } 
 import { useLanguage } from '@/contexts/LanguageContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
 import { formatDate } from '@/utils/helpers'
+import { formatRequestRef } from '@/lib/requestRef'
 import AdminLayout from '@/components/admin/AdminLayout'
 import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import Reveal from '../../components/motion/Reveal'
@@ -24,6 +25,7 @@ interface AdminChatRow {
   kind: ChatKind
   title: string | null
   requestId: string | null
+  requestDisplayId: string | null
   active: boolean
   lastMessageAt: string | null
   createdAt: string | null
@@ -37,6 +39,13 @@ function participantSummary(row: AdminChatRow): string {
   )
   if (names.length <= 3) return names.join(', ')
   return `${names.slice(0, 3).join(', ')} +${names.length - 3}`
+}
+
+/** Friendly reference for a request-bound row (WS-3); '' for direct chats. */
+function requestRef(row: AdminChatRow): string {
+  return row.requestId
+    ? formatRequestRef({ displayId: row.requestDisplayId, id: row.requestId })
+    : ''
 }
 
 /**
@@ -112,7 +121,7 @@ export default function AdminChatsPage() {
   const confirmName =
     confirmTarget?.title ||
     (confirmTarget?.requestId
-      ? `${cc.kindRequest} ${confirmTarget.requestId}`
+      ? `${cc.kindRequest} ${requestRef(confirmTarget)}`
       : confirmTarget
         ? participantSummary(confirmTarget)
         : '')
@@ -190,7 +199,7 @@ export default function AdminChatsPage() {
                               href={`/admin/requests/${row.requestId}`}
                               className="admin-chat-reqlink"
                             >
-                              {row.requestId}
+                              {requestRef(row)}
                             </Link>
                           ) : (
                             <span>{row.title || cc.untitled}</span>
@@ -221,7 +230,7 @@ export default function AdminChatsPage() {
                               className="btn btn-ghost btn-sm"
                               disabled={busy}
                               onClick={() => setConfirmTarget(row)}
-                              aria-label={`${row.active ? cc.pause : cc.resume}: ${row.title || row.requestId || row.id}`}
+                              aria-label={`${row.active ? cc.pause : cc.resume}: ${row.title || requestRef(row) || row.id}`}
                             >
                               {row.active ? (
                                 <PauseCircle size={14} aria-hidden="true" />
