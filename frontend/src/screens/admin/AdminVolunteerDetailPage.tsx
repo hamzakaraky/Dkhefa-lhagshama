@@ -9,6 +9,7 @@ import {
   Activity,
   Briefcase,
   CalendarCheck2,
+  CalendarRange,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -45,6 +46,8 @@ interface VolunteerDetail {
   workStatus?: string
   approvedCategories?: string[]
   approvedAt?: string | null
+  availabilityWindows?: { day: number; start: string; end: string }[]
+  availableAgainOn?: string | null
   [key: string]: unknown
 }
 
@@ -59,6 +62,7 @@ interface AssignedRow {
   category?: string
   status?: string
   urgency?: string
+  deadline?: string | null
   archived?: boolean
   [key: string]: unknown
 }
@@ -217,6 +221,11 @@ export default function AdminVolunteerDetailPage() {
     if (ws === 'unavailable') return vd.wsUnavailable
     return ws || EMPTY
   }
+
+  // WS-7: localized weekday labels (0=Sun … 6=Sat) for availability windows.
+  const wsDays = vd.wsDays as readonly string[]
+  const fmtWindow = (w: { day: number; start: string; end: string }): string =>
+    `${wsDays[w.day] ?? w.day} ${w.start}–${w.end}`
 
   const name = volunteer?.fullName || uid
 
@@ -387,6 +396,20 @@ export default function AdminVolunteerDetailPage() {
                 <MetaCell icon={CalendarCheck2} label={vd.approvedAt}>
                   {fmtDate(volunteer.approvedAt)}
                 </MetaCell>
+                <MetaCell icon={CalendarRange} label={vd.availabilityWindows}>
+                  {volunteer.availabilityWindows && volunteer.availabilityWindows.length > 0 ? (
+                    <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {volunteer.availabilityWindows.map((w, i) => (
+                        <span key={i}>{fmtWindow(w)}</span>
+                      ))}
+                    </span>
+                  ) : (
+                    vd.noWindows
+                  )}
+                </MetaCell>
+                <MetaCell icon={Clock3} label={vd.availableAgainOn}>
+                  {volunteer.availableAgainOn ? fmtDate(volunteer.availableAgainOn) : EMPTY}
+                </MetaCell>
               </dl>
             )}
           </section>
@@ -402,6 +425,22 @@ export default function AdminVolunteerDetailPage() {
                   : `${requests.length} ${requests.length === 1 ? 'request' : 'requests'}`}
               </p>
             </div>
+
+            {/* WS-7: a compact read-only summary of this volunteer's request
+                deadlines, so the admin sees the same calendar signal the
+                volunteer does without leaving the page. */}
+            {requests.filter((r) => typeof r.deadline === 'string' && r.deadline).length > 0 && (
+              <div className="admin-notice" role="note" style={{ marginBlockEnd: 'var(--sp-4)' }}>
+                <CalendarRange size={16} aria-hidden="true" />
+                <span>
+                  {vd.deadlinesHeading}:{' '}
+                  {requests
+                    .filter((r) => typeof r.deadline === 'string' && r.deadline)
+                    .map((r) => fmtDate(r.deadline as string))
+                    .join(', ')}
+                </span>
+              </div>
+            )}
 
             {requests.length === 0 ? (
               <EmptyState icon={Inbox} title={vd.assignedEmpty} message={vd.assignedEmptyHint} />
