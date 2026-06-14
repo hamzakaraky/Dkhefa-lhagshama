@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
-import { HeartHandshake, Clock, CheckCircle2, Check, X } from 'lucide-react'
+import { HeartHandshake, Clock, CheckCircle2, Check, X, Search } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useCategories } from '@/hooks/useCategories'
 import { apiJson, apiFetch } from '@/lib/apiClient'
@@ -58,6 +58,7 @@ export default function AdminVolunteersPage() {
   const [error, setError] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [busyCat, setBusyCat] = useState<string | null>(null)
+  const [query, setQuery] = useState('') // WS-9 client-side search (name + email)
 
   // WS-9 — honour a ?tab=active|pending deep-link (e.g. the dashboard KPI
   // "active volunteers" link). Runs once on mount; invalid values are ignored
@@ -124,7 +125,16 @@ export default function AdminVolunteersPage() {
     }
   }
 
-  const rows = tab === 'pending' ? data.pending : data.active
+  const baseRows = tab === 'pending' ? data.pending : data.active
+  const q = query.trim().toLowerCase()
+  const rows = useMemo(() => {
+    if (!q) return baseRows
+    return baseRows.filter((v) => {
+      const name = String(v.fullName || v.uid || '').toLowerCase()
+      const email = String(v.email || '').toLowerCase()
+      return name.includes(q) || email.includes(q)
+    })
+  }, [baseRows, q])
 
   return (
     <AdminLayout title={a.vol.title} subtitle={a.vol.subtitle}>
@@ -239,6 +249,30 @@ export default function AdminVolunteersPage() {
             {a.vol.filterActive}
           </button>
         </div>
+        <div className="admin-search" style={{ marginBlockEnd: 0, marginInlineStart: 'auto' }}>
+          <Search size={16} aria-hidden="true" className="admin-search-icon" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={a.vol.searchPlaceholder}
+            aria-label={a.vol.searchPlaceholder}
+            className="form-input admin-search-input"
+            autoComplete="off"
+            spellCheck={false}
+            enterKeyHint="search"
+          />
+          {query && (
+            <button
+              type="button"
+              className="admin-search-clear"
+              aria-label={t.common.cancel}
+              onClick={() => setQuery('')}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
       </div>
 
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
@@ -252,7 +286,11 @@ export default function AdminVolunteersPage() {
           <TableSkeleton rows={5} cols={4} />
         ) : rows.length === 0 ? (
           <Reveal>
-            <EmptyState icon={HeartHandshake} title={a.vol.empty} message={a.vol.emptyHint} />
+            <EmptyState
+              icon={q ? Search : HeartHandshake}
+              title={q ? a.vol.noMatches : a.vol.empty}
+              message={q ? undefined : a.vol.emptyHint}
+            />
           </Reveal>
         ) : (
           <Reveal>
