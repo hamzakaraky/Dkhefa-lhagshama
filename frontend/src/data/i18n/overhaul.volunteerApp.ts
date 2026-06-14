@@ -46,6 +46,21 @@ export const overhaulVolunteerApp = {
           done: 'הושלמו',
           poolAvailable: 'זמינות במאגר',
         },
+        hero: {
+          assignedLabel: 'בקשות פעילות',
+          nextDeadlineLabel: 'תאריך היעד הקרוב',
+          availabilityLabel: 'הזמינות שלי',
+          noDeadline: 'אין תאריך יעד קרוב',
+          openTasks: 'בקשות בטיפול',
+        },
+        availability: {
+          free: 'פנוי/ה',
+          working: 'בעבודה',
+          unavailable: 'לא זמין/ה',
+          backOn: (d: string) => `חוזר/ת ב־${d}`,
+          manage: 'ניהול זמינות ולוח שנה',
+          ariaPill: 'סטטוס הזמינות שלי',
+        },
         workStatus: {
           title: 'הסטטוס שלי',
           subtitle: 'עדכן/י את זמינותך לטיפול בבקשות.',
@@ -217,6 +232,21 @@ export const overhaulVolunteerApp = {
           inProgress: 'In progress',
           done: 'Completed',
           poolAvailable: 'Available in pool',
+        },
+        hero: {
+          assignedLabel: 'Active requests',
+          nextDeadlineLabel: 'Next deadline',
+          availabilityLabel: 'My availability',
+          noDeadline: 'No upcoming deadline',
+          openTasks: 'in progress',
+        },
+        availability: {
+          free: 'Free',
+          working: 'Working',
+          unavailable: 'Unavailable',
+          backOn: (d: string) => `Back on ${d}`,
+          manage: 'Manage availability & calendar',
+          ariaPill: 'My availability status',
         },
         workStatus: {
           title: 'My status',
