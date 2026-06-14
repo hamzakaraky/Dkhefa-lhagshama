@@ -187,6 +187,13 @@ const base = {
         urgencyLow:  'רגיל, תוך שבועיים',
         urgencyMed:  'בינוני, תוך שבוע',
         urgencyHigh: 'דחוף, תוך 48 שעות',
+        // WS-6 — beneficiary's preferred language (feeds volunteer matching)
+        prefLang:        'שפה מועדפת',
+        prefLangNone:    'ללא העדפה',
+        prefLangHe:      'עברית',
+        prefLangAm:      'אמהרית',
+        prefLangEn:      'אנגלית',
+        prefLangHint:    'נשתדל לשייך מתנדב/ת הדובר/ת את השפה שתבחר/י.',
         // Optional per-tile hint line for the legacy slug ids. Tile LABELS come
         // from the live taxonomy (useCategories labelFor), never from here.
         cats: {
@@ -1407,6 +1414,13 @@ const base = {
         urgencyLow:  'Normal, within 2 weeks',
         urgencyMed:  'Medium, within 1 week',
         urgencyHigh: 'Urgent, within 48 hours',
+        // WS-6 — beneficiary's preferred language (feeds volunteer matching)
+        prefLang:        'Preferred language',
+        prefLangNone:    'No preference',
+        prefLangHe:      'Hebrew',
+        prefLangAm:      'Amharic',
+        prefLangEn:      'English',
+        prefLangHint:    'We will try to match a volunteer who speaks the language you choose.',
         // Optional per-tile hint line for the legacy slug ids. Tile LABELS come
         // from the live taxonomy (useCategories labelFor), never from here.
         cats: {
