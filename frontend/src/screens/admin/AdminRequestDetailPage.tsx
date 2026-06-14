@@ -88,6 +88,9 @@ interface RequestDetail {
   city?: string
   status?: string
   assignedVolunteerId?: string
+  // Denormalized name captured at assign time (adminRequests POST /assign).
+  // Survives the assigned volunteer being deactivated, unlike the live list lookup.
+  assignedVolunteerName?: string | null
   language?: string
   preferredLanguage?: string
   events?: RequestEvent[]
@@ -569,9 +572,13 @@ export default function AdminRequestDetailPage() {
     request && request.assignedVolunteerId && !assignedVolunteer,
   )
 
-  // Label for the assigned volunteer cell: prefer their name, fall back to uid.
+  // Label for the assigned volunteer cell: prefer the live active-list name,
+  // then the denormalized name captured at assign time (survives deactivation,
+  // #91 — matches the requests list), and only fall back to the raw uid.
   const assignedLabel = request && request.assignedVolunteerId
-    ? (assignedVolunteer && assignedVolunteer.fullName) || request.assignedVolunteerId
+    ? (assignedVolunteer && assignedVolunteer.fullName) ||
+      request.assignedVolunteerName ||
+      request.assignedVolunteerId
     : a.reqDetail.unassigned
 
   // #95 — non-blocking language-match check for the volunteer being *picked* in

@@ -337,7 +337,6 @@ export interface Suggestion {
    * 'ngo' server-side; treat an absent value as 'ngo'.
    */
   orgType?: OrgType | null;
-  acceptsInAppRequest?: boolean;
   createdAt?: string | null;
 }
 

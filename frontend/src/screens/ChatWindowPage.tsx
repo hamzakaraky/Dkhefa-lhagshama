@@ -153,8 +153,10 @@ export default function ChatWindowPage() {
         if (!snap.exists()) return;
         const d = snap.data();
         // Derive a stable activity tick from lastMessageAt (Timestamp | string).
-        // The close-consent write flips chat.active + posts a system message, so
-        // this changes whenever a close handshake resolves on the other side.
+        // Every close-consent action (propose/approve/decline/close) posts a
+        // chat system message, which bumps lastMessageAt, so this tick changes
+        // whenever a close handshake advances on the other side — driving the
+        // linkedRequest refetch that updates the strip/status pill/buttons live.
         const lma = d.lastMessageAt as { toMillis?: () => number } | string | undefined;
         const activityTick =
           lma && typeof lma === "object" && typeof lma.toMillis === "function"
@@ -277,9 +279,10 @@ export default function ChatWindowPage() {
 
   // Keep the close-consent strip in sync with server state (review r6, finding
   // 20). `linkedRequest` is otherwise only re-fetched on id change or after THIS
-  // user's own close action — so when the OTHER party declines/approves, the
-  // strip (driven by linkedRequest.closeRequest / status) goes stale until a
-  // reload. The close write flips chat.active + posts a system message, which
+  // user's own close action — so when the OTHER party proposes/declines/approves,
+  // the strip (driven by linkedRequest.closeRequest / status) would go stale
+  // until a reload. Every close-consent action now posts a chat system message
+  // (propose/approve/decline/close), which bumps chats.lastMessageAt and thus
   // advances chatMeta.activityTick; re-fetch on that tick so the handshake
   // reflects the server without the user having to act. Skip the very first
   // tick (the id-change effect above already fetched).
@@ -770,6 +773,14 @@ export default function ChatWindowPage() {
         return c.system.chatPaused;
       case "chat_resumed":
         return c.system.chatResumed;
+      case "close_proposed":
+        return c.system.closeProposed;
+      case "close_approved":
+        return c.system.closeApproved;
+      case "close_declined":
+        return c.system.closeDeclined;
+      case "close_closed":
+        return c.system.closeClosed;
       default:
         // Legacy assignment note posted by chat-on-assign.
         if (raw.startsWith("A volunteer has been assigned"))

@@ -634,6 +634,14 @@ router.get(
         res.status(404).json({ error: 'attachment_not_found' });
         return;
       }
+      // Storage-isolation guard (defense-in-depth): only ever broker a signed
+      // URL for an object under THIS request's own prefix. A mis-stored path
+      // (e.g. pointing at another request's PII or an avatars/<uid>/ object)
+      // must never resolve to a download for this request's volunteer/handler.
+      if (!match.path.startsWith(`requests/${requestId}/`)) {
+        res.status(404).json({ error: 'attachment_not_found' });
+        return;
+      }
       // Mirror the volunteer-card projection (volunteerApp.ts projectAttachments):
       // on task requests, an attachment not flagged volunteerVisible is staff-only.
       // A non-admin caller (the assigned volunteer) must not mint a URL for it, so

@@ -788,6 +788,21 @@ router.post('/task', async (req: Request, res: Response): Promise<void> => {
   const actorId = req.user!.uid;
   const requestId = randomUUID();
 
+  // Storage-isolation guard: every attachment path MUST live under this
+  // request's own prefix. Otherwise a task's attachment could point at another
+  // beneficiary's PII object (e.g. requests/<otherId>/national-id.pdf) and the
+  // download broker (GET /:id/attachments/:name) would mint a signed URL for it
+  // to the assigned volunteer, crossing the per-request isolation boundary.
+  // The real flow uploads task files AFTER create via the upload route (which
+  // writes to requests/${id}/...), so a path outside this prefix is never
+  // legitimate here.
+  const expectedPrefix = `requests/${requestId}/`;
+  const badAttachment = input.attachments.find((a) => !a.path.startsWith(expectedPrefix));
+  if (badAttachment) {
+    res.status(400).json({ error: 'invalid_attachment_path' });
+    return;
+  }
+
   // Normalize attachments so every entry carries an explicit volunteerVisible
   // flag (default false) — never leave it undefined in Firestore.
   const attachments = input.attachments.map((a) => ({

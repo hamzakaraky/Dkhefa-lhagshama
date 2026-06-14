@@ -483,6 +483,10 @@
 
 .home-marquee[data-reduce="true"] .home-marquee-track { animation: none; flex-wrap: wrap; inline-size: 100%; }
 
+/* The track renders a doubled list so the scroll keyframe can loop seamlessly;
+   under reduced motion the animation is off, so hide the aria-hidden duplicate half. */
+.home-marquee[data-reduce="true"] .home-partner[aria-hidden="true"] { display: none; }
+
 .home-partner {
   display: inline-flex;
   align-items: center;

@@ -58,7 +58,6 @@ router.get('/', async (req: Request, res: Response) => {
         // answers.ts. Lets the suggest-card directory fallback target the
         // correct tab (pre-field docs count as 'ngo').
         orgType: data.orgType === 'partner' ? 'partner' : 'ngo',
-        acceptsInAppRequest: data.acceptsInAppRequest ?? false,
         createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
       };
     });

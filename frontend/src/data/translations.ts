@@ -1021,6 +1021,8 @@ const base = {
       minOneArea:     'יש לבחור לפחות תחום התנדבות אחד',
       minOneLang:     'יש לציין לפחות שפה אחת',
       consentRequired:'יש לאשר את התנאים',
+      alreadyApplied: 'כבר קיימת בקשת התנדבות פעילה עבור חשבון זה. נציג יצור איתך קשר בקרוב.',
+      alreadyVolunteer:'החשבון הזה כבר רשום כמתנדב/ת, אין צורך להגיש בקשה נוספת.',
 
       // Thanks page
       thanksTitle:    'תודה על ההגשה!',
@@ -2198,6 +2200,8 @@ const base = {
       minOneArea:     'Please select at least one area of help',
       minOneLang:     'Please enter at least one language',
       consentRequired:'You must agree to the terms to continue',
+      alreadyApplied: 'You already have an active volunteer application on this account. A representative will contact you soon.',
+      alreadyVolunteer:'This account is already registered as a volunteer, so there is no need to apply again.',
 
       // Thanks page
       thanksTitle:    'Thank You for Applying!',

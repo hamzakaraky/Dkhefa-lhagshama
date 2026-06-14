@@ -38,6 +38,47 @@ export interface CloseResult {
 const CLOSEABLE = new Set(['in_progress', 'awaiting_review']);
 
 /**
+ * Map a close effect to the machine-readable system-message marker the chat UI
+ * localizes (see ChatWindowPage.systemMessageText). `bothApproved` distinguishes
+ * the final close from an intermediate one-sided approval.
+ */
+function closeMarker(effect: CloseEffect, bothApproved: boolean): string {
+  if (effect === 'declined') return 'close_declined';
+  if (effect === 'proposed') return 'close_proposed';
+  return bothApproved ? 'close_closed' : 'close_approved';
+}
+
+/**
+ * Post a system message into every chat linked to this request and bump each
+ * chat's lastMessageAt. This is the activity signal the non-acting party's chat
+ * window listens for (chatMeta.activityTick), so a propose/approve/decline/close
+ * reaches the other side live instead of going stale until reload (review r8).
+ * Best-effort: a failure here must never fail the close itself, which already
+ * committed. Mirrors the inline system-message style of chatOnAssign.ts.
+ */
+async function postCloseSystemMessage(requestId: string, marker: string): Promise<void> {
+  try {
+    const chats = await db().collection('chats').where('requestId', '==', requestId).get();
+    await Promise.all(
+      chats.docs.map(async (c) => {
+        const msgRef = db().collection('messages').doc();
+        await msgRef.set({
+          chatId: c.id,
+          senderId: 'system',
+          content: `[SYSTEM] ${marker}`,
+          timestamp: FieldValue.serverTimestamp(),
+          status: 'sent',
+          isSystem: true,
+        });
+        await c.ref.update({ lastMessageAt: FieldValue.serverTimestamp() });
+      }),
+    );
+  } catch {
+    /* non-fatal: the close-consent write already committed */
+  }
+}
+
+/**
  * Apply a close-consent action. `actorUid` must already be authorized by the
  * caller as the given `role` for this request (route-level gate); this function
  * re-checks ownership defensively inside the transaction.
@@ -125,6 +166,14 @@ export async function applyCloseConsent(
     } catch {
       /* non-fatal: the request is closed; chat flag is best-effort */
     }
+  }
+
+  // Signal every close-consent action into the linked chat so the non-acting
+  // party's window refreshes live (review r8). This also bumps lastMessageAt on
+  // the full-close path, so the other side's status pill/buttons stop being
+  // stale even though the close itself only flips chats.active.
+  if (result.status === 'ok' && result.action) {
+    await postCloseSystemMessage(requestId, closeMarker(result.action, result.closed));
   }
 
   return result;

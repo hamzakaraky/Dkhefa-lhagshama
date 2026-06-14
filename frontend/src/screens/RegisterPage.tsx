@@ -428,6 +428,11 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
       const e = err as CaughtError
       const msg = e && e.message ? String(e.message) : ''
       if (msg.includes('email-already-in-use')) setError(a.emailInUse)
+      // The apply POST runs AFTER account creation, so a retry after a partial
+      // success surfaces these 409 codes — show the specific cause, not the
+      // generic failure, so the user learns they already applied / are a volunteer.
+      else if (msg.includes('already_applied')) setError(v.alreadyApplied)
+      else if (msg.includes('already_volunteer')) setError(v.alreadyVolunteer)
       else setError(a.error)
       setSubmitting(false)
     }
