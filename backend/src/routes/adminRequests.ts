@@ -89,6 +89,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const cr = (data.closeRequest as Record<string, unknown> | null | undefined) ?? null;
       return {
         id: d.id,
+        displayId:            data.displayId ?? null,
         beneficiaryId:        data.beneficiaryId,
         firstName:            data.firstName,
         lastName:             data.lastName,

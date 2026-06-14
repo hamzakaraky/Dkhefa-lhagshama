@@ -402,6 +402,7 @@ router.get('/mine', authenticate, async (req: Request, res: Response) => {
         : null;
       return {
         id: d.id,
+        displayId:       data.displayId ?? null,
         category:        data.category,
         urgency:         data.urgency,
         status:          data.status,
