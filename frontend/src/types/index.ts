@@ -222,6 +222,12 @@ export interface DropReport {
 /** A beneficiary assistance request (UC-01). */
 export interface Request {
   id: string;
+  /**
+   * Friendly parallel reference, e.g. "REQ-0042" (WS-3). Display-only — the
+   * UUID `id` stays the durable key. Optional because legacy docs predate it
+   * (backfilled by backend/scripts/backfillDisplayId.ts).
+   */
+  displayId?: string | null;
   firstName?: string;
   lastName?: string;
   nameEn?: string;
