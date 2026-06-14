@@ -120,4 +120,12 @@ describe('scoreVolunteers', () => {
     )[0];
     expect(mondayWindow.reasons).toContainEqual({ key: 'availableBeforeDeadline' });
   });
+
+  it('omits the no-open-tasks reason for a busy volunteer but emits it for an idle one', () => {
+    const busy = scoreVolunteers(baseReq, [vol({ uid: 'busy', openLoad: 3 })])[0];
+    const idle = scoreVolunteers(baseReq, [vol({ uid: 'idle', openLoad: 0 })])[0];
+    expect(busy.reasons).not.toContainEqual({ key: 'lowLoad', count: 0 });
+    expect(busy.reasons.some((r) => r.key === 'lowLoad')).toBe(false);
+    expect(idle.reasons).toContainEqual({ key: 'lowLoad', count: 0 });
+  });
 });

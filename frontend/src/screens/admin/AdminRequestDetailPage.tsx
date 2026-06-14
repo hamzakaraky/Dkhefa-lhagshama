@@ -422,7 +422,9 @@ export default function AdminRequestDetailPage() {
       return `${m.reasons.speaksLanguage}: ${langName}`
     }
     if (r.key === 'lowLoad') {
-      return `${m.reasons.lowLoad} (${r.count ?? 0})`
+      // The matcher only emits this for a genuinely idle volunteer (openLoad===0),
+      // and the per-candidate load is shown separately, so render without a count.
+      return m.reasons.lowLoad
     }
     return m.reasons[r.key] || r.key
   }

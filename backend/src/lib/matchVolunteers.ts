@@ -103,9 +103,13 @@ export function scoreVolunteers(
       reasons.push({ key: 'relatedArea' });
     }
 
-    // 2. Workload — subtract a penalty per open task.
+    // 2. Workload — subtract a penalty per open task. Only emit the reason chip
+    // for a genuinely idle volunteer (the per-candidate load is shown separately
+    // in the UI, so a "no open tasks" chip on a busy volunteer would mislead).
     score -= v.openLoad * WEIGHTS.loadPenalty;
-    reasons.push({ key: 'lowLoad', count: v.openLoad });
+    if (v.openLoad === 0) {
+      reasons.push({ key: 'lowLoad', count: v.openLoad });
+    }
 
     // 3. Availability — work status tier.
     if (v.workStatus === 'free') {
