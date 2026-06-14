@@ -61,6 +61,24 @@ interface RequestRow {
   [key: string]: unknown
 }
 
+// Sort indicator caret for a column header: up/down when this is the active
+// sort column, a neutral double-caret otherwise. Decorative (aria-hidden);
+// the <th aria-sort> attribute carries the semantics for assistive tech.
+function SortCaret({
+  state,
+  up: Up,
+  down: Down,
+  both: Both,
+}: {
+  state: 'ascending' | 'descending' | 'none'
+  up: typeof ArrowUp
+  down: typeof ArrowDown
+  both: typeof ChevronsUpDown
+}) {
+  const Icon = state === 'ascending' ? Up : state === 'descending' ? Down : Both
+  return <Icon size={13} aria-hidden="true" className="admin-reqlist-sortcaret" />
+}
+
 export default function AdminRequestsListPage() {
   const { t, lang, isRTL } = useLanguage()
   const a = t.admin
@@ -415,11 +433,66 @@ export default function AdminRequestsListPage() {
               <table className="admin-data-table">
                 <thead>
                   <tr>
+                    <th aria-sort={ariaSortFor('requester')}>
+                      <button
+                        type="button"
+                        className="admin-reqlist-sortbtn"
+                        onClick={() => toggleSort('requester')}
+                        title={a.reqList.sortAria.replace('{col}', a.reqList.colRequester)}
+                      >
+                        {a.reqList.colRequester}
+                        <SortCaret state={ariaSortFor('requester')} up={ArrowUp} down={ArrowDown} both={ChevronsUpDown} />
+                      </button>
+                    </th>
                     <th>{a.reqList.colTitle}</th>
-                    <th>{a.reqList.colCategory}</th>
-                    <th>{a.reqList.colCity}</th>
+                    <th aria-sort={ariaSortFor('category')}>
+                      <button
+                        type="button"
+                        className="admin-reqlist-sortbtn"
+                        onClick={() => toggleSort('category')}
+                        title={a.reqList.sortAria.replace('{col}', a.reqList.colCategory)}
+                      >
+                        {a.reqList.colCategory}
+                        <SortCaret state={ariaSortFor('category')} up={ArrowUp} down={ArrowDown} both={ChevronsUpDown} />
+                      </button>
+                    </th>
+                    <th aria-sort={ariaSortFor('city')}>
+                      <button
+                        type="button"
+                        className="admin-reqlist-sortbtn"
+                        onClick={() => toggleSort('city')}
+                        title={a.reqList.sortAria.replace('{col}', a.reqList.colCity)}
+                      >
+                        {a.reqList.colCity}
+                        <SortCaret state={ariaSortFor('city')} up={ArrowUp} down={ArrowDown} both={ChevronsUpDown} />
+                      </button>
+                    </th>
                     <th>{a.reqList.colAssigned}</th>
-                    <th>{a.reqList.colStatus}</th>
+                    <th aria-sort={ariaSortFor('interested')}>
+                      <span className="admin-reqlist-sortbtn-wrap">
+                        <button
+                          type="button"
+                          className="admin-reqlist-sortbtn"
+                          onClick={() => toggleSort('interested')}
+                          title={a.reqList.sortAria.replace('{col}', a.reqList.colInterested)}
+                        >
+                          {a.reqList.colInterested}
+                          <SortCaret state={ariaSortFor('interested')} up={ArrowUp} down={ArrowDown} both={ChevronsUpDown} />
+                        </button>
+                        <HelpTooltip text={a.reqList.interestedHelp} label={a.reqList.interestedHelpLabel} />
+                      </span>
+                    </th>
+                    <th aria-sort={ariaSortFor('status')}>
+                      <button
+                        type="button"
+                        className="admin-reqlist-sortbtn"
+                        onClick={() => toggleSort('status')}
+                        title={a.reqList.sortAria.replace('{col}', a.reqList.colStatus)}
+                      >
+                        {a.reqList.colStatus}
+                        <SortCaret state={ariaSortFor('status')} up={ArrowUp} down={ArrowDown} both={ChevronsUpDown} />
+                      </button>
+                    </th>
                     <th className="admin-table-actions-col">{a.ui.actions}</th>
                   </tr>
                 </thead>
