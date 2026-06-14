@@ -335,13 +335,55 @@ export default function AdminRequestsListPage() {
         )}
       </Reveal>
 
+      {/* WS-5 search: live, client-side, over the loaded items[]. RTL-safe icon
+          + inset clear button; same anatomy as the public directory search. */}
+      <div className="admin-reqlist-search">
+        <Search size={17} aria-hidden="true" className="admin-reqlist-search-icon" />
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={a.reqList.searchPlaceholder}
+          aria-label={a.reqList.searchLabel}
+          className="form-input admin-reqlist-search-input"
+          autoComplete="off"
+          spellCheck={false}
+          enterKeyHint="search"
+        />
+        {search && (
+          <button
+            type="button"
+            className="admin-reqlist-search-clear"
+            aria-label={a.reqList.searchClear}
+            onClick={() => setSearch('')}
+          >
+            <X size={15} aria-hidden="true" />
+          </button>
+        )}
+      </div>
+
       {error && <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />}
 
       {loading ? (
-        <TableSkeleton rows={6} cols={6} />
+        <TableSkeleton rows={6} cols={8} />
       ) : visibleItems.length === 0 ? (
         <Reveal>
-          <EmptyState icon={Inbox} title={a.reqList.empty} message={a.reqList.emptyHint} />
+          {search.trim() ? (
+            <div className="admin-reqlist-nomatch" role="status" aria-live="polite">
+              <p className="admin-reqlist-nomatch-title">{a.reqList.noMatches}</p>
+              <p>{a.reqList.noMatchesHint}</p>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={() => setSearch('')}
+                style={{ marginBlockStart: 'var(--sp-3)' }}
+              >
+                {a.reqList.searchClear}
+              </button>
+            </div>
+          ) : (
+            <EmptyState icon={Inbox} title={a.reqList.empty} message={a.reqList.emptyHint} />
+          )}
         </Reveal>
       ) : (
         <Reveal delay={0.05}>
