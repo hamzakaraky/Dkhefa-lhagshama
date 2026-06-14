@@ -202,6 +202,10 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
       onBehalf: data.onBehalf === true,
       submittedBy: data.submittedBy ?? null,
       submittedByRole: data.submittedByRole ?? null,
+      // WS-6: the matcher + the request-detail "why" panel need the chosen
+      // language. `...data` already spreads it, but spell it out so the value
+      // is explicitly normalized to null when absent on legacy docs.
+      preferredLanguage: (data.preferredLanguage as string | null | undefined) ?? null,
       attachments: data.attachments ?? [],
       referral,
       createdAt: data.createdAt?.toDate?.()?.toISOString?.() ?? null,
