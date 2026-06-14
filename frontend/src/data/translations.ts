@@ -395,6 +395,10 @@ const base = {
           activeVolunteers:  'מתנדבים פעילים',
           pendingVolunteers: 'מתנדבים ממתינים',
           totalUsers:        'סך משתמשים',
+          awaitingReview:    'ממתינות לבדיקה',
+          unassigned:        'ממתינות לשיוך',
+          usersLink:         'משתמשים',
+          todayNew:          'בקשות חדשות היום',
         },
       },
       statusLabels: {
