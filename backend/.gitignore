@@ -1,2 +1,6 @@
 .env
 .secrets
+
+# Firestore JSON backups produced by scripts/exportFirestore.ts + seedDemoData.ts.
+# These are local DB dumps (contain staging data) — never commit them.
+scripts/data/backup-*.json

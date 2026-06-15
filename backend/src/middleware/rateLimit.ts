@@ -8,6 +8,12 @@
  *
  * Both use the default in-memory store which is fine for a single-process
  * deployment. Swap to RedisStore when we move to multi-instance Cloud Run.
+ *
+ * `validate.trustProxy: false` disables express-rate-limit's permissive-trust-
+ * proxy guard. In production the app runs behind Firebase Hosting + Cloud
+ * Functions, where `app.set('trust proxy', true)` is required so req.ip is the
+ * real client (Google manages X-Forwarded-For). The guard would otherwise log
+ * ERR_ERL_PERMISSIVE_TRUST_PROXY on every request; we trust Google's proxy.
  */
 import rateLimit from 'express-rate-limit';
 
@@ -18,6 +24,7 @@ export const globalLimiter = rateLimit({
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'too_many_requests', retryAfter: '15 minutes' },
+  validate: { trustProxy: false },
 });
 
 /**
@@ -36,4 +43,5 @@ export const authWriteLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'too_many_requests', retryAfter: '15 minutes' },
   skip: (req) => req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS',
+  validate: { trustProxy: false },
 });

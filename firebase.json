@@ -8,12 +8,59 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "functions": [
+    {
+      "//": "The Express backend (backend/) deployed as a single 2nd-gen HTTPS function named `api`. predeploy runs the local TypeScript build (tsc && tsc-alias) so dist/ holds plain relative-import JS; the cloud install pulls production deps only. Credentials come from the runtime service-account ADC, so .env + serviceAccountKey.json are excluded from the upload.",
+      "source": "backend",
+      "codebase": "api",
+      "runtime": "nodejs22",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ],
+      "ignore": [
+        "node_modules",
+        ".git",
+        ".env",
+        ".env.*",
+        "serviceAccountKey.json",
+        "scripts",
+        "tests",
+        "**/*.test.ts",
+        "**/*.spec.ts",
+        "**/*.map",
+        "*-debug.log",
+        "nodemon.json"
+      ]
+    }
+  ],
   "hosting": {
-    "//": "Framework-aware hosting. The frontend is a Next.js app with SSR / API routes (no `output: export`), so we point `source` at the app dir and let Firebase build + deploy it (Hosting CDN + Cloud Functions for SSR). Requires `firebase experiments:enable webframeworks`. If the team switches the frontend to a fully static export (add `output: 'export'` in next.config.js), replace `source` with `\"public\": \"frontend/out\"`.",
+    "//": "Framework-aware hosting for the Next.js frontend (client-rendered SPA with dynamic client routes; `source` lets Firebase build + deploy it). The /api/** rewrite proxies all API traffic to the Express `api` Cloud Function on the SAME origin, so the browser never makes a cross-origin call (no CORS) and Express receives the original /api/... path. Requires `firebase experiments:enable webframeworks`.",
     "source": "frontend",
     "frameworksBackend": {
       "region": "us-east1"
     },
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": {
+          "functionId": "api",
+          "region": "us-east1"
+        }
+      },
+      {
+        "//": "Client-rendered dynamic routes: the build emits literal-bracket files (chats/[id].html, etc.). Map a deep-link / hard refresh on /chats/<id> to that shell so the client router can read the real id from the URL. Without these, direct loads of dynamic routes 404 (only in-app navigation works).",
+        "source": "/chats/*",
+        "destination": "/chats/[id].html"
+      },
+      {
+        "source": "/admin/requests/*",
+        "destination": "/admin/requests/[id].html"
+      },
+      {
+        "source": "/admin/volunteers/*",
+        "destination": "/admin/volunteers/[uid].html"
+      }
+    ],
     "ignore": [
       "firebase.json",
       "**/.*",

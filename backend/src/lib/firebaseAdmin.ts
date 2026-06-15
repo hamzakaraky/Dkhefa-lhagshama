@@ -8,6 +8,8 @@
  * NEVER commit the service-account JSON to git. The pattern
  * `*-firebase-adminsdk-*.json` is in the repo's `.gitignore`.
  */
+import * as fs from 'fs';
+
 import * as admin from 'firebase-admin';
 
 let initialized = false;
@@ -46,7 +48,19 @@ export function initializeFirebaseAdmin(): admin.app.App {
     return admin.app();
   }
 
-  // `applicationDefault()` reads GOOGLE_APPLICATION_CREDENTIALS from env.
+  // `applicationDefault()` reads GOOGLE_APPLICATION_CREDENTIALS from env. On
+  // managed runtimes (Cloud Functions / Cloud Run) credentials come from the
+  // runtime service account via the metadata server and no key file is shipped.
+  // If GOOGLE_APPLICATION_CREDENTIALS is set (e.g. inherited from a deployed
+  // .env) but points at a file that does not exist, drop it so
+  // applicationDefault() falls back to the platform ADC instead of throwing.
+  const gac = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (gac && !fs.existsSync(gac)) {
+    // eslint-disable-next-line no-console
+    console.log('[firebaseAdmin] credentials file not found; using platform ADC');
+    delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  }
+
   const storageBucket = resolveStorageBucketName();
   // eslint-disable-next-line no-console
   console.log('[firebaseAdmin] storage bucket:', storageBucket);
