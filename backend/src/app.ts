@@ -52,10 +52,17 @@ const LOCAL_ORIGIN_RE =
 // ── CORS allowlist (#83) ──────────────────────────────────────────────────────
 // Origins are driven by CORS_ALLOWED_ORIGINS (comma-separated). FRONTEND_ORIGIN
 // is always allowed for backwards-compat, and localhost/127.0.0.1 dev origins
-// keep working regardless. In production the frontend is served from the SAME
-// origin as the API (Hosting /api/** rewrite -> this function), so browser
-// requests are same-origin and never hit CORS; the allowlist still covers any
-// cross-origin tooling (e.g. a direct function-URL call).
+// keep working regardless.
+//
+// In production the frontend is served from Firebase Hosting and proxied to this
+// function via the /api/** rewrite. That is same-origin, BUT browsers still
+// attach an `Origin` header to unsafe-method requests (POST/PUT/PATCH/DELETE) —
+// even same-origin ones — so those requests ARE CORS-checked. (Same-origin GETs
+// send no Origin header, which is why reads worked but every write was blocked.)
+// The deployed function has no .env, so CORS_ALLOWED_ORIGINS/FRONTEND_ORIGIN are
+// unset there; we must therefore always allow the Hosting origins. They are
+// derived from the runtime project id (exposed as GCLOUD_PROJECT /
+// GOOGLE_CLOUD_PROJECT on Cloud Functions) with a known-project fallback.
 const ALLOWED_ORIGINS = new Set(
   (process.env.CORS_ALLOWED_ORIGINS ?? '')
     .split(',')
@@ -63,6 +70,14 @@ const ALLOWED_ORIGINS = new Set(
     .filter(Boolean),
 );
 ALLOWED_ORIGINS.add(FRONTEND_ORIGIN);
+
+const PROJECT_ID =
+  process.env.GCLOUD_PROJECT ??
+  process.env.GOOGLE_CLOUD_PROJECT ??
+  process.env.FIREBASE_PROJECT_ID ??
+  'push-for-fulfillment-staging';
+ALLOWED_ORIGINS.add(`https://${PROJECT_ID}.web.app`);
+ALLOWED_ORIGINS.add(`https://${PROJECT_ID}.firebaseapp.com`);
 
 // Initialize Firebase Admin SDK before any route handler runs.
 initializeFirebaseAdmin();
