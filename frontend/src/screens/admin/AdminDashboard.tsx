@@ -150,7 +150,7 @@ export default function AdminDashboard() {
       key: 'pendingDirectory',
       label: ops.items.pendingDirectory,
       count: n('pendingDirectory'),
-      href: '/admin/directory',
+      href: '/admin/approvals',
       icon: FolderCheck,
       cta: ops.review,
     },

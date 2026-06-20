@@ -7,6 +7,7 @@ import Pagination from '@/components/data-display/Pagination'
 import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import { useApp } from '@/contexts/AppContext'
 import Reveal from '../components/motion/Reveal'
+import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
 import { useCategories } from '../hooks/useCategories'
 import { apiJson } from '../lib/apiClient'
@@ -952,7 +953,7 @@ export default function DirectoryPage() {
       </div>
 
       {/* Business Registration Modal */}
-      {showRegForm && (
+      {showRegForm && createPortal(
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowRegForm(false)}>
           <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="dir-reg-title">
             <div className="modal-header">
@@ -1029,7 +1030,8 @@ export default function DirectoryPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Branded notice (replaces native alert). Single OK button by default;

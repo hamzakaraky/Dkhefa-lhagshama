@@ -207,7 +207,7 @@ router.get('/:id/candidates', async (req: Request, res: Response): Promise<void>
       const v = d.data();
       return {
         uid: d.id,
-        name: (v.fullName as string | undefined) || d.id,
+        name: (v.fullName as string | undefined) || (v.name as string | undefined) || d.id,
         languages: (v.languages as string[] | undefined) ?? [],
         areas: (v.areas as string[] | undefined) ?? [],
         approvedCategories: (v.approvedCategories as string[] | undefined) ?? [],
@@ -376,6 +376,12 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
 
     const prevVolunteerId = data.assignedVolunteerId ?? null;
 
+    // Assigning a volunteer to a still-pending request also starts the work:
+    // move pending → in_progress so the status reflects reality without a
+    // separate "Start handling" click. Re-assigning a request that is already
+    // in_progress / awaiting_review leaves its status untouched.
+    const willStart = (data.status as string) === 'pending';
+
     // Denormalize the display name so list views never need an N+1 lookup
     // (and former volunteers keep a readable name after deactivation).
     const assignedVolunteerName = await volunteerDisplayName(volunteerId);
@@ -385,6 +391,7 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
       assignedVolunteerName,
       assignedAt: FieldValue.serverTimestamp(),
       handler: volunteerId,
+      ...(willStart ? { status: 'in_progress' } : {}),
       // Claim flow (req 22): the chosen volunteer wins the pool; any other
       // pending claims are dropped and the request leaves the available pool.
       poolStatus: 'none',
@@ -400,6 +407,16 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
       visibility: 'all',
       details: { volunteerId, prevVolunteerId },
     });
+
+    if (willStart) {
+      await writeRequestEvent({
+        requestId,
+        type: 'status_changed',
+        actorId,
+        visibility: 'all',
+        details: { from: 'pending', to: 'in_progress', via: 'assign' },
+      });
+    }
 
     await writeAuditLog({
       actorId,
@@ -431,7 +448,7 @@ router.post('/:id/assign', async (req: Request, res: Response): Promise<void> =>
       console.error('[adminRequests] notify accepted failed:', err);
     });
 
-    res.json({ ok: true });
+    res.json({ ok: true, status: willStart ? 'in_progress' : (data.status as string) });
   } catch (err) {
     console.error('[adminRequests] POST /:id/assign:', err);
     res.status(500).json({ error: 'internal_error' });

@@ -25,6 +25,17 @@ interface ApprovalItem {
   entityType: EntityType | string
   name?: LocalizedField
   title?: LocalizedField
+  // Full detail fields the /api/admin/pending endpoint already returns (it spreads
+  // the whole doc); rendered in the card so the admin sees the request, not just a name.
+  ownerName?: string
+  phone?: string
+  category?: string
+  orgType?: string
+  website?: string
+  sourceUrl?: string
+  city?: LocalizedField
+  description?: LocalizedField
+  body?: LocalizedField
 }
 
 type ApprovalAction = 'approve' | 'reject' | 'request_changes'
@@ -72,6 +83,10 @@ const ENTITY_VISUAL: Record<string, EntityVisual> = {
 export default function AdminApprovalsPage() {
   const { t, lang } = useLanguage()
   const a = t.admin
+  const f = a.approvals.fields as {
+    owner: string; phone: string; category: string; city: string; type: string; website: string
+    orgTypeLabels: Record<string, string>
+  }
   const { toast } = useApp()
 
   const [items, setItems] = useState<ApprovalItem[]>([])
@@ -238,6 +253,38 @@ export default function AdminApprovalsPage() {
                       <h3 className="admin-approval-name">{displayName}</h3>
                     </div>
                   </div>
+
+                  {/* Full details so the admin reviews the whole submission, not just a name. */}
+                  {(() => {
+                    const rows: Array<[string, string]> = []
+                    if (item.ownerName) rows.push([f.owner, item.ownerName])
+                    if (item.phone) rows.push([f.phone, item.phone])
+                    if (item.category) rows.push([f.category, item.category])
+                    const cityStr = L(item.city, lang)
+                    if (cityStr) rows.push([f.city, cityStr])
+                    if (item.orgType) rows.push([f.type, f.orgTypeLabels[item.orgType] || item.orgType])
+                    const url = item.website || item.sourceUrl
+                    const desc = L(item.description, lang) || L(item.body, lang)
+                    if (!rows.length && !url && !desc) return null
+                    return (
+                      <div className="admin-approval-details">
+                        {rows.length > 0 && (
+                          <dl className="admin-approval-fields">
+                            {rows.map(([k, v]) => (
+                              <div key={k}>
+                                <dt>{k}</dt>
+                                <dd>{v}</dd>
+                              </div>
+                            ))}
+                          </dl>
+                        )}
+                        {url && (
+                          <a className="admin-approval-link" href={url} target="_blank" rel="noreferrer noopener">{url}</a>
+                        )}
+                        {desc && <p className="admin-approval-desc">{desc}</p>}
+                      </div>
+                    )
+                  })()}
 
                   {/* Actions: approve leads (ember), then request-changes, then reject */}
                   <div className="admin-row-actions" style={{ marginInlineStart: 'auto' }}>

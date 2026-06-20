@@ -310,12 +310,12 @@ export default function AdminInsights() {
               {data!.byCategory.length > 0 ? (
                 <div className="insights-chart" dir="ltr" role="img" aria-label={ins.charts.byCategory}>
                   <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={byCategoryData} margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
-                      <CartesianGrid stroke={COLOR_HAIR} vertical={false} />
-                      <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={{ stroke: COLOR_HAIR }} interval={0} />
-                      <YAxis orientation={yAxisOrientation} allowDecimals={false} tick={axisTick} tickLine={false} axisLine={false} width={36} />
+                    <BarChart data={byCategoryData} layout="vertical" margin={{ top: 8, right: 16, bottom: 4, left: 4 }}>
+                      <CartesianGrid stroke={COLOR_HAIR} horizontal={false} />
+                      <XAxis type="number" allowDecimals={false} tick={axisTick} tickLine={false} axisLine={{ stroke: COLOR_HAIR }} />
+                      <YAxis type="category" dataKey="label" orientation={yAxisOrientation} tick={axisTick} tickLine={false} axisLine={false} width={120} interval={0} />
                       <Tooltip cursor={{ fill: COLOR_CURSOR }} content={CountTooltip} />
-                      <Bar dataKey="count" fill={COLOR_SKY} stroke={COLOR_BAR_STROKE} strokeWidth={1} radius={[4, 4, 0, 0]} maxBarSize={48} isAnimationActive={animateCharts} />
+                      <Bar dataKey="count" fill={COLOR_SKY} stroke={COLOR_BAR_STROKE} strokeWidth={1} radius={[0, 4, 4, 0]} maxBarSize={26} isAnimationActive={animateCharts} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

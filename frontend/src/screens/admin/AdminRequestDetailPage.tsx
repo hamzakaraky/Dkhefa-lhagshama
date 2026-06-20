@@ -27,7 +27,8 @@ import {
   Sparkles,
   Languages,
   Gauge,
-  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Check,
   Search,
   X,
@@ -330,7 +331,7 @@ export default function AdminRequestDetailPage() {
   // WS-6 — ranked match candidates for this request.
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [candidatesError, setCandidatesError] = useState(false)
-  const [showAllCandidates, setShowAllCandidates] = useState(false)
+  const [candIdx, setCandIdx] = useState(0)
   // FIX 2 — client-side name filter over the ranked candidate list. When
   // non-empty the list shows ALL matches (no 8-item cap); empty restores the
   // collapsing show-all behavior.
@@ -434,7 +435,7 @@ export default function AdminRequestDetailPage() {
     showAll: string; hideAll: string; assign: string; assigning: string
     empty: string; loadError: string; claimedTag: string; openTasks: string
     reassign: string; cancelReassign: string
-    searchPlaceholder: string; noMatches: string
+    searchPlaceholder: string; noMatches: string; prev: string; next: string
     reasons: Record<string, string>; langLabels: Record<string, string>
   }
   const handleAssignCandidate = async (uid: string) => {
@@ -722,12 +723,11 @@ export default function AdminRequestDetailPage() {
         : candidates,
     [candidates, candidateQuery],
   )
-  // When searching, show every match (no 8-item cap); otherwise keep the
-  // collapsing show-all behavior on long lists.
-  const visibleCandidates =
-    candidateQuery || showAllCandidates || filteredCandidates.length <= 8
-      ? filteredCandidates
-      : filteredCandidates.slice(0, 8)
+  // One-at-a-time carousel: reset to the first card when the search narrows the
+  // set, clamp the index, and render only the current (ranked best-first) card.
+  useEffect(() => { setCandIdx(0) }, [candidateQuery])
+  const safeIdx = Math.min(candIdx, Math.max(0, filteredCandidates.length - 1))
+  const visibleCandidates = filteredCandidates.length ? [filteredCandidates[safeIdx]] : []
 
   return (
     <AdminLayout title={a.reqDetail.title}>
@@ -1279,7 +1279,17 @@ export default function AdminRequestDetailPage() {
                         sorted list (top emphasized). With an active search ALL
                         matches show; otherwise long lists collapse to the first 8
                         with a show-all toggle. */}
-                    <ul className="match-list">
+                    <div className="match-carousel-stage">
+                      <button
+                        type="button"
+                        className="match-nav"
+                        aria-label={m.prev}
+                        disabled={safeIdx <= 0}
+                        onClick={() => setCandIdx((v) => Math.max(0, v - 1))}
+                      >
+                        {isRTL ? <ChevronRight size={22} aria-hidden="true" /> : <ChevronLeft size={22} aria-hidden="true" />}
+                      </button>
+                      <ul className="match-list match-carousel-list">
                       {visibleCandidates.map((c, i) => {
                         const busy = assigningUid === c.uid
                         return (
@@ -1319,21 +1329,18 @@ export default function AdminRequestDetailPage() {
                           </li>
                         )
                       })}
-                    </ul>
-                    {/* Show-all only applies to the unsearched full list. */}
-                    {!candidateQuery && filteredCandidates.length > 8 && (
-                      <div className="match-toggle-row">
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm match-toggle"
-                          onClick={() => setShowAllCandidates((v) => !v)}
-                          aria-expanded={showAllCandidates}
-                        >
-                          <ChevronDown size={14} aria-hidden="true" />
-                          {showAllCandidates ? m.hideAll : m.showAll}
-                        </button>
-                      </div>
-                    )}
+                      </ul>
+                      <button
+                        type="button"
+                        className="match-nav"
+                        aria-label={m.next}
+                        disabled={safeIdx >= filteredCandidates.length - 1}
+                        onClick={() => setCandIdx((v) => Math.min(filteredCandidates.length - 1, v + 1))}
+                      >
+                        {isRTL ? <ChevronLeft size={22} aria-hidden="true" /> : <ChevronRight size={22} aria-hidden="true" />}
+                      </button>
+                    </div>
+                    <p className="match-carousel-counter" aria-live="polite">{safeIdx + 1} / {filteredCandidates.length}</p>
                       </>
                     )}
 

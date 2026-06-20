@@ -567,6 +567,8 @@ const base = {
           cancelReassign: 'ביטול',
           searchPlaceholder: 'חיפוש מתנדבים',
           noMatches:         'לא נמצאו מתנדבים תואמים',
+          prev:              'המתנדב הקודם',
+          next:              'המתנדב הבא',
           reasons: {
             sameCategory:            'אותו תחום',
             relatedArea:             'תחום קרוב',
@@ -608,6 +610,10 @@ const base = {
           rejectBody:     'הפריט יידחה ולא יפורסם. אפשר יהיה לשחזר אותו בהמשך.',
           changesTitle:   'לבקש שינויים?',
           changesBody:    'הפריט יוחזר לשולח לצורך תיקונים.',
+        },
+        fields: {
+          owner: 'בעלים', phone: 'טלפון', category: 'קטגוריה', city: 'עיר', type: 'סוג', website: 'אתר',
+          orgTypeLabels: { ngo: 'עמותה', partner: 'שותף' } as Record<string, string>,
         },
         entityAll:           'הכול',
         entityBusinesses:    'עסקים',
@@ -1842,6 +1848,8 @@ const base = {
           cancelReassign: 'Cancel',
           searchPlaceholder: 'Search volunteers',
           noMatches:         'No matching volunteers',
+          prev:              'Previous volunteer',
+          next:              'Next volunteer',
           reasons: {
             sameCategory:            'Same category',
             relatedArea:             'Related area',
@@ -1883,6 +1891,10 @@ const base = {
           rejectBody:     'The item will be rejected and stay unpublished. You can restore it later.',
           changesTitle:   'Request changes?',
           changesBody:    'The item will be sent back to its submitter for edits.',
+        },
+        fields: {
+          owner: 'Owner', phone: 'Phone', category: 'Category', city: 'City', type: 'Type', website: 'Website',
+          orgTypeLabels: { ngo: 'NGO', partner: 'Partner' } as Record<string, string>,
         },
         entityAll:           'All',
         entityBusinesses:    'Businesses',

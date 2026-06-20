@@ -65,6 +65,7 @@
   background: rgba(6,14,30,0.65);
   z-index: 500;
   display: flex; align-items: center; justify-content: center;
+  overflow-y: auto;
   padding: 1.5rem;
   animation: fadeOverlay 0.2s ease;
 }
@@ -81,8 +82,14 @@
   max-width: 560px;
   box-shadow: var(--shadow-lg);
   animation: scaleIn 0.25s ease;
-  max-height: 90vh;
-  overflow-y: auto;
+  /* The box is capped to the viewport (max-height below) and scrolls its body
+     internally, so it always fits — align-items:center keeps it centered on the
+     screen for both short and tall forms (overlay overflow-y:auto is a safety net). */
+  margin: auto;
+  max-height: calc(100dvh - 3rem);
+  /* Flex column so the header/footer pin and only .modal-body scrolls. */
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes scaleIn {
@@ -91,14 +98,17 @@
 }
 
 .modal-header {
+  flex: 0 0 auto;
   padding: 24px 28px 16px;
   border-bottom: 1px solid var(--gray-100);
   display: flex; align-items: center; justify-content: space-between;
 }
 
-.modal-body   { padding: 24px 28px; }
+/* flex:1 takes the remaining height; min-height:0 lets the flex child
+   actually shrink below its content so overflow-y can scroll. */
+.modal-body   { flex: 1 1 auto; overflow-y: auto; min-height: 0; padding: 24px 28px; }
 
-.modal-footer { padding: 16px 28px 24px; display: flex; justify-content: flex-end; gap: 10px; }
+.modal-footer { flex: 0 0 auto; padding: 16px 28px 24px; display: flex; justify-content: flex-end; gap: 10px; }
 
 /* ── Modal close (✕) and ghost icon buttons: ensure a ring. */
 

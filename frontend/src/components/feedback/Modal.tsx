@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
 
@@ -27,7 +28,7 @@ export default function Modal() {
 
   if (!modal) return null
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
       <div className="modal-box" role="dialog" aria-modal="true">
         {modal.title && (
@@ -41,6 +42,7 @@ export default function Modal() {
         <div className="modal-body">{modal.content}</div>
         {modal.footer && <div className="modal-footer">{modal.footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
