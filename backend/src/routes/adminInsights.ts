@@ -21,6 +21,7 @@ import { Router, type Request, type Response } from 'express';
 import { db } from '@/lib/firebaseAdmin';
 import { authenticate, requireRole } from '@/middleware/auth';
 import { computeScalarKpis, type KpiRequest } from '@/lib/insightsKpis';
+import { resolveRange } from '@/lib/insightsRange';
 
 const router = Router();
 router.use(authenticate, requireRole('admin'));
@@ -57,8 +58,12 @@ function dayKey(d: Date): string {
 }
 
 // ── GET /api/admin/insights ───────────────────────────────────────────────
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
+    // Optional time-range scope: ?range=7d|30d|90d|12m|all, or a custom
+    // ?from=YYYY-MM-DD&to=YYYY-MM-DD window (default all).
+    const { sinceMs, untilMs } = resolveRange(req.query, Date.now());
+
     // 1) All requests — small NGO dataset, a single read is fine.
     const reqSnap = await db().collection('requests').get();
 
@@ -72,6 +77,14 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 
     for (const doc of reqSnap.docs) {
       const data = doc.data() as RequestDoc;
+      const created = toDate(data.createdAt);
+
+      // Time-range scope: skip requests outside [sinceMs, untilMs] (a missing
+      // createdAt is excluded when any bound is set). `all` = no filter.
+      const ms = created ? created.getTime() : null;
+      if (sinceMs !== null && (ms === null || ms < sinceMs)) continue;
+      if (untilMs !== null && (ms === null || ms > untilMs)) continue;
+
       kpiRequests.push({ id: doc.id, status: data.status });
 
       // Age insights (req 24): only count finite, in-range ages.
@@ -80,7 +93,6 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
         validAges.push(age);
       }
 
-      const created = toDate(data.createdAt);
       if (created) {
         const key = dayKey(created);
         overTimeMap.set(key, (overTimeMap.get(key) ?? 0) + 1);

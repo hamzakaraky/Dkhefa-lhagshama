@@ -61,6 +61,9 @@ export const overhaulVolunteerApp = {
           backOn: (d: string) => `חוזר/ת ב־${d}`,
           manage: 'ניהול זמינות ולוח שנה',
           ariaPill: 'סטטוס הזמינות שלי',
+          setStatus: 'עדכון סטטוס זמינות',
+          availableAgainOn: 'זמין/ה שוב בתאריך',
+          statusError: 'עדכון הסטטוס נכשל, נסה/י שוב',
         },
         workStatus: {
           title: 'הסטטוס שלי',
@@ -123,6 +126,7 @@ export const overhaulVolunteerApp = {
         days: ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'],
         monthsBack: 'חודש קודם',
         monthsFwd: 'חודש הבא',
+        openRequest: 'פתיחת הבקשה',
       },
 
       // ── Pool (req 16, 19) ────────────────────────────────────
@@ -150,6 +154,7 @@ export const overhaulVolunteerApp = {
         title: 'הבקשות שלי',
         subtitle: 'הבקשות שאת/ה מטפל/ת בהן כעת.',
         empty: 'אין לך בקשות משויכות כרגע.',
+        requester: 'מבקש/ת',
         editTitle: 'עריכת דחיפות ותאריך יעד',
         urgency: 'דחיפות',
         deadline: 'תאריך יעד',
@@ -175,6 +180,17 @@ export const overhaulVolunteerApp = {
         previouslyTaken: 'נלקח בעבר',
         openChat: 'פתיחת שיחה',
         awaitingClose: 'ממתין לסגירה. השלמת הסגירה מתבצעת בשיחת הבקשה.',
+        // Toolbar: search + sort over the assigned cards.
+        searchPlaceholder: 'חיפוש לפי מבקש/ת, עיר, מספר בקשה, קטגוריה או תיאור…',
+        searchLabel: 'חיפוש בבקשות שלי',
+        searchClear: 'ניקוי חיפוש',
+        noMatches: 'אין בקשות תואמות לחיפוש.',
+        sortLabel: 'מיון',
+        sortNewest: 'חדשות ביותר',
+        sortDeadline: 'תאריך יעד',
+        sortUrgency: 'דחיפות',
+        sortCategory: 'קטגוריה',
+        sortStatus: 'סטטוס',
       },
 
       // ── Insights (req 14b) ───────────────────────────────────
@@ -249,6 +265,9 @@ export const overhaulVolunteerApp = {
           backOn: (d: string) => `Back on ${d}`,
           manage: 'Manage availability & calendar',
           ariaPill: 'My availability status',
+          setStatus: 'Update availability status',
+          availableAgainOn: 'Available again on',
+          statusError: 'Could not update status, please try again',
         },
         workStatus: {
           title: 'My status',
@@ -311,6 +330,7 @@ export const overhaulVolunteerApp = {
         days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
         monthsBack: 'Previous month',
         monthsFwd: 'Next month',
+        openRequest: 'Open request',
       },
 
       // ── Pool (req 16, 19) ────────────────────────────────────
@@ -338,6 +358,7 @@ export const overhaulVolunteerApp = {
         title: 'My requests',
         subtitle: 'The requests you are currently handling.',
         empty: 'You have no assigned requests right now.',
+        requester: 'Requester',
         editTitle: 'Edit urgency & deadline',
         urgency: 'Urgency',
         deadline: 'Deadline',
@@ -363,6 +384,16 @@ export const overhaulVolunteerApp = {
         previouslyTaken: 'Previously taken',
         openChat: 'Open chat',
         awaitingClose: 'Awaiting close. Finish the close from the request chat.',
+        searchPlaceholder: 'Search by requester, city, request ID, category or description…',
+        searchLabel: 'Search my requests',
+        searchClear: 'Clear search',
+        noMatches: 'No requests match your search.',
+        sortLabel: 'Sort',
+        sortNewest: 'Newest',
+        sortDeadline: 'Deadline',
+        sortUrgency: 'Urgency',
+        sortCategory: 'Category',
+        sortStatus: 'Status',
       },
 
       // ── Insights (req 14b) ───────────────────────────────────

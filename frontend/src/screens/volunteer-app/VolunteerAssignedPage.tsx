@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   Tag,
@@ -9,16 +9,24 @@ import {
   Pencil,
   LogOut,
   MessageCircle,
+  MapPin,
+  Search,
+  X,
+  ArrowUpDown,
 } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useCategories } from '@/hooks/useCategories'
 import { apiFetch, apiJson } from '@/lib/apiClient'
 import { formatDate } from '@/utils/helpers'
+import { formatRequestRef } from '@/lib/requestRef'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
 import { ErrorState, EmptyState, StatusBadge } from '@/components/admin/AdminUI'
 
 interface AssignedItem {
   id: string
+  displayId?: string | null
+  firstName?: string | null
+  city?: string | null
   title?: string
   category?: string
   description?: string
@@ -31,6 +39,20 @@ interface AssignedItem {
 
 interface AssignedResponse {
   items: AssignedItem[]
+}
+
+type SortKey = 'newest' | 'deadline' | 'urgency' | 'category' | 'status'
+
+// High → low for urgency; canonical lifecycle order for status. Unknown values
+// sort last (rank 9).
+const URGENCY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 }
+const STATUS_RANK: Record<string, number> = {
+  pending: 0,
+  in_progress: 1,
+  awaiting_review: 2,
+  closed: 3,
+  rejected: 4,
+  referred: 5,
 }
 
 export default function VolunteerAssignedPage() {
@@ -46,6 +68,9 @@ export default function VolunteerAssignedPage() {
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+  // Toolbar: free-text search + sort over the assigned cards.
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<SortKey>('newest')
 
   // Per-card UI state.
   const [editing, setEditing] = useState<string | null>(null)
@@ -163,6 +188,50 @@ export default function VolunteerAssignedPage() {
   const urgencyLabel = (u?: string) =>
     u === 'high' ? a.urgencyHigh : u === 'medium' ? a.urgencyMedium : a.urgencyLow
 
+  // Filter by the shared search, then sort by the chosen key. Recomputed only
+  // when the inputs change.
+  const visibleItems = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const filtered = q
+      ? items.filter((it) => {
+          const hay = [
+            formatRequestRef(it),
+            it.firstName ?? '',
+            it.city ?? '',
+            it.title ?? '',
+            labelFor(it.category),
+            it.description ?? '',
+            it.status ? statusLabels[it.status] ?? it.status : '',
+          ]
+            .join(' ')
+            .toLowerCase()
+          return hay.includes(q)
+        })
+      : items.slice()
+    filtered.sort((x, y) => {
+      switch (sortBy) {
+        case 'deadline': {
+          const dx = x.deadline ?? ''
+          const dy = y.deadline ?? ''
+          if (!dx && !dy) return 0
+          if (!dx) return 1
+          if (!dy) return -1
+          return dx.localeCompare(dy)
+        }
+        case 'urgency':
+          return (URGENCY_RANK[x.urgency ?? ''] ?? 9) - (URGENCY_RANK[y.urgency ?? ''] ?? 9)
+        case 'category':
+          return labelFor(x.category).localeCompare(labelFor(y.category))
+        case 'status':
+          return (STATUS_RANK[x.status ?? ''] ?? 9) - (STATUS_RANK[y.status ?? ''] ?? 9)
+        case 'newest':
+        default:
+          return (y.createdAt ?? '').localeCompare(x.createdAt ?? '')
+      }
+    })
+    return filtered
+  }, [items, search, sortBy, labelFor, statusLabels])
+
   const renderBody = () => {
     if (error) {
       return <ErrorState message={error} onRetry={load} retryLabel={v.ui.retry} />
@@ -182,15 +251,23 @@ export default function VolunteerAssignedPage() {
     if (items.length === 0) {
       return <EmptyState title={a.empty} />
     }
+    if (visibleItems.length === 0) {
+      return <EmptyState title={a.noMatches} />
+    }
 
     return (
       <div className="volapp-card-grid">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const isEditing = editing === item.id
           const isDropping = dropping === item.id
           const isBusy = busy === item.id
           return (
-            <article key={item.id} className="card volapp-req-card">
+            <article
+              key={item.id}
+              id={`req-${item.id}`}
+              className="card volapp-req-card"
+              style={{ scrollMarginBlockStart: '90px' }}
+            >
               <div className="volapp-req-head">
                 <h3 className="volapp-req-title">{item.title || labelFor(item.category)}</h3>
                 {item.status && (
@@ -198,6 +275,20 @@ export default function VolunteerAssignedPage() {
                     status={item.status}
                     label={statusLabels[item.status] ?? item.status}
                   />
+                )}
+              </div>
+
+              {/* Who + which request: friendly REQ-#### ref, requester first
+                  name and city (the only PII the backend exposes here). */}
+              <div className="volapp-req-idline">
+                <span className="volapp-req-ref">{formatRequestRef(item)}</span>
+                {item.firstName && (
+                  <span className="volapp-req-who">{a.requester}: {item.firstName}</span>
+                )}
+                {item.city && (
+                  <span className="volapp-req-city">
+                    <MapPin size={13} aria-hidden="true" /> {item.city}
+                  </span>
                 )}
               </div>
 
@@ -432,6 +523,48 @@ export default function VolunteerAssignedPage() {
           {notice.text}
         </p>
       )}
+
+      {!loading && !error && items.length > 0 && (
+        <div className="volapp-toolbar">
+          <div className="volapp-search">
+            <Search size={16} aria-hidden="true" className="volapp-search-icon" />
+            <input
+              type="search"
+              className="volapp-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={a.searchPlaceholder}
+              aria-label={a.searchLabel}
+            />
+            {search && (
+              <button
+                type="button"
+                className="volapp-search-clear"
+                onClick={() => setSearch('')}
+                aria-label={a.searchClear}
+              >
+                <X size={15} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <label className="volapp-sort">
+            <ArrowUpDown size={15} aria-hidden="true" />
+            <span className="volapp-sort-label">{a.sortLabel}</span>
+            <select
+              className="form-select volapp-sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+            >
+              <option value="newest">{a.sortNewest}</option>
+              <option value="deadline">{a.sortDeadline}</option>
+              <option value="urgency">{a.sortUrgency}</option>
+              <option value="category">{a.sortCategory}</option>
+              <option value="status">{a.sortStatus}</option>
+            </select>
+          </label>
+        </div>
+      )}
+
       {renderBody()}
     </VolunteerLayout>
   )

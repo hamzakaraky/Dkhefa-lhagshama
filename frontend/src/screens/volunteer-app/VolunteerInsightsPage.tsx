@@ -19,6 +19,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import type { VolunteerInsights } from '@/types'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
+import InsightsRangeSelect, { type InsightsRange } from '@/components/InsightsRangeSelect'
 import Reveal from '@/components/motion/Reveal'
 import { ErrorState, EmptyState } from '@/components/admin/AdminUI'
 
@@ -82,6 +83,9 @@ export default function VolunteerInsightsPage() {
 
   // Gate charts behind a mounted flag to avoid SSR hydration warnings.
   const [mounted, setMounted] = useState(false)
+  const [range, setRange] = useState<InsightsRange>('all')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -90,14 +94,16 @@ export default function VolunteerInsightsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiJson<VolunteerInsights>('/api/volunteer/insights')
+      const params =
+        range === 'custom' ? (from || to ? `?from=${from}&to=${to}` : '') : `?range=${range}`
+      const res = await apiJson<VolunteerInsights>('/api/volunteer/insights' + params)
       setData(res)
     } catch {
       setError(ins.loadError)
     } finally {
       setLoading(false)
     }
-  }, [ins.loadError])
+  }, [ins.loadError, range, from, to])
 
   useEffect(() => {
     load()
@@ -304,6 +310,16 @@ export default function VolunteerInsightsPage() {
 
   return (
     <VolunteerLayout title={ins.title} subtitle={ins.subtitle}>
+      <InsightsRangeSelect
+        value={range}
+        onChange={setRange}
+        from={from}
+        to={to}
+        onDates={(f, t) => {
+          setFrom(f)
+          setTo(t)
+        }}
+      />
       {renderBody()}
     </VolunteerLayout>
   )

@@ -201,6 +201,89 @@
   }
 }
 
+/* ── Toolbar: active count + shared search ─────────────────────── */
+.myreq-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-block-end: 18px;
+}
+
+.myreq-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 280px;
+  max-width: 420px;
+}
+
+.myreq-search-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  color: var(--gray-400);
+  pointer-events: none;
+}
+
+.myreq-search-input {
+  inline-size: 100%;
+  padding: 9px 12px;
+  padding-inline-start: 36px;
+  padding-inline-end: 34px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--white);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+.myreq-search-input::placeholder { color: var(--gray-400); }
+.myreq-search-input:focus-visible {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+}
+/* Hide the native search clear (we render our own). */
+.myreq-search-input::-webkit-search-cancel-button { display: none; }
+
+.myreq-search-clear {
+  position: absolute;
+  inset-inline-end: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sky-2);
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.myreq-search-clear:hover { background: var(--sky-1); color: var(--ink); }
+
+/* ── Per-column one-at-a-time carousel controls ────────────────── */
+.myreq-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-block-start: 4px;
+}
+
+.myreq-carousel-counter {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--gray-600);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: center;
+}
+
 /* ── req 12 — card footer: attachments indicator + chat shortcut ── */
 .myreq-card-footer {
   display: flex;

@@ -19,6 +19,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { apiFetch } from '@/lib/apiClient'
 import type { InsightsData } from '@/types'
 import AdminLayout from '@/components/admin/AdminLayout'
+import InsightsRangeSelect, { type InsightsRange } from '@/components/InsightsRangeSelect'
 import { ErrorState, EmptyState, adminErrorMessage } from '@/components/admin/AdminUI'
 import Reveal from '@/components/motion/Reveal'
 
@@ -95,6 +96,9 @@ export default function AdminInsights() {
   // the server and client and triggers hydration warnings. Gate the charts
   // behind a mounted flag so they only render in the browser.
   const [mounted, setMounted] = useState(false)
+  const [range, setRange] = useState<InsightsRange>('all')
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -103,7 +107,9 @@ export default function AdminInsights() {
     setLoading(true)
     setError(null)
     try {
-      const res = await apiFetch('/api/admin/insights')
+      const params =
+        range === 'custom' ? (from || to ? `?from=${from}&to=${to}` : '') : `?range=${range}`
+      const res = await apiFetch('/api/admin/insights' + params)
       if (!res.ok) {
         const err = { status: res.status }
         throw err
@@ -126,7 +132,7 @@ export default function AdminInsights() {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [range, from, to])
 
   // Translate the raw status key into the localized lifecycle label for the
   // by-status chart axis + tooltip.
@@ -400,6 +406,16 @@ export default function AdminInsights() {
 
   return (
     <AdminLayout title={ins.pageTitle} subtitle={ins.pageSubtitle}>
+      <InsightsRangeSelect
+        value={range}
+        onChange={setRange}
+        from={from}
+        to={to}
+        onDates={(f, t) => {
+          setFrom(f)
+          setTo(t)
+        }}
+      />
       {renderBody()}
     </AdminLayout>
   )

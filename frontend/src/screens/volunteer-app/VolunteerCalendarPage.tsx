@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { ChevronLeft, ChevronRight, CalendarClock } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { useCategories } from '@/hooks/useCategories'
@@ -8,9 +9,12 @@ import type { VolunteerMe } from '@/types'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
 import { ErrorState } from '@/components/admin/AdminUI'
 import AvailabilityEditor from '@/components/volunteer-app/AvailabilityEditor'
+import WorkStatusControl from '@/components/volunteer-app/WorkStatusControl'
 
 interface AssignedItem {
   id: string
+  displayId?: string | null
+  firstName?: string | null
   title?: string
   category?: string
   deadline?: string | null
@@ -74,11 +78,17 @@ export default function VolunteerCalendarPage() {
     return map
   }, [assigned])
 
-  // Set of weekday indices (0-6) the volunteer has any window on.
-  const availableDows = useMemo(() => {
-    const set = new Set<number>()
-    for (const w of me?.availabilityWindows ?? []) set.add(w.day)
-    return set
+  // Map weekday index (0-6) → that day's working-hours windows, so the grid can
+  // render the actual time ranges inside each cell (not just a highlight).
+  const windowsByDow = useMemo(() => {
+    const map = new Map<number, Array<{ start: string; end: string }>>()
+    for (const w of me?.availabilityWindows ?? []) {
+      const arr = map.get(w.day) ?? []
+      arr.push({ start: w.start, end: w.end })
+      map.set(w.day, arr)
+    }
+    for (const arr of map.values()) arr.sort((a, b) => a.start.localeCompare(b.start))
+    return map
   }, [me])
 
   // Build the 6x7 grid cells (leading pad days + the month's days).
@@ -150,7 +160,8 @@ export default function VolunteerCalendarPage() {
             }
             const key = dayKey(cell.date)
             const isToday = key === todayKey
-            const isAvail = availableDows.has(cell.date.getDay())
+            const windows = windowsByDow.get(cell.date.getDay()) ?? []
+            const isAvail = windows.length > 0
             const dls = deadlinesByDay.get(key) ?? []
             return (
               <div
@@ -159,15 +170,27 @@ export default function VolunteerCalendarPage() {
                 className={`volapp-cal-cell${isToday ? ' volapp-cal-cell--today' : ''}${isAvail ? ' volapp-cal-cell--available' : ''}`}
               >
                 <span className="volapp-cal-daynum">{cell.date.getDate()}</span>
-                {dls.map((dl) => (
-                  <span
-                    key={dl.id}
-                    className="volapp-cal-deadline"
-                    title={dl.title || labelFor(dl.category)}
-                  >
-                    {dl.title || labelFor(dl.category)}
+                {windows.map((w, wi) => (
+                  <span key={`w-${wi}`} className="volapp-cal-hours">
+                    {w.start}–{w.end}
                   </span>
                 ))}
+                {dls.map((dl) => {
+                  // Lead with the requester's name (the volunteer asked to see
+                  // who, not just the category); category stays in the tooltip.
+                  const label = dl.firstName || dl.title || labelFor(dl.category)
+                  return (
+                    <Link
+                      key={dl.id}
+                      href={`/volunteer-hub/assigned#req-${encodeURIComponent(dl.id)}`}
+                      className="volapp-cal-deadline"
+                      title={`${label} · ${labelFor(dl.category)}`}
+                      aria-label={`${c.openRequest}: ${label}`}
+                    >
+                      {label}
+                    </Link>
+                  )
+                })}
               </div>
             )
           })}
@@ -196,7 +219,13 @@ export default function VolunteerCalendarPage() {
               .map((a) => (
                 <div className="volapp-meta-row" key={a.id}>
                   <dt>
-                    <CalendarClock size={13} aria-hidden="true" /> {a.title || labelFor(a.category)}
+                    <CalendarClock size={13} aria-hidden="true" />{' '}
+                    <Link
+                      href={`/volunteer-hub/assigned#req-${encodeURIComponent(a.id)}`}
+                      className="volapp-cal-deadline-link"
+                    >
+                      {a.firstName || a.title || labelFor(a.category)}
+                    </Link>
                   </dt>
                   <dd className="volapp-deadline-val">{formatDate(a.deadline as string, lang)}</dd>
                 </div>
@@ -205,6 +234,12 @@ export default function VolunteerCalendarPage() {
         ) : (
           <p className="volapp-muted">{c.noDeadlines}</p>
         )}
+      </section>
+
+      {/* ── Work status ───────────────────────────────────────── */}
+      <section className="card volapp-panel">
+        <h2 className="volapp-panel-title">{t.volunteerApp.dash.hero.availabilityLabel}</h2>
+        <WorkStatusControl me={me} onChange={setMe} />
       </section>
 
       {/* ── Availability editor ───────────────────────────────── */}

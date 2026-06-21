@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback, useRef } from "react";
-import { CheckCircle, ChevronDown, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus, MessageCircle, UserCheck, Phone, Mail, ExternalLink } from "lucide-react";
+import { CheckCircle, ChevronDown, ChevronLeft, ChevronRight, AlertCircle, FileText, Paperclip, Calendar, Tag, Plus, MessageCircle, UserCheck, Phone, Mail, ExternalLink, Search, X } from "lucide-react";
 
 import RatingForm from "@/components/forms/RatingForm";
 import SuggestCard from "@/components/SuggestCard";
@@ -578,16 +578,29 @@ function RequestCard({ item, t, lang, expandedId, onToggle, isFocused, focusRef 
 
 // ── Main page ─────────────────────────────────────────────────
 export default function MyRequestsPage() {
-  const { t: tRaw, lang } = useLanguage();
+  const { t: tRaw, lang, isRTL } = useLanguage();
   const t = tRaw as unknown as Translations;
   const { user, loading: authLoading } = useAuth();
   const { toast } = useApp();
   const router = useRouter();
+  const { labelFor } = useCategories();
+  // Mirror the carousel chevrons in RTL so "previous" points to the start of
+  // the reading direction.
+  const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
+  const NextIcon = isRTL ? ChevronLeft : ChevronRight;
 
   const [items, setItems] = useState<RequestRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // One-at-a-time carousel: the visible card index per status column. A shared
+  // search filters all three columns at once.
+  const [search, setSearch] = useState("");
+  const [cursorByCol, setCursorByCol] = useState<Record<"open" | "inProgress" | "done", number>>({
+    open: 0,
+    inProgress: 0,
+    done: 0,
+  });
 
   // Suggest-alternatives (UC-01 A1) — community answers in the new request's
   // category. Dismissible; only shown when there's at least one match.
@@ -746,10 +759,32 @@ export default function MyRequestsPage() {
     }
   }, [focusId, loading, items]);
 
+  // Shared search — filters all three status columns (and the archived group)
+  // at once. Matches the friendly REQ-#### ref, the category label, the raw
+  // description, and the localized status label.
+  const q = search.trim().toLowerCase();
+  const matchesSearch = useCallback(
+    (it: RequestRecord) => {
+      if (!q) return true;
+      const statusLabel = (t.lifecycle.statusLabels as Record<string, string>)[it.status] || it.status;
+      const hay = [
+        formatRequestRef(it),
+        labelFor(it.category),
+        it.category || "",
+        it.description || "",
+        statusLabel,
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    },
+    [q, t, labelFor],
+  );
+
   // Active vs. archived split — archived requests stay visible to their owner
   // but are grouped/de-emphasized as "past" rather than hidden (Note 6).
-  const activeItems = items.filter((it) => it.archived !== true);
-  const archivedItems = items.filter((it) => it.archived === true);
+  const activeItems = items.filter((it) => it.archived !== true && matchesSearch(it));
+  const archivedItems = items.filter((it) => it.archived === true && matchesSearch(it));
 
   // req 10 — group active requests into 3 kanban-style status columns.
   // `done` is a CATCH-ALL: anything not explicitly "open" or "in progress"
@@ -909,42 +944,108 @@ export default function MyRequestsPage() {
           </Reveal>
         ) : (
           <>
-            {/* Active requests — archived ones are grouped separately below */}
-            <div style={{ ...labelStyle, marginBlockEnd: "18px" }} aria-live="polite">
-              {activeItems.length} · {t.myRequests.title}
+            {/* Active requests — archived ones are grouped separately below.
+                The count + a shared search sit on one row. */}
+            <div className="myreq-toolbar">
+              <span style={{ ...labelStyle }} aria-live="polite">
+                {activeItems.length} · {t.myRequests.title}
+              </span>
+              <div className="myreq-search">
+                <Search size={16} aria-hidden="true" className="myreq-search-icon" />
+                <input
+                  type="search"
+                  className="myreq-search-input"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={t.myRequests.searchPlaceholder}
+                  aria-label={t.myRequests.searchLabel}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className="myreq-search-clear"
+                    onClick={() => setSearch("")}
+                    aria-label={t.myRequests.searchClear}
+                  >
+                    <X size={15} aria-hidden="true" />
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* req 10 — kanban-style status columns. CSS collapses the grid to
-                a single column (stacked sections) on narrow screens. */}
+            {q && activeItems.length === 0 && archivedItems.length === 0 ? (
+              <p className="myreq-col-empty" style={{ paddingBlock: "32px" }}>
+                {t.myRequests.noMatches}
+              </p>
+            ) : (
+            /* req 10 — three status columns. Each column is a one-at-a-time
+               carousel: a single card plus ◀ ▶ arrows (mirrors the admin
+               candidate carousel). CSS collapses the grid to stacked sections
+               on narrow screens. */
             <div className="myreq-board">
-              {columns.map((col) => (
-                <section key={col.key} className="myreq-col" aria-label={col.title}>
-                  <div className="myreq-col-head">
-                    <h2 className="myreq-col-title" style={labelStyle}>{col.title}</h2>
-                    <span className="myreq-col-count">{col.items.length}</span>
-                  </div>
-                  <div className="myreq-col-body">
-                    {col.items.length === 0 ? (
-                      <p className="myreq-col-empty">{t.myRequests.columns.empty}</p>
-                    ) : (
-                      col.items.map((item, i) => (
-                        <Reveal key={item.id} delay={Math.min(i * 0.05, 0.3)}>
-                          <RequestCard
-                            item={item}
-                            t={t}
-                            lang={lang}
-                            expandedId={expandedId}
-                            onToggle={handleToggle}
-                            isFocused={focusId === item.id}
-                            focusRef={focusId === item.id ? (el) => { focusCardRef.current = el; } : undefined}
-                          />
-                        </Reveal>
-                      ))
-                    )}
-                  </div>
-                </section>
-              ))}
+              {columns.map((col) => {
+                const len = col.items.length;
+                const idx = Math.min(cursorByCol[col.key], Math.max(0, len - 1));
+                const item = col.items[idx];
+                return (
+                  <section key={col.key} className="myreq-col" aria-label={col.title}>
+                    <div className="myreq-col-head">
+                      <h2 className="myreq-col-title" style={labelStyle}>{col.title}</h2>
+                      <span className="myreq-col-count">{len}</span>
+                    </div>
+                    <div className="myreq-col-body">
+                      {len === 0 || !item ? (
+                        <p className="myreq-col-empty">{t.myRequests.columns.empty}</p>
+                      ) : (
+                        <>
+                          <Reveal key={item.id}>
+                            <RequestCard
+                              item={item}
+                              t={t}
+                              lang={lang}
+                              expandedId={expandedId}
+                              onToggle={handleToggle}
+                              isFocused={focusId === item.id}
+                              focusRef={focusId === item.id ? (el) => { focusCardRef.current = el; } : undefined}
+                            />
+                          </Reveal>
+                          {len > 1 && (
+                            <div className="myreq-carousel-nav">
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                aria-label={t.myRequests.carouselPrev}
+                                disabled={idx === 0}
+                                onClick={() =>
+                                  setCursorByCol((c) => ({ ...c, [col.key]: Math.max(0, idx - 1) }))
+                                }
+                              >
+                                <PrevIcon size={16} aria-hidden="true" />
+                              </button>
+                              <span className="myreq-carousel-counter" aria-live="polite">
+                                {idx + 1} / {len}
+                              </span>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-sm"
+                                aria-label={t.myRequests.carouselNext}
+                                disabled={idx >= len - 1}
+                                onClick={() =>
+                                  setCursorByCol((c) => ({ ...c, [col.key]: Math.min(len - 1, idx + 1) }))
+                                }
+                              >
+                                <NextIcon size={16} aria-hidden="true" />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
+            )}
 
             {/* Past / archived requests — de-emphasized, not hidden (Note 6) */}
             {archivedItems.length > 0 && (

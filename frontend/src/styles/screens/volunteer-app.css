@@ -76,6 +76,24 @@
 .voldash-avail-dot.is-working { background: var(--ember); }
 .voldash-avail-dot.is-unavailable { background: var(--gray-400); }
 
+/* Editable work-status control (segmented Free / Working / Unavailable). */
+.work-status { display: flex; flex-direction: column; gap: var(--sp-2); align-items: flex-start; }
+.work-status-seg {
+  display: inline-flex; gap: 4px; padding: 4px; flex-wrap: wrap;
+  background: var(--gray-50); border: 1px solid var(--hair); border-radius: 999px;
+}
+.work-status-opt {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border: 0; background: transparent; border-radius: 999px;
+  font-size: var(--fs-sm); color: var(--gray-600); cursor: pointer;
+  transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+.work-status-opt:hover:not(:disabled) { color: var(--ink); }
+.work-status-opt.is-active { background: var(--white); color: var(--ink); font-weight: 600; box-shadow: var(--shadow-xs); }
+.work-status-opt:disabled { opacity: 0.6; cursor: default; }
+.work-status-date { display: inline-flex; align-items: center; gap: 8px; font-size: var(--fs-sm); color: var(--gray-600); }
+.work-status-date .form-input { inline-size: auto; }
+
 .voldash-avail-manage {
   display: inline-flex;
   align-items: center;
@@ -332,11 +350,108 @@
   line-height: 1.25;
 }
 
+/* REQ-#### ref + requester name + city, under the title. */
+.volapp-req-idline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.8rem;
+  margin-block: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  color: var(--gray-600);
+}
+.volapp-req-ref {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ember-700);
+}
+.volapp-req-who {
+  font-weight: 600;
+  color: var(--ink);
+}
+.volapp-req-city {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .volapp-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
 }
+
+/* ── Assigned-list toolbar: search + sort ──────────────────────── */
+.volapp-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-block-end: var(--sp-5);
+}
+
+.volapp-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 280px;
+  max-width: 440px;
+}
+.volapp-search-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  color: var(--gray-400);
+  pointer-events: none;
+}
+.volapp-search-input {
+  inline-size: 100%;
+  padding: 9px 12px;
+  padding-inline-start: 36px;
+  padding-inline-end: 34px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--white);
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+.volapp-search-input::placeholder { color: var(--gray-400); }
+.volapp-search-input:focus-visible {
+  outline: none;
+  border-color: var(--ember);
+  box-shadow: 0 0 0 3px var(--ember-soft);
+}
+.volapp-search-input::-webkit-search-cancel-button { display: none; }
+.volapp-search-clear {
+  position: absolute;
+  inset-inline-end: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--sky-2);
+  color: var(--gray-600);
+  cursor: pointer;
+}
+.volapp-search-clear:hover { background: var(--sky-1); color: var(--ink); }
+
+.volapp-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray-600);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.volapp-sort-label { font-weight: 600; }
+.volapp-sort-select { inline-size: auto; min-width: 150px; }
 
 .volapp-badges .badge {
   display: inline-flex;
@@ -599,6 +714,40 @@
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Now a link to the request in "My requests". */
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--dur-2) var(--ease-out), color var(--dur-2) var(--ease-out);
+}
+.volapp-cal-deadline:hover {
+  background: var(--ember-soft);
+  color: var(--ember-700);
+}
+
+/* Deadline name in the text list below the grid — links to the request. */
+.volapp-cal-deadline-link {
+  color: inherit;
+  text-decoration: none;
+  border-block-end: 1px solid transparent;
+  transition: color var(--dur-2) var(--ease-out), border-color var(--dur-2) var(--ease-out);
+}
+.volapp-cal-deadline-link:hover {
+  color: var(--ember-700);
+  border-block-end-color: var(--ember-soft);
+}
+
+/* Working-hours time window shown inside a calendar day cell. */
+.volapp-cal-hours {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ember-700);
+  background: var(--ember-soft);
+  border-radius: var(--radius-sm);
+  padding: 0.05rem 0.25rem;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 

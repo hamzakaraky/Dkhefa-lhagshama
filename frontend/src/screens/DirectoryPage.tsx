@@ -6,6 +6,7 @@ import { useRouter } from 'next/router'
 import Pagination from '@/components/data-display/Pagination'
 import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import { useApp } from '@/contexts/AppContext'
+import { useAuth } from '@/contexts/AuthContext'
 import Reveal from '../components/motion/Reveal'
 import { createPortal } from 'react-dom'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -81,6 +82,7 @@ type NoticeState = {
 export default function DirectoryPage() {
   const { t, lang, isRTL } = useLanguage() as unknown as LangCtx
   const { openModal, closeModal } = useApp()
+  const { user } = useAuth()
   const router = useRouter()
   const d = t.directory
   const ArrowIcon = isRTL ? ArrowLeft : ArrowRight
@@ -222,6 +224,23 @@ export default function DirectoryPage() {
   const [bizCat, setBizCat] = useState('all')
   const [bizPage, setBizPage] = useState(1)
   const [showRegForm, setShowRegForm] = useState(false)
+
+  // Registering a business is owner-linked, so it requires login. Gate the entry
+  // point: a signed-out user is sent to log in first (and returned here with
+  // ?register=1 to auto-open the form) instead of filling a form that 401s.
+  const openRegister = () => {
+    if (!user) {
+      router.push('/login?next=' + encodeURIComponent('/directory?register=1'))
+      return
+    }
+    setShowRegForm(true)
+  }
+  useEffect(() => {
+    if (router.query.register === '1' && user) {
+      setShowRegForm(true)
+      router.replace('/directory', undefined, { shallow: true })
+    }
+  }, [router.query.register, user, router])
   const [businesses, setBusinesses] = useState<DirRecord[]>([])
   const [bizLoading, setBizLoading] = useState(true)
   const [bizError, setBizError] = useState<string | null>(null)
@@ -625,7 +644,7 @@ export default function DirectoryPage() {
               </div>
               <button
                 className="btn btn-ember"
-                onClick={() => setShowRegForm(true)}
+                onClick={openRegister}
                 style={{ flexShrink: 0 }}
               >
                 <Plus size={16} aria-hidden="true" />

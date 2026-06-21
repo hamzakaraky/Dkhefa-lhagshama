@@ -20,6 +20,13 @@ export const overhaulRequestsChat = {
         done:       'הושלמו',
         empty:      'אין בקשות בעמודה זו',
       },
+      // One-at-a-time carousel per status column + a shared search.
+      searchPlaceholder: 'חיפוש לפי מספר בקשה, קטגוריה, תיאור או סטטוס…',
+      searchLabel:       'חיפוש בבקשות שלי',
+      searchClear:       'ניקוי חיפוש',
+      noMatches:         'אין בקשות תואמות לחיפוש.',
+      carouselPrev:      'הבקשה הקודמת',
+      carouselNext:      'הבקשה הבאה',
     },
     chat: {
       // req 13a — chat-window "back to list" button label
@@ -113,6 +120,12 @@ export const overhaulRequestsChat = {
         done:       'Done',
         empty:      'No requests in this column',
       },
+      searchPlaceholder: 'Search by request ID, category, description or status…',
+      searchLabel:       'Search my requests',
+      searchClear:       'Clear search',
+      noMatches:         'No requests match your search.',
+      carouselPrev:      'Previous request',
+      carouselNext:      'Next request',
     },
     chat: {
       allActiveChats: 'All active chats',

@@ -12,6 +12,7 @@ import { useCategories } from '@/hooks/useCategories'
 import { apiJson } from '@/lib/apiClient'
 import type { VolunteerMe } from '@/types'
 import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
+import WorkStatusControl from '@/components/volunteer-app/WorkStatusControl'
 import { ErrorState } from '@/components/admin/AdminUI'
 import Reveal from '@/components/motion/Reveal'
 
@@ -74,10 +75,6 @@ export default function VolunteerDashboard() {
   const [catMsg, setCatMsg] = useState<string | null>(null)
   const [catErr, setCatErr] = useState(false)
 
-  // WS-7 adds `availableAgainOn` to the volunteer doc; read it defensively so
-  // this screen compiles whether or not WS-7's type extension has landed yet.
-  const availableAgainOn =
-    (me as { availableAgainOn?: string | null } | null)?.availableAgainOn ?? null
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -200,20 +197,7 @@ export default function VolunteerDashboard() {
 
         <section className="card voldash-hero-card">
           <p className="voldash-hero-label">{d.hero.availabilityLabel}</p>
-          <span
-            className="voldash-avail"
-            role="status"
-            aria-label={d.availability.ariaPill}
-          >
-            <span
-              className={`voldash-avail-dot is-${me?.workStatus ?? 'free'}`}
-              aria-hidden="true"
-            />
-            {d.availability[(me?.workStatus ?? 'free') as 'free' | 'working' | 'unavailable']}
-          </span>
-          {me?.workStatus === 'unavailable' && availableAgainOn && (
-            <p className="voldash-hero-sub">{d.availability.backOn(fmtDate(availableAgainOn))}</p>
-          )}
+          <WorkStatusControl me={me} onChange={setMe} />
           <Link href="/volunteer-hub/calendar" className="voldash-avail-manage">
             <ClipboardList size={14} aria-hidden="true" />
             {d.availability.manage}

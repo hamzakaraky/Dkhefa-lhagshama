@@ -20,6 +20,7 @@ import { z } from 'zod';
 
 import { db } from '@/lib/firebaseAdmin';
 import { writeAuditLog } from '@/lib/audit';
+import { resolveRange } from '@/lib/insightsRange';
 import { isAllowedCategory } from '@/lib/categoriesCache';
 import { writeRequestEvent } from '@/lib/requestEvents';
 import { authenticate, requireAnyRole } from '@/middleware/auth';
@@ -70,7 +71,13 @@ function projectAttachments(data: Record<string, unknown>): AttachmentLike[] {
 function toAssignedCard(id: string, data: Record<string, unknown>) {
   return {
     id,
+    // Friendly REQ-#### ref + requester identity so the volunteer's "My
+    // requests" cards (and the calendar) show who they are helping. Same PII
+    // stance as the pool card: first name + city only.
+    displayId: (data.displayId as string | undefined) ?? null,
     title: (data.title as string | undefined) ?? null,
+    firstName: (data.firstName as string | undefined) ?? null,
+    city: (data.city as string | undefined) ?? null,
     category: data.category ?? null,
     description: data.description ?? null,
     status: data.status ?? null,
@@ -703,6 +710,7 @@ router.post('/requests/:id/close', async (req: Request, res: Response): Promise<
 // missing fields: everything defaults sensibly.
 router.get('/insights', async (req: Request, res: Response): Promise<void> => {
   const uid = req.user!.uid;
+  const { sinceMs, untilMs } = resolveRange(req.query, Date.now());
   try {
     const snap = await db()
       .collection('requests')
@@ -724,6 +732,10 @@ router.get('/insights', async (req: Request, res: Response): Promise<void> => {
 
       // overTime by createdAt day (YYYY-MM-DD)
       const createdIso = toIso(data.createdAt);
+      // Time-range scope: skip requests outside [sinceMs, untilMs].
+      const cms = createdIso ? Date.parse(createdIso) : null;
+      if (sinceMs !== null && (cms === null || cms < sinceMs)) continue;
+      if (untilMs !== null && (cms === null || cms > untilMs)) continue;
       if (createdIso) {
         const day = createdIso.slice(0, 10);
         overTimeMap.set(day, (overTimeMap.get(day) ?? 0) + 1);
