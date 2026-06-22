@@ -1,3 +1,13 @@
+/**
+ * App-wide HE/EN language context. Single source of truth for the active UI
+ * language, its translation table (`t`), and text direction (`isRTL`/dir).
+ * Wrapped around the app in `_app.tsx`; every screen reads it via `useLanguage()`.
+ * SSR-safe: renders the default lang on the server, then adopts the saved
+ * `localStorage('pff-lang')` preference after mount (see `hydrated`). On each
+ * lang change it persists the choice and syncs `<html lang/dir>`, the body
+ * rtl/ltr class, and the document title. Languages are list-driven (LANGUAGES),
+ * so adding one is an entry there plus a translation table.
+ */
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import translations from '../data/translations'
@@ -5,6 +15,8 @@ import translations from '../data/translations'
 // ── Type surface (moved inline from the former LanguageContext.d.ts) ──
 // A .d.ts cannot coexist with this .tsx, so the declarations live here and
 // are re-exported so existing `import type { ... }` consumers keep working.
+
+/** Supported UI language codes. */
 export type Lang = 'he' | 'en'
 
 /** Text direction for a language. */
@@ -30,6 +42,7 @@ export const LANGUAGES: readonly LanguageOption[] = [
 /** Active-language translation table — shape inferred from data/translations. */
 export type Translations = (typeof import('@/data/translations'))['default'][Lang]
 
+/** Value exposed by the context: active lang, setters, translation table, and dir/hydration flags. */
 export interface LanguageContextValue {
   lang: Lang
   setLang: (lang: Lang) => void
@@ -57,6 +70,7 @@ function isLang(value: unknown): value is Lang {
   return LANGUAGES.some((l) => l.code === value)
 }
 
+/** Provider that owns the active-language state and side effects; wrap the app once near the root. */
 export function LanguageProvider({ children }: { children: ReactNode }) {
   // SSR-safe: start with the default and adopt the saved preference after mount.
   const [lang, setLangState] = useState<Lang>(DEFAULT_LANG)
@@ -64,6 +78,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   const setLang = useCallback((next: Lang) => setLangState(next), [])
 
+  // mount-only: adopt the saved preference after first render so SSR/CSR markup
+  // matches, then flip `hydrated` so consumers can show lang-dependent UI safely.
   useEffect(() => {
     if (typeof window === 'undefined') return
     const saved = window.localStorage.getItem('pff-lang')
@@ -76,6 +92,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const t = translations[lang] || translations[DEFAULT_LANG]
   const isRTL = active.dir === 'rtl'
 
+  // on every lang change: persist it and sync the document-level RTL/LTR state
+  // (html lang/dir, body class, and the title) that CSS and a11y depend on.
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.localStorage.setItem('pff-lang', lang)
@@ -114,6 +132,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   )
 }
 
+/** Hook to read the language context; throws if used outside `LanguageProvider`. */
 export function useLanguage(): LanguageContextValue {
   const ctx = useContext(LanguageContext)
   if (!ctx) {

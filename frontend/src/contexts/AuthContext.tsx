@@ -76,6 +76,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Pull the `role` custom claim off the user's id token and narrow it to a known
+// StoredRole. `forceRefresh` re-fetches from the token endpoint (used after a
+// role change); otherwise the cached token is read. Unknown/absent claim -> null.
 async function readRoleFromToken(user: User, forceRefresh = false): Promise<StoredRole | null> {
   const tokenResult = await user.getIdTokenResult(forceRefresh);
   const role = tokenResult.claims.role;
@@ -228,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Consumer hook for the auth context. Throws if used outside <AuthProvider>.
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');

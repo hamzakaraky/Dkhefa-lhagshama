@@ -5,15 +5,19 @@ import { apiJson } from '@/lib/apiClient'
 import type { VolunteerMe } from '@/types'
 
 /**
- * Editable work-status control (Free / Working / Unavailable). The backend
- * (`PATCH /api/volunteer/me`) already accepts `workStatus` + `availableAgainOn`;
- * this is the missing UI. Choosing "Unavailable" reveals an optional return-date.
- * Shared by the volunteer dashboard and the calendar so status, hours and
- * deadlines live together.
+ * WorkStatusControl: the volunteer's self-service availability toggle
+ * (Free / Working / Unavailable). Rendered in the volunteer dashboard and the
+ * calendar so status, hours and deadlines sit together. Each click PATCHes
+ * `/api/volunteer/me` and hands the fresh VolunteerMe back to the parent via
+ * `onChange` (the parent owns the state; this component is controlled by `me`).
+ * Invariant: `availableAgainOn` is only meaningful while status is "unavailable"
+ * and is cleared to null on any other status.
  */
 const STATUSES = ['free', 'working', 'unavailable'] as const
 type WorkStatus = (typeof STATUSES)[number]
 
+// props: `me` is the source of truth (status + return-date read from it);
+// `onChange` lifts the server's updated record back to the owning page.
 export default function WorkStatusControl({
   me,
   onChange,
@@ -26,10 +30,12 @@ export default function WorkStatusControl({
   const { toast } = useApp()
   const [busy, setBusy] = useState(false)
   const current = (me?.workStatus ?? 'free') as WorkStatus
+  // availableAgainOn is not on the VolunteerMe type yet, so read it via a local cast.
   const againOn = (me as { availableAgainOn?: string | null } | null)?.availableAgainOn ?? null
 
+  // persist a status change; clears availableAgainOn unless the new status is "unavailable".
   const save = async (status: WorkStatus, date: string | null) => {
-    if (busy) return
+    if (busy) return // guard against concurrent PATCHes while one is in flight
     setBusy(true)
     try {
       const updated = await apiJson<VolunteerMe>('/api/volunteer/me', {

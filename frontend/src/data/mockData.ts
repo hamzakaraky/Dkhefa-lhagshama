@@ -1,10 +1,13 @@
 // ─────────────────────────────────────────────────────────────
 //  MOCK DATA  –  Volunteer roster, success stories, headline stats
 // ─────────────────────────────────────────────────────────────
+//  Static HE/EN fixtures for the few surfaces that have no live API backing.
 //  Every list-screen (requests, directory, users, insights) reads from the
-//  Express API; the only fixtures left here back the public volunteer roster
-//  (VolunteerPage), the homepage success-story gallery, and the homepage/login
-//  headline counters.
+//  Express API; what remains here is read-only demo content:
+//    - mockVolunteers → AppContext.volunteers (public VolunteerPage roster)
+//    - mockStories    → HomePage success-story gallery
+//    - mockStats      → HomePage + LoginPage headline stat strip
+//  All three are imported (not mutated) by their consumers, so treat as const.
 
 import type { Volunteer, Story } from '@/types'
 
@@ -16,6 +19,9 @@ export interface MockStats {
   yearsActive: number
 }
 
+// public volunteer roster shown on VolunteerPage (via AppContext). each entry
+// carries parallel HE/EN fields; `areas` maps to the category filter chips and
+// `status`/`assignedTo` drive the available-vs-assigned badge.
 export const mockVolunteers: Volunteer[] = [
   {
     id: 1,

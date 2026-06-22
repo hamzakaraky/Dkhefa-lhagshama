@@ -1,8 +1,17 @@
 /**
- * Workstream B (my-requests ↔ chat) translation add-ons.
- * Add keys under `he` and `en` mirrors. Merged into `t.*` by `translations.ts`
- * via `deepMerge`, so these extend the existing `myRequests` / `chat`
- * namespaces (access stays `t.myRequests.x` / `t.chat.x`).
+ * Workstream B (my-requests <-> chat) i18n add-on bundle.
+ *
+ * Pure data: a frozen (`as const`) HE/EN string table that `translations.ts`
+ * deep-merges into the global `t` tree, extending the existing `myRequests`
+ * and `chat` namespaces (callers keep reading `t.myRequests.x` / `t.chat.x`).
+ * Covers the kanban/carousel/search on my-requests and the full chat surface
+ * (attachments, mutual-consent close handshake, staff/group chats, participant
+ * management, read-only states, system-note markers).
+ *
+ * Invariants: the `he` and `en` shapes must stay structurally identical (merge
+ * + call sites assume both sides have every key). Function-valued entries
+ * (e.g. `otherAskedToClose`) are runtime interpolation builders that take a
+ * display name and return the localized sentence.
  */
 export const overhaulRequestsChat = {
   he: {

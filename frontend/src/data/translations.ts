@@ -1,6 +1,20 @@
-// ─────────────────────────────────────────────────────────────
-//  TRANSLATIONS  –  Hebrew (he) | English (en)
-// ─────────────────────────────────────────────────────────────
+/*
+ * TRANSLATIONS - the app's single bilingual (he | en) UI string table.
+ *
+ * What: one `base` object-literal with mirrored `he` / `en` branches keyed by
+ *   feature area (nav, hero, request form, directory, admin, lifecycle, chat,
+ *   …). Some leaves are functions (e.g. `dueIn(days)`, `avatarAlt(name)`) for
+ *   pluralization/interpolation, not just strings.
+ * Who uses it: the whole frontend reads strings via `translations[lang]`
+ *   (`lang` from LanguageContext); `t.dir` / `t.lang` drive RTL/LTR layout.
+ * How it's assembled: `base` is deep-merged with the per-workstream add-on
+ *   modules under `src/data/i18n/` (overhaul.*), so newer feature strings can
+ *   override/extend the base without editing this file. `base.he` is the
+ *   source-of-truth shape that `Translations` is derived from, so the two
+ *   branches must stay structurally identical for every key to resolve in both.
+ * Add new strings to the matching `i18n/overhaul.*` module, NOT here, to avoid
+ *   merge conflicts (see the export block at the bottom).
+ */
 
 import { deepMerge } from './i18n/deepMerge'
 import { overhaulPublic } from './i18n/overhaul.public'
@@ -8,6 +22,8 @@ import { overhaulRequestsChat } from './i18n/overhaul.requestsChat'
 import { overhaulAdmin } from './i18n/overhaul.admin'
 import { overhaulVolunteerApp } from './i18n/overhaul.volunteerApp'
 
+// base literal: the in-file strings, later deep-merged with the i18n add-on
+// modules to form the exported `translations`. `he` and `en` mirror each other.
 const base = {
   he: {
     home: {

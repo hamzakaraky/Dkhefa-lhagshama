@@ -1,9 +1,13 @@
 /**
- * Workstream C (admin operational dashboard) translation add-ons.
- * Add keys under `he` and `en` mirrors. Merged into `t.*` by `translations.ts`.
+ * Bilingual (HE/EN) i18n add-on for the admin operational area: dashboard KPIs,
+ * admin-created task requests, multi-claimant assignment, protected admin rows,
+ * category-permission requests, beneficiary age insights, and chat oversight.
  *
- * Everything here extends the existing `admin` namespace so access stays
- * `t.admin.x` after the deep-merge. Add BOTH he + en for every key.
+ * Consumed by `translations.ts`, which deep-merges this into the shared `t`
+ * tree, so all keys here live under the `admin` namespace and read as
+ * `t.admin.x` at call sites. Invariant: the `he` and `en` shapes must stay
+ * structurally identical (same nested keys) or a language will miss strings.
+ * `as const` keeps the literal types narrow for type-safe key access.
  */
 export const overhaulAdmin = {
   he: {

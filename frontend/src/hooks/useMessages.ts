@@ -72,6 +72,12 @@ function toAttachment(raw: ChatAttachment | null | undefined): ChatAttachment | 
   };
 }
 
+/**
+ * Subscribe to one chat's messages live. Pass null chatId to detach (clears
+ * messages, no listener). Re-subscribes whenever chatId changes; the effect
+ * tears down the prior listener first so two chats never overlap. Returns
+ * { messages, loading, error } where error is 'permission' | 'load_failed' | null.
+ */
 export function useMessages(chatId: string | null): UseMessagesResult {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,7 +85,8 @@ export function useMessages(chatId: string | null): UseMessagesResult {
   const unsubRef = useRef<Unsubscribe | null>(null);
 
   useEffect(() => {
-    // Clean up any previous listener.
+    // detach the prior chat's listener before (re)subscribing, so a chatId
+    // switch can't leave a stale listener feeding the wrong messages.
     if (unsubRef.current) {
       unsubRef.current();
       unsubRef.current = null;
@@ -113,6 +120,8 @@ export function useMessages(chatId: string | null): UseMessagesResult {
             timestamp: d.timestamp?.toDate() ?? null,
             status: d.status ?? 'sent',
             attachment: toAttachment(d.attachment),
+            // treat sender 'system' as a system note even on older docs that
+            // predate the explicit isSystem flag.
             isSystem: d.isSystem === true || d.senderId === 'system',
             targetUid: typeof d.targetUid === 'string' ? d.targetUid : null,
             targetName: typeof d.targetName === 'string' ? d.targetName : null,

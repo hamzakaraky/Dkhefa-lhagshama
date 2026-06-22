@@ -1,9 +1,20 @@
 /**
- * Workstream D (volunteer operational system) translation add-ons.
- * All strings live under a `volunteerApp` namespace → access via
- * `t.volunteerApp.*`. Merged into `t.*` by `translations.ts`.
+ * i18n string bundle for the volunteer hub (workstream D: volunteer
+ * operational system). One frozen `{ he, en }` object; every key lives
+ * under a `volunteerApp` namespace so consumers read `t.volunteerApp.*`.
  *
- * Keep `as const`. Mirror every key across `he` and `en`.
+ * Consumed by: the `/volunteer-hub/*` screens (dashboard, pool, assigned,
+ * calendar, insights) which pull `t` from the shared LanguageContext.
+ * `translations.ts` deep-merges this object into the global `t`, so this
+ * file owns only the volunteer-hub slice and never the rest of the app.
+ *
+ * Invariants:
+ * - keep the trailing `as const` (literal types drive autocomplete + the
+ *   key-parity type checks that catch a key present in one locale but not
+ *   the other).
+ * - every key MUST exist in both `he` and `en` with the same shape; some
+ *   leaves are functions (e.g. `claimsCount(n)`, `backOn(d)`) for runtime
+ *   interpolation/pluralization and must keep matching signatures.
  */
 export const overhaulVolunteerApp = {
   he: {

@@ -1,3 +1,13 @@
+/**
+ * AppContext — app-wide UI scratch state, not domain/auth state.
+ *
+ * Holds three small concerns that any page may need: transient toasts,
+ * a single global modal slot, and the public read-only volunteer roster
+ * fixture. Provided once by AppProvider (mounted near the app root) and
+ * consumed via the useApp() hook. Domain data (auth, requests, chats) lives
+ * elsewhere; this context is intentionally lightweight and side-effect-free
+ * apart from toast auto-dismiss timers.
+ */
 import { createContext, useContext, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { mockVolunteers } from '../data/mockData'
@@ -26,12 +36,15 @@ export interface AppContextValue {
 
 const AppContext = createContext<AppContextValue | null>(null)
 
+// monotonic counter for unique toast ids; module-scoped so it survives re-renders.
 let toastId = 0
 
+// AppProvider — supplies toast/modal/volunteers state to the subtree via AppContext.
 export function AppProvider({ children }: { children: ReactNode }) {
   // ── TOAST ──────────────────────────────────────────────
   const [toasts, setToasts] = useState<Toast[]>([])
 
+  // push a toast and schedule its own removal after `duration` ms (id matched, not index).
   const toast = useCallback((message: string, type: ToastType = 'info', duration = 3500) => {
     const id = ++toastId
     setToasts(prev => [...prev, { id, message, type }])
@@ -61,6 +74,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// useApp — typed accessor for AppContext; throws if called outside AppProvider.
 export function useApp(): AppContextValue {
   const ctx = useContext(AppContext)
   if (!ctx) throw new Error('useApp must be used inside AppProvider')

@@ -12,6 +12,8 @@
 
 type Plain = Record<string, unknown>;
 
+// true only for mergeable nested namespaces; arrays/functions/null are treated
+// as leaf values so they get replaced wholesale rather than recursed into.
 function isPlainObject(v: unknown): v is Plain {
   return (
     typeof v === 'object' &&
@@ -21,13 +23,17 @@ function isPlainObject(v: unknown): v is Plain {
   );
 }
 
+// recursively merge add-on sources over base, left-to-right (later sources win).
+// shallow-clones at each level so inputs are never mutated; only matching
+// plain-object branches recurse, all other keys overwrite.
 export function deepMerge<T extends Plain>(base: T, ...sources: Plain[]): T {
   const out: Plain = { ...base };
   for (const src of sources) {
-    if (!src) continue;
+    if (!src) continue; // tolerate undefined/null add-on modules
     for (const key of Object.keys(src)) {
       const a = out[key];
       const b = src[key];
+      // recurse only when both sides are nested namespaces; otherwise b replaces a
       out[key] = isPlainObject(a) && isPlainObject(b) ? deepMerge(a, b) : b;
     }
   }

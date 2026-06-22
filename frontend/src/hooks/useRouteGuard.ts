@@ -1,3 +1,13 @@
+/**
+ * useRouteGuard — the app's single client-side page-access gate.
+ *
+ * Every protected page (admin/*, volunteer-hub/*, requests, chats, ...) calls this
+ * hook with the roles it permits and renders content only when it returns 'allowed'.
+ * It reads auth + role from AuthContext, role-home destinations from roleHome, and
+ * uses AppContext's toast for the wrong-role case. Invariant: the access decision is
+ * pure and synchronous (role never changes mid-mount, so no reactive effect); the
+ * lone effect does nothing but the navigation that gating implies.
+ */
 import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '@/contexts/AuthContext'
@@ -5,6 +15,7 @@ import { useApp } from '@/contexts/AppContext'
 import { roleHome } from '@/utils/roleHome'
 import type { Role } from '@/types'
 
+// guard outcome a page acts on: render content, show loading, or hold while redirecting.
 export type GuardStatus = 'loading' | 'redirecting' | 'allowed'
 
 interface RouteGuardOptions {
@@ -17,19 +28,17 @@ interface RouteGuardOptions {
 }
 
 /**
- * Centralised client-side route guard.
+ * Decides whether the current user may view a page, and redirects if not.
  *
- * The access decision is computed **synchronously at render** from the (stable)
- * auth + role state — a user's role does not change while a page is mounted, so
- * it is never a reactive `useEffect`. The single effect here performs only
- * navigation, which is the one unavoidable side-effect of client-side routing.
- * The transient-null grace that prevents auth flicker lives once in
- * `AuthContext` (`sessionState`), so this hook needs no redirect timer.
+ * The decision is computed synchronously at render from the (stable) auth + role
+ * state; only the navigation runs in an effect. The transient-null grace that
+ * prevents auth flicker lives once in AuthContext (sessionState), so this hook
+ * needs no redirect timer of its own.
  *
  * Signed-out users go to /login; signed-in users without an allowed role are
  * bounced to their own role-home with an optional toast (never a dead-end).
  * Returns the current {@link GuardStatus}; callers render content only on
- * `'allowed'` and a neutral loading view otherwise.
+ * 'allowed' and a neutral loading view otherwise.
  */
 export function useRouteGuard({
   allow,

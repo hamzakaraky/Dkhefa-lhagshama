@@ -62,12 +62,16 @@ export interface UseCategoriesResult {
   refresh: () => Promise<void>
 }
 
+// Consumer hook: returns the shared taxonomy, a loading flag, a label
+// resolver, and a refresh. Seeds state from the module cache so a warm cache
+// renders synchronously (no loading flash) and an empty cache shows loading.
 export function useCategories(): UseCategoriesResult {
   const { t, lang: activeLang } = useLanguage()
   const [categories, setCategories] = useState<Category[]>(() => cache ?? [])
   const [loading, setLoading] = useState(cache === null)
 
   useEffect(() => {
+    // `alive` guards against setState after unmount if the fetch resolves late.
     let alive = true
     load().then((items) => {
       if (!alive) return
