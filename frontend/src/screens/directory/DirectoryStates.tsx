@@ -1,8 +1,19 @@
+// Presentational status banner for the public directory grid (UC-02 answers /
+// UC-03 businesses). Renders exactly one of three async UI states above the
+// results: a polite live results-count, an error card with Retry, or a
+// skeleton-card loading grid. Stateless and side-effect free — the owning
+// directory page drives the fetch and passes down loading/error/count + retry.
+// States are mutually exclusive by the !loading/!error guards below; the
+// skeleton mirrors PER_PAGE (page size) so the layout doesn't shift on load.
+
 import { AlertTriangle } from 'lucide-react'
 import type { TNode } from '@/types'
 import { PER_PAGE } from './constants'
 import styles from './DirectoryStates.module.css'
 
+// d = directory-specific copy (loadError/retry), t = shared bilingual table
+// (common.loading/results). error is the fetch error message or null; retry
+// re-triggers the parent's fetch.
 type Props = {
   d: TNode
   t: TNode

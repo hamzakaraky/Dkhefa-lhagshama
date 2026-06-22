@@ -1,3 +1,12 @@
+// MessageFeed — the scrolling message list for a single chat (chat-window screen).
+// Renders, in order: a centred loading/empty/error/permission state, then each
+// message as either a centred system note, a downloadable file bubble, or a text
+// bubble. Own vs incoming layout is decided per row by senderId === currentUid;
+// sender identity (avatar/name) is resolved from the `participants` map.
+// Pure presentation: data (messages, loading/error flags) comes from useMessages
+// via the parent, and downloads are delegated up through onDownload. The
+// forwarded ref is the scroll container the parent uses to auto-scroll to bottom.
+// Fully RTL-aware (isRtl) and i18n via LanguageContext (t.chat).
 import { forwardRef } from "react";
 import type { ReactNode } from "react";
 import {
@@ -25,6 +34,8 @@ interface FeedStateProps {
   body?: ReactNode;
 }
 function renderFeedState({ icon, tone = "ember", title: stateTitle, body }: FeedStateProps) {
+  // danger tone is the only one announced assertively as an alert; the rest are
+  // polite status regions.
   const isError = tone === "danger";
   return (
     <div
@@ -53,6 +64,8 @@ interface MessageFeedProps {
   onDownload: (att: NonNullable<ChatMessage["attachment"]>) => void;
 }
 
+// MessageFeed — ref-forwarding component; the ref targets the scroll container
+// (`.chat-feed`) so the parent can scroll it to the latest message.
 export const MessageFeed = forwardRef<HTMLDivElement, MessageFeedProps>(function MessageFeed(
   {
     messages,
@@ -70,6 +83,8 @@ export const MessageFeed = forwardRef<HTMLDivElement, MessageFeedProps>(function
   const { t } = useLanguage();
   const c = t.chat;
 
+  // HH:MM in the active locale; empty string for not-yet-acked messages (no
+  // server timestamp).
   function formatTime(date: Date | null) {
     if (!date) return "";
     return date.toLocaleTimeString(isRtl ? "he-IL" : "en-GB", {

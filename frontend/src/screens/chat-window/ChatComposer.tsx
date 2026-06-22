@@ -1,3 +1,15 @@
+/*
+ * ChatComposer — the bottom bar of a chat window (chat-window screen).
+ * Pure presentational component: it holds no chat state and does no
+ * network/business logic itself. The parent chat screen owns send/upload/
+ * join state and passes everything in via props; this component only
+ * decides WHICH of three mutually-exclusive UIs to render:
+ *   1. locked  -> read-only note (chat paused or its request ended)
+ *   2. staff viewer -> "join to write" control (admins who aren't participants)
+ *   3. default -> the message form (attach + text input + send)
+ * note: both isRtl (used for layout direction) and isRTL (used to mirror the
+ * send icon) are distinct props from the parent and both are required.
+ */
 import { useRef } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Lock, Eye, Loader2, UserPlus, Send, Paperclip } from "lucide-react";
@@ -37,12 +49,12 @@ export function ChatComposer({
   onFilePick,
 }: ChatComposerProps) {
   const { t } = useLanguage();
-  const c = t.chat;
+  const c = t.chat; // chat-scoped i18n strings (HE/EN)
+  // drives the hidden <input type=file>; clicked indirectly via the paperclip btn
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Composer — sticks to the bottom of the panel. Read-only when
-  // the chat is paused / its request ended; admins who are not
-  // participants get a "join to write" control instead.
+  // branch 1: chat is paused or its request ended -> show a read-only note,
+  // distinct copy for the paused vs ended case.
   if (composerLocked) {
     return (
       <div
@@ -56,6 +68,9 @@ export function ChatComposer({
     );
   }
 
+  // branch 2: admin/staff observing a chat they don't belong to -> can read
+  // but not write until they join; onJoin is owned by the parent, joinBusy
+  // toggles the spinner + disables the button.
   if (isStaffViewer) {
     return (
       <div
@@ -83,6 +98,9 @@ export function ChatComposer({
     );
   }
 
+  // branch 3 (default): the live message form. submit is gated on a
+  // non-empty trimmed input; attach + text are disabled while sending,
+  // and attach is additionally disabled while a prior upload is in flight.
   return (
     <form
       onSubmit={onSend}

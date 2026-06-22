@@ -7,11 +7,16 @@ import { apiFetch } from "@/lib/apiClient";
 import type { ChatParticipant } from "./shared";
 
 /**
- * Participant management + admin self-join (feedback round 2). Owns the busy /
- * dialog state and the three write handlers; the live chat-doc listener (in
- * useChatWindowData) flips membership once the writes land.
+ * Chat participant management hook (feedback round 2). Backs the chat-window UI:
+ * admin self-join, adding people, and removing a participant, all hitting
+ * /api/chats/:id/participants. Owns only the busy/dialog/error state and the
+ * three write handlers; it does NOT update the roster itself. The live chat-doc
+ * listener in useChatWindowData re-derives membership once a write lands, so
+ * these handlers are fire-and-toast. Consumed by the chat-window screen.
  */
 export function useParticipantActions(chatId: string | string[] | undefined) {
+  // chatId arrives straight from the router param, hence string | string[] |
+  // undefined; every handler guards `typeof chatId !== "string"` before writing.
   const { user } = useAuth();
   const { toast } = useApp();
   const { t } = useLanguage();

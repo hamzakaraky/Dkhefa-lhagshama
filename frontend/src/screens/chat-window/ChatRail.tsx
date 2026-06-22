@@ -1,3 +1,15 @@
+/**
+ * ChatRail — the side panel of the chat window (right rail in LTR, left in RTL).
+ *
+ * Purely presentational: renders chat identity (single-face headline for 2-person
+ * chats; a participants list with remove/add controls for groups and managers) plus
+ * the linked-request status badge and its lifecycle actions (mark-done, and the
+ * mutual-consent close handshake: propose / approve / decline / cancel).
+ *
+ * All state and the actual API calls live in the parent chat-window screen; this
+ * component only takes flags + callbacks via ChatRailProps and emits clicks back.
+ * i18n strings come from LanguageContext (t.chat + t.lifecycle).
+ */
 import {
   MessageCircle,
   Loader2,
@@ -42,6 +54,8 @@ interface ChatRailProps {
   onAddOpen: () => void;
 }
 
+// stateless rail; every interactive bit is driven by a flag prop and reports back
+// through an on*-callback. parent owns busy/disabled state and the lifecycle logic.
 export function ChatRail({
   isRtl,
   currentUid,
@@ -90,6 +104,7 @@ export function ChatRail({
             <p className="chat-rail-people-label">{c.participantsTitle}</p>
             <ul className="chat-rail-people">
               {Object.values(participants).map((p) => {
+                // fall back to a short uid prefix when displayName is missing/blank
                 const name =
                   (p.displayName && p.displayName.trim()) ||
                   p.uid.slice(0, 6);
@@ -168,6 +183,7 @@ export function ChatRail({
             <span className="chat-status">
               <span className={`chat-status__dot ${statusDotClass}`} aria-hidden="true" />
               <span className="chat-status__label">
+                {/* translate the status enum; show the raw value if unmapped */}
                 {lc.statusLabels[
                   linkedRequest.status as keyof typeof lc.statusLabels
                 ] ?? linkedRequest.status}
@@ -195,7 +211,10 @@ export function ChatRail({
                   </button>
                 )}
 
-                {/* ── req 25 — mutual-consent close handshake ──────────── */}
+                {/* ── req 25 — mutual-consent close handshake ──────────────
+                    three exclusive states keyed off closeReq + who proposed:
+                    no pending → "request close"; other proposed → approve/decline;
+                    i proposed → waiting note + cancel. */}
                 {canUseCloseConsent && !closeReq && (
                   <button
                     type="button"

@@ -1,7 +1,19 @@
+/*
+ * DirectoryControls — the filter bar for the public directory screen.
+ *
+ * Renders search + category chips + secondary filters for whichever tab is
+ * active ('business' vs the NGO/answers tab). Fully controlled: it owns no
+ * state, every value + setter is passed in by the parent directory page, and
+ * each change also resets the relevant page to 1 (filter changes start at the
+ * first page). All copy comes from the `d` i18n node (HE/EN). Icons are looked
+ * up from the BIZ_CAT_ICONS / NGO_AREA_ICONS maps with LayoutGrid as fallback.
+ */
 import { Search, LayoutGrid } from 'lucide-react'
 import type { TNode } from '@/types'
 import { BIZ_CAT_ICONS, NGO_AREA_ICONS, BIZ_CATS } from './constants'
 
+// all values/setters are owned by the parent; userInteracted is a ref the
+// parent reads to distinguish a user-driven category change from auto-defaults.
 type Props = {
   d: TNode
   activeTab: string
@@ -45,6 +57,8 @@ export default function DirectoryControls({
   answerAudience,
   setAnswerAudience,
 }: Props) {
+  // tab-driven branching: the same search/chip UI serves both tabs, swapping
+  // which value/setter/placeholder it binds based on activeTab.
   return (
     /* ── CONTROLS: search + chips + secondary filters in one block ── */
     <div
@@ -100,6 +114,7 @@ export default function DirectoryControls({
                   key={area}
                   className={`filter-chip dir-chip${answerCategory === area ? ' active' : ''}`}
                   aria-pressed={answerCategory === area}
+                  // flag the ref so the parent skips its category auto-default once the user picks a chip
                   onClick={() => { userInteracted.current = true; setAnswerCategory(area); setAnswerPage(1) }}
                 >
                   <Icon size={15} aria-hidden="true" />

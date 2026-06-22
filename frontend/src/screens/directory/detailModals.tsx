@@ -1,3 +1,17 @@
+/*
+ * detailModals — directory "see details" modal builders for the two public
+ * directories: community businesses (UC-03) and community answers/orgs (UC-02).
+ * Each export is a factory that takes the directory screen's deps (L bilingual
+ * picker, d translations, openModal/closeModal, router) and returns a click
+ * handler that opens the shared <Modal> for a given record. Used by the
+ * directory list screens; collaborates with the app-level Modal in
+ * pages/_app.tsx and with safeHref for link hardening.
+ *
+ * Invariant: the shared <Modal> renders an object payload as
+ * { title, content, footer }, but openModal is typed ReactNode, so the
+ * structured payload is cast through unknown. Content is built in the active
+ * language/direction; CTAs reuse existing button classes/tokens.
+ */
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { Phone, Mail, MapPin, Globe } from 'lucide-react'
@@ -6,18 +20,14 @@ import type { TNode } from '@/types'
 import type { Bilingual, DirRecord } from './constants'
 import styles from './detailModals.module.css'
 
-// ── DETAIL MODALS (Note 2) ────────────────────────────────────
-// The shared <Modal> (pages/_app.tsx) renders an object payload as
-// { title, content, footer }; openModal is typed ReactNode so we cast the
-// structured payload through unknown. Content is built in the active language
-// and direction; CTAs reuse existing button classes/tokens.
-
 type ModalDeps = {
   L: (v: Bilingual) => string
   d: TNode
   openModal: (node: ReactNode) => void
 }
 
+// builds the click handler that opens a business detail modal (name + category/
+// city chips + description, with tel:/website CTAs in the footer).
 export function makeOpenBusinessModal({ L, d, openModal }: ModalDeps) {
   return (biz: DirRecord) => {
     const name = L(biz.name)
@@ -70,6 +80,9 @@ type AnswerModalDeps = ModalDeps & {
   ArrowIcon: LucideIcon
 }
 
+// builds the click handler that opens an answer/org detail modal. Adds a
+// "start request" CTA over the business modal: it closes the modal first, then
+// routes to /requests (order matters so the modal is gone before navigation).
 export function makeOpenAnswerModal({ L, d, openModal, closeModal, router, ArrowIcon }: AnswerModalDeps) {
   return (answer: DirRecord) => {
     const title = L(answer.title) || String(d.untitledOrg)

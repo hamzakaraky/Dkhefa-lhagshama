@@ -1,3 +1,11 @@
+// Static config + shared types for the public directory screen (UC-02 answers
+// catalog + UC-03 community businesses). No logic here: tab order, the
+// category/area -> lucide-icon maps used by filter chips and cards, the
+// business-registration autofill hints, and the loose bilingual/record types
+// the directory components narrow at use-site. Consumed by the directory page
+// and its child components; keep in sync with the server-side ?orgType=/category
+// filters (TAB_ORDER values and BIZ_CATS must match what the API accepts).
+
 import { HeartHandshake, Globe, LayoutGrid, Utensils, Wrench, HeartPulse, GraduationCap, Sparkles, Laptop, Briefcase, Scale, Users, Home } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { TNode, Lang } from '@/types'

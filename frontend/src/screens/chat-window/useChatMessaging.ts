@@ -14,9 +14,13 @@ import {
 } from "./shared";
 
 /**
- * Composer + attachment messaging (req 26). Owns the input / send / upload /
- * download state and their handlers; the realtime message listener renders the
- * resulting messages, so no optimistic inserts are needed.
+ * Composer + attachment messaging hook for the chat window (req 26). Owns the
+ * input / send / upload / download state and their handlers, keyed off the
+ * route `chatId`. Consumed by the chat-window screen, which wires the returned
+ * state+handlers to the composer UI and renders messages from a separate
+ * realtime listener (useMessages) — so this hook performs no optimistic
+ * inserts: every send/upload is reflected only once the listener picks it up.
+ * Errors surface via either `sendError` (composer) or `toast` (attachments).
  */
 export function useChatMessaging(chatId: string | string[] | undefined) {
   const { toast } = useApp();
@@ -32,6 +36,9 @@ export function useChatMessaging(chatId: string | string[] | undefined) {
   // Attachment names currently being fetched a signed URL for (per-bubble busy).
   const [downloading, setDownloading] = useState<Record<string, boolean>>({});
 
+  // POST a trimmed text message to the chat; clears the input on success and
+  // sets `sendError` (raw server code or "send_failed") otherwise. Guards
+  // against empty text and double-submit while a send is in flight.
   async function handleSend(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const text = inputText.trim();

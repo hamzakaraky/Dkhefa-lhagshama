@@ -1,3 +1,11 @@
+/*
+ * AnswerResults — presentational grid for the directory's answers catalog
+ * (the 'ngo' / 'partner' tabs). Renders one card per organization on the
+ * current page, or an empty state, plus the pagination control. Pure view:
+ * all data, filtering, paging state and the open-modal callback come from the
+ * parent Directory screen via props. `L` resolves bilingual fields to the
+ * active language; `d` is the (loose TNode) translation table for static copy.
+ */
 import type { LucideIcon } from 'lucide-react'
 import { HeartHandshake, Handshake } from 'lucide-react'
 import Pagination from '@/components/data-display/Pagination'
@@ -7,18 +15,19 @@ import { PER_PAGE } from './constants'
 import type { Bilingual, DirRecord } from './constants'
 
 type Props = {
-  d: TNode
-  activeTab: string
-  answerPageData: DirRecord[]
-  filteredAnswersLength: number
+  d: TNode                                  // translation table for static copy (loose TNode view)
+  activeTab: string                         // 'ngo' | 'partner' — only drives the empty-state icon/text
+  answerPageData: DirRecord[]               // already-sliced records for the current page
+  filteredAnswersLength: number             // total matches across pages (drives Pagination)
   answerPage: number
   setAnswerPage: (v: number) => void
-  L: (v: Bilingual) => string
-  catLabel: (id: string) => string
+  L: (v: Bilingual) => string               // resolve a bilingual field to the active language
+  catLabel: (id: string) => string          // category id -> localized label
   openAnswerModal: (answer: DirRecord) => void
-  ArrowIcon: LucideIcon
+  ArrowIcon: LucideIcon                      // direction-aware CTA arrow (flips for RTL upstream)
 }
 
+// renders the current page of answer cards (or empty state) + pagination.
 export default function AnswerResults({
   d,
   activeTab,
@@ -39,8 +48,10 @@ export default function AnswerResults({
             const aTitle = L(answer.title)
             const aRegion = L(answer.region)
             const aAudience = L(answer.audience)
+            // badge label: the catch-all 'all' category shows the generic filter copy, otherwise the localized category name
             const areaLabel = answer.category && (answer.category === 'all' ? d.filterAll : catLabel(String(answer.category)))
             return (
+            // staggered reveal capped at 6 cards (Math.min(i,5)) so later rows don't lag
             <Reveal key={answer.id} delay={Math.min(i, 5) * 0.06} className="card card-interactive dir-answer-card">
               {areaLabel && (
                 <span className="dir-answer-badge">
@@ -77,6 +88,7 @@ export default function AnswerResults({
           })}
         </div>
       ) : (
+        // empty state: partner tab gets a different icon/heading than the ngo tab
         <div className="dir-state">
           <span className="dir-state-icon">
             {activeTab === 'partner'

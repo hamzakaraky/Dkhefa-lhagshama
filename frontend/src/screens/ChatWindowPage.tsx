@@ -1,3 +1,19 @@
+/**
+ * ChatWindowPage — the single-conversation screen (route /chats/[id]).
+ *
+ * Orchestration layer only: it composes the chat-window feature hooks
+ * (useChatWindowData / useRequestLifecycle / useParticipantActions /
+ * useChatMessaging + the shared useMessages listener) into the two-column
+ * layout (MessageFeed + ChatComposer on the left, ChatRail on the right) and
+ * derives the view-model flags those parts consume. All data fetching,
+ * mutations, and realtime live in the hooks under ./chat-window/.
+ *
+ * Used by beneficiaries, volunteers, and admins. Key invariants: the message
+ * listener only attaches once auth is resolved AND a user exists (logged-out
+ * visitors never trigger a permission-denied snapshot), and the composer is
+ * locked client-side whenever the chat is paused or its linked request has
+ * ended (the server enforces the same with a 409).
+ */
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";

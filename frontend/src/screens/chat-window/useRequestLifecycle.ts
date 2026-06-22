@@ -1,3 +1,13 @@
+/**
+ * useRequestLifecycle — the request-lifecycle controls shown inside the chat window:
+ * the volunteer's "Mark as done" action and the beneficiary/volunteer mutual-consent
+ * close handshake (notes 6 + req 25). Consumed by the chat-window screen, which feeds
+ * it the currently-linked request and renders the returned flags/handlers as a status
+ * strip. Visibility guards (canMarkDone / canUseCloseConsent / myCloseRole) are derived
+ * client-side from the linked request + signed-in user purely to gate the UI; every
+ * lifecycle mutation goes through the server (apiFetch), which enforces ownership and
+ * is the source of truth. State updates are optimistic with rollback on failure.
+ */
 import { useState } from "react";
 
 import { useApp } from "@/contexts/AppContext";
@@ -7,17 +17,13 @@ import { apiFetch } from "@/lib/apiClient";
 import type { RequestStatus } from "@/types";
 import type { LinkedRequest } from "./shared";
 
+// inputs are owned by the chat-window screen: the linked request plus the setter and
+// refetch it uses to keep that request in sync after a lifecycle write.
 interface UseRequestLifecycleArgs {
   linkedRequest: LinkedRequest | null;
   setLinkedRequest: React.Dispatch<React.SetStateAction<LinkedRequest | null>>;
   refetchLinkedRequest: () => Promise<void>;
 }
-
-/**
- * Note 6 / req 25 — the volunteer's "Mark as done" control + the mutual-consent
- * close handshake. Derives the visibility guards from the linked request and the
- * signed-in user; lifecycle writes stay server-only.
- */
 export function useRequestLifecycle({
   linkedRequest,
   setLinkedRequest,
@@ -46,6 +52,8 @@ export function useRequestLifecycle({
     isAssignedHandler &&
     linkedRequest.status === "in_progress";
 
+  // volunteer marks the request done -> moves it to `awaiting_review` (server-decided
+  // final status applied from the response). optimistic with rollback to prevStatus.
   async function handleMarkDone() {
     if (!linkedRequest || markingDone || !canMarkDone) return;
     if (typeof window !== "undefined" && !window.confirm(lc.actions.markDoneConfirm)) return;
@@ -109,6 +117,8 @@ export function useRequestLifecycle({
   // The other side initiated and is waiting on me to confirm.
   const otherProposed = !!closeReq && !iProposed;
 
+  // drive one step of the close handshake. endpoint is chosen by myCloseRole so each
+  // side hits its own ownership-checked route; no optimism here, we refetch for truth.
   async function handleCloseAction(action: "propose" | "approve" | "decline") {
     if (!linkedRequest || closeBusy || !canUseCloseConsent) return;
     setCloseBusy(true);

@@ -7,11 +7,19 @@ import { projectLinkedRequest } from "./shared";
 import type { ChatParticipant, ChatMeta, LinkedRequest } from "./shared";
 
 /**
- * Data layer for the chat window: the live chat-doc projection (kind / title /
- * active / membership), the participant identity map, and the linked-request
- * projection (status + assigned handler + close handshake). Owned by the page;
- * behavior is identical to the inline effects it replaces.
+ * Read-side data layer for the chat-window screen. Given the chat id to listen
+ * on, it owns three live projections: the chat-doc meta (kind / title / active /
+ * membership + an activityTick derived from lastMessageAt), the participant
+ * identity map (uid -> name + avatar), and the linked request (status + assigned
+ * handler + close handshake). Consumed by the chat-window page, which feeds the
+ * returned values into the header, message list, and close-consent strip.
+ * Key invariant: the close-consent strip stays in sync without a reload because
+ * every handshake action posts a chat system message that bumps lastMessageAt,
+ * which advances activityTick and triggers a linkedRequest refetch.
  */
+// returns { chatMeta, participants, linkedRequest, setLinkedRequest,
+// linkedRequestId, refetchLinkedRequest } — setLinkedRequest +
+// refetchLinkedRequest let the page update the strip after its own close action.
 export function useChatWindowData(listenChatId: string | null) {
   // ── Live chat-doc projection (kind / title / active / membership) ──────
   // onSnapshot (not a one-shot read) so an admin pause, a participant change

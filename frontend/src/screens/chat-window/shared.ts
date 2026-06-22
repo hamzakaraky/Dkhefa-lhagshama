@@ -1,5 +1,20 @@
+/*
+ * shared.ts — pure constants, types, and helpers for the chat-window screen.
+ *
+ * The chat-window UI (window + composer + close-consent strip + participant
+ * mgmt) is split across several components; this module is the dependency-free
+ * core they all import: attachment validation limits, the minimal projections
+ * of the chat doc (ChatMeta) and its linked request (LinkedRequest), and small
+ * display helpers (initials, byte formatting). No React, no fetch, no state.
+ *
+ * Invariant: the projection helpers read backend payloads defensively (tolerant
+ * of legacy/partial docs) and the writes that change request status/lifecycle
+ * stay server-only; these types are read-side projections, not the source of truth.
+ */
 import type { RequestStatus, CloseRequest, ChatKind } from "@/types";
 
+// API origin for fetches from the chat-window components; relative "/api" in
+// prod (env set empty), localhost backend in dev when the env var is unset.
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
 /** Client-side attachment guard (req 26): PDF / JPEG / PNG / DOCX, <= 10MB. */
@@ -15,6 +30,7 @@ export const ALLOWED_ATTACHMENT_EXTS = [".pdf", ".jpg", ".jpeg", ".png", ".docx"
 
 /** Human-readable file size (matches the request-form attachment style). */
 export function formatBytes(bytes: number): string {
+  // empty string for 0/missing/negative so the UI shows nothing rather than "0 B".
   if (!bytes || bytes < 0) return "";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -82,6 +98,8 @@ export function toInitials(label: string | undefined | null): string {
 export function projectLinkedRequest(
   data: Partial<LinkedRequest> & { id?: string },
 ): LinkedRequest | null {
+  // null out malformed/partial payloads (missing id or status) so callers can
+  // safely skip the "Mark as done" control rather than render on bad data.
   if (typeof data?.id !== "string" || typeof data.status !== "string") return null;
   return {
     id: data.id,

@@ -1,3 +1,11 @@
+/*
+ * BusinessResults — presentational grid for the community-business directory
+ * (UC-03). Renders the current page of businesses as cards (banner, name,
+ * category/city, description, tags, optional rating, call + "more" actions)
+ * or an empty-state, followed by pagination. Pure view: all data, paging
+ * state and the modal opener are passed in by the parent directory page;
+ * bilingual fields are resolved through the injected L / L_arr selectors.
+ */
 import { Star, Phone, MapPin, Store } from 'lucide-react'
 import Pagination from '@/components/data-display/Pagination'
 import Reveal from '../../components/motion/Reveal'
@@ -7,16 +15,17 @@ import type { Bilingual, DirRecord } from './constants'
 import styles from './BusinessResults.module.css'
 
 type Props = {
-  d: TNode
-  bizPageData: DirRecord[]
-  filteredBizLength: number
-  bizPage: number
+  d: TNode                                  // directory i18n strings for the active locale
+  bizPageData: DirRecord[]                  // businesses for the current page only
+  filteredBizLength: number                 // total filtered count (drives pagination, not page slice)
+  bizPage: number                           // 1-based current page
   setBizPage: (v: number) => void
-  L: (v: Bilingual) => string
-  L_arr: (v: Bilingual) => string[]
+  L: (v: Bilingual) => string               // bilingual scalar -> active-locale string
+  L_arr: (v: Bilingual) => string[]         // bilingual list (tags) -> active-locale array
   openBusinessModal: (biz: DirRecord) => void
 }
 
+// stateless: receives the pre-filtered/paged slice and renders it; no fetching here
 export default function BusinessResults({
   d,
   bizPageData,
@@ -32,6 +41,7 @@ export default function BusinessResults({
       {bizPageData.length > 0 ? (
         <div className="dir-grid">
           {bizPageData.map((biz, i) => {
+            // category-specific glyph for the banner; Store is the catch-all fallback
             const BannerIcon = BIZ_CAT_ICONS[biz.category as string] || Store
             const photo = biz.photo ? String(biz.photo) : ''
             return (
