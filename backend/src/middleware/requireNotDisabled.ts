@@ -18,6 +18,8 @@ import type { NextFunction, Request, Response } from 'express';
 
 import { db } from '@/lib/firebaseAdmin';
 
+// express mutation guard: 401 not_authenticated if unauthenticated, 403
+// account_disabled if users/{uid}.disabled === true; otherwise next().
 export async function requireNotDisabled(
   req: Request,
   res: Response,

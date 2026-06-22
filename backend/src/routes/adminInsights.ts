@@ -1,20 +1,26 @@
 /**
- * /api/admin/insights — Admin analytics aggregation (Note 7).
+ * /api/admin/insights — admin analytics aggregation (Note 7).
  *
- * Computes the InsightsData payload on request from `requests` + `requestEvents`
- * (the per-transition timestamp trail). Replaces the dead mock charts in the
- * admin dashboard. Admin-only.
+ * Single GET that computes the InsightsData payload on demand from `requests`
+ * + `requestEvents` (the per-transition timestamp trail). Backs the admin
+ * dashboard charts + KPI strip; admin-only (router-wide authenticate +
+ * requireRole('admin')). Built for a small NGO dataset: one full `requests`
+ * read + one filtered `requestEvents` read, aggregated in memory.
  *
- *   GET /api/admin/insights
+ *   GET /api/admin/insights?range=7d|30d|90d|12m|all  (or ?from=&to=)
  *     {
  *       overTime:    [{ date: 'YYYY-MM-DD', count }],   // requests created/day
  *       byCategory:  [{ category, count }],
  *       byStatus:    [{ status, count }],               // current status
- *       avgResolutionDays: number | null,               // mean created→closed
- *       perVolunteer: [{ uid, name, count }]            // assigned-request load
+ *       avgResolutionDays: number | null,               // mean created→closed (days)
+ *       perVolunteer: [{ uid, name, count }],           // assigned-request load
+ *       ageStats:    { averageAge, buckets: [{ label, count }] }, // req 24
+ *       kpis:        <scalar KPI strip>                 // WS-10, see insightsKpis
  *     }
  *
- * Archived requests ARE included (Note 6: archived counts toward stats).
+ * Range filters by createdAt only; avgResolution/kpis derive their closed-at
+ * timestamps from requestEvents. Archived requests ARE included (Note 6:
+ * archived counts toward stats).
  */
 import { Router, type Request, type Response } from 'express';
 
@@ -107,6 +113,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         byStatusMap.set(data.status, (byStatusMap.get(data.status) ?? 0) + 1);
       }
 
+      // attribute the request to its volunteer: prefer the explicit assignment,
+      // fall back to `handler` (legacy field) before giving up.
       const vol = data.assignedVolunteerId ?? data.handler ?? null;
       if (vol) {
         perVolunteerMap.set(vol, (perVolunteerMap.get(vol) ?? 0) + 1);

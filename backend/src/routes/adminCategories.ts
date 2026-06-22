@@ -43,6 +43,8 @@ function slugify(name: string): string {
 
 // ── GET /api/admin/categories ───────────────────────────────────────────────
 // Everything, archived included, so the admin screen can manage the full set.
+// Returns { items: [{ id, nameHe, nameEn, archived }] } sorted by Hebrew label;
+// labels fall back to the doc id when a name field is missing.
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   try {
     const snap = await db().collection('categories').get();
@@ -66,6 +68,9 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 });
 
 // ── POST /api/admin/categories ──────────────────────────────────────────────
+// Create a category. Validates labels (1-80 chars) and an optional slug id;
+// 400 invalid_input on bad body, 409 category_exists on slug collision,
+// 201 { id, nameHe, nameEn, archived:false } on success.
 const createSchema = z.object({
   nameHe: z.string().trim().min(1).max(80),
   nameEn: z.string().trim().min(1).max(80),
@@ -132,6 +137,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 // ── PATCH /api/admin/categories/:id ─────────────────────────────────────────
 // Edit labels and/or the soft-archive flag. At least one field required.
+// 400 invalid_input, 404 not_found if the id is unknown, 200 { ok:true } on success.
 const patchSchema = z
   .object({
     nameHe: z.string().trim().min(1).max(80).optional(),
@@ -188,7 +194,8 @@ router.patch('/:id', async (req: Request, res: Response): Promise<void> => {
 
 // ── DELETE /api/admin/categories/:id ────────────────────────────────────────
 // Hard delete, allowed only when nothing references the id. Usage is checked
-// with two single-field equality queries (limit 1) — no composite index.
+// with two single-field equality queries (limit 1), no composite index.
+// 404 not_found, 409 category_in_use if any request/answer uses it, 200 { ok:true }.
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   const id = req.params.id;
   const actorId = req.user!.uid;

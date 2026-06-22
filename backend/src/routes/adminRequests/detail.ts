@@ -1,6 +1,10 @@
 /**
- * GET /api/admin/requests/:id — single request detail (#75).
+ * Admin request-detail handler (#75) for GET /api/admin/requests/:id.
  *
+ * Loads one `requests` doc plus its `requestEvents` timeline and returns a
+ * single serialized payload for the admin request-detail screen. All Firestore
+ * Timestamps are converted to ISO strings (or null) so the client gets plain
+ * JSON. Mounted under the admin router, so auth/role gating lives upstream.
  * Extracted verbatim from the original single-file router.
  */
 import { type Request, type Response } from 'express';
@@ -8,6 +12,9 @@ import { type Request, type Response } from 'express';
 import { db } from '@/lib/firebaseAdmin';
 
 // ── GET /api/admin/requests/:id ───────────────────────────────────────────
+// validates the request exists (404 `not_found` otherwise); responds with the
+// flattened request fields + normalized booleans/provenance + ISO timestamps +
+// an ascending `events` timeline. failures log and return 500 `internal_error`.
 export async function getRequestDetail(req: Request, res: Response): Promise<void> {
   try {
     const snap = await db().collection('requests').doc(req.params.id).get();

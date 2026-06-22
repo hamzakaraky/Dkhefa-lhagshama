@@ -36,9 +36,11 @@ import { addNote } from './note';
 import { createTask } from './task';
 
 const router = Router();
+// every route below requires a valid token + admin role; gate runs first
 router.use(authenticate, requireRole('admin'));
 
 router.get('/', listRequests);
+// literal /:id/candidates must register before /:id so the param route does not swallow it
 router.get('/:id/candidates', listCandidates);
 router.get('/:id', getRequestDetail);
 router.post('/:id/assign', assignVolunteer);

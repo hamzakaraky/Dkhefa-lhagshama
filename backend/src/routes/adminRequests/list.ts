@@ -1,7 +1,15 @@
 /**
- * GET /api/admin/requests — list + filter all requests (#75).
+ * Admin requests list handler (UC-05) — the data source behind the admin
+ * "all requests" table. Mounted as GET /api/admin/requests (#75).
  *
- * Extracted verbatim from the original single-file router.
+ * Strategy: read the whole `requests` collection, then filter/sort/limit in
+ * memory so the page works on any environment with zero composite indexes
+ * (NGO request volume is small enough that this is cheap). Each surviving doc
+ * is projected to a flat list row that the frontend renders directly; rows
+ * also carry pool/claim/close-handshake badge state so the list needs no
+ * per-row detail fetch. Collaborators: firebaseAdmin (Firestore), requestSort
+ * (canonical priority order), displayName + assignedName (legacy uid to human
+ * name resolution). Response: { items: Row[] }.
  */
 import { type Request, type Response } from 'express';
 
@@ -18,12 +26,17 @@ export async function listRequests(req: Request, res: Response): Promise<void> {
   try {
     const { status, category, urgency, archived, volunteerId, sort, limit: limitStr } =
       req.query as Record<string, string | undefined>;
+    // clamp to 200 so a hand-crafted ?limit= can't force an unbounded payload;
+    // falls back to 50 on NaN/0.
     const limit = Math.min(parseInt(limitStr ?? '50', 10) || 50, 200);
 
     // Fetch the whole collection and filter + sort + limit IN MEMORY. This
     // deliberately avoids every composite index (status/category/urgency +
     // createdAt) so the admin list works on any environment without an index
     // deploy. The request volume for this NGO is small enough that this is fine.
+    // archived defaults to 'false' (hide archived); 'true' shows only archived,
+    // 'all' shows both. status is whitelisted against the canonical enum so an
+    // unknown value is ignored rather than silently matching nothing.
     const archivedMode = archived ?? 'false';
     const wantStatus =
       status && REQUEST_STATUSES.includes(status as RequestStatus) ? status : undefined;

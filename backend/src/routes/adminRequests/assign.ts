@@ -1,7 +1,19 @@
 /**
- * POST /api/admin/requests/:id/assign — assign a volunteer (#75).
+ * Admin "assign a volunteer to a request" handler (#75), mounted as
+ * POST /api/admin/requests/:id/assign on the adminRequests router.
  *
- * Extracted verbatim from the original single-file router.
+ * Responsibility: atomically bind a request to one active volunteer and bring
+ * the surrounding state in sync. Sets handler/assignedVolunteerId (the key
+ * downstream authorization reads), denormalizes the volunteer name, auto-starts
+ * a pending request, clears the claim pool, logs an audit + request-event trail,
+ * guarantees the beneficiary<->volunteer chat, and notifies the beneficiary.
+ *
+ * Invariant the guards protect: only an active, real volunteer may be assigned,
+ * and never to a terminal (closed/referred/rejected) request. Both matter
+ * because the assignment hands out request PII (staff projection + chat access).
+ *
+ * Collaborates with: firebaseAdmin (db), audit, requestEvents, notify,
+ * displayName, chatOnAssign.
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { type Request, type Response } from 'express';
@@ -22,6 +34,9 @@ const assignSchema = z.object({
   volunteerId: z.string().min(1),
 });
 
+// Validates body {volunteerId}, runs the not-found/terminal/inactive guards,
+// then performs the assign write + side effects. Responds 200 {ok, status}
+// (status reflects the auto-start), or 400/404/409/500 on the failure paths.
 export async function assignVolunteer(req: Request, res: Response): Promise<void> {
   const parsed = assignSchema.safeParse(req.body);
   if (!parsed.success) {

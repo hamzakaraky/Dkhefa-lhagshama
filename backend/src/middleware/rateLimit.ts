@@ -6,6 +6,9 @@
  *  - `authWriteLimiter` — stricter, for auth endpoints and mutating routes:
  *                          30 req / 15 min per IP.
  *
+ * Consumed in app setup (app.ts): globalLimiter is mounted app-wide and
+ * authWriteLimiter is layered on the auth + mutating route groups.
+ *
  * Both use the default in-memory store which is fine for a single-process
  * deployment. Swap to RedisStore when we move to multi-instance Cloud Run.
  *

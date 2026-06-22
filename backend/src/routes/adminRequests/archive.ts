@@ -1,5 +1,11 @@
 /**
- * POST /api/admin/requests/:id/archive — archive a closed/referred request (#75).
+ * archive.ts — admin handler for POST /api/admin/requests/:id/archive (#75).
+ *
+ * Soft-archives a finished request so it leaves the default active list but
+ * stays queryable for stats. Mounted by the adminRequests router; admin-only
+ * (auth/role enforced upstream). The status check runs inside a Firestore
+ * transaction so concurrent writes can't archive a request that is no longer
+ * in an archivable state; audit + event side-effects run best-effort after.
  *
  * Extracted verbatim from the original single-file router.
  */
@@ -41,6 +47,7 @@ export async function archiveRequest(req: Request, res: Response): Promise<void>
       res.status(err.httpStatus).json({ error: err.code, ...err.extra });
       return;
     }
+    // firestore code 10 = ABORTED: transaction lost a contention retry race.
     const code = (err as { code?: number }).code;
     if (code === 10) {
       res.status(409).json({ error: 'concurrent_update' });
@@ -51,6 +58,8 @@ export async function archiveRequest(req: Request, res: Response): Promise<void>
     return;
   }
 
+  // side-effects run only after the transaction committed; a failure here is
+  // logged but does not fail the request (archive already persisted).
   try {
     await writeRequestEvent({
       requestId,

@@ -1,7 +1,15 @@
 /**
- * POST /api/admin/requests/:id/note — add internal note (#75).
+ * Admin-only handler for adding an internal staff note to a request (#75).
  *
- * Extracted verbatim from the original single-file router.
+ * Route: POST /api/admin/requests/:id/note (mounted by the adminRequests router,
+ * already behind admin auth). Appends a timestamped line to the request's `notes`
+ * field and records the action in two places: a request-timeline event
+ * (visibility 'internal', so beneficiaries never see it) via writeRequestEvent,
+ * and the global audit log via writeAuditLog.
+ *
+ * Invariant: `notes` is a single newline-delimited string built by appending,
+ * not an array. Each note is one "[iso-ts] actorUid: text" line. Extracted verbatim
+ * from the original single-file router.
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { type Request, type Response } from 'express';
@@ -11,13 +19,14 @@ import { db } from '@/lib/firebaseAdmin';
 import { writeAuditLog } from '@/lib/audit';
 import { writeRequestEvent } from '@/lib/requestEvents';
 
-// ── POST /api/admin/requests/:id/note ────────────────────────────────────
-// Body: { note: string }
-// Fires 'note_added' event with visibility 'internal'.
+// request body shape: non-empty trimmed note, capped at 2000 chars.
 const noteSchema = z.object({
   note: z.string().trim().min(1).max(2000),
 });
 
+// POST /api/admin/requests/:id/note. validates body against noteSchema,
+// 404s on missing request, appends the note, logs the event + audit entry,
+// and responds { ok: true } (400 on bad body, 500 on write failure).
 export async function addNote(req: Request, res: Response): Promise<void> {
   const parsed = noteSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -27,6 +36,7 @@ export async function addNote(req: Request, res: Response): Promise<void> {
 
   const { note } = parsed.data;
   const requestId = req.params.id;
+  // non-null assertion is safe: admin auth middleware populates req.user upstream.
   const actorId = req.user!.uid;
 
   try {

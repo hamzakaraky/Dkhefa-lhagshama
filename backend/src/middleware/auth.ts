@@ -1,14 +1,16 @@
 /**
- * Authentication middleware.
+ * Express auth middleware for the API. The single trust boundary between
+ * incoming HTTP requests and the Admin-SDK routes.
  *
- * Verifies the Firebase ID token sent in `Authorization: Bearer <token>`.
- * On success, attaches `req.user = { uid, email, role }` for downstream handlers.
- * On failure, returns 401.
+ * `authenticate` verifies the Firebase ID token in `Authorization: Bearer <token>`
+ * and attaches `req.user = { uid, email, role }` for downstream handlers; 401 otherwise.
+ * `requireRole` / `requireAnyRole` then gate handlers by the role custom claim.
  *
- * Custom claims:
- *   request.auth.token.role ∈ { beneficiary | businessOwner | volunteer | admin }
- *
- * Use the `requireRole(role)` helper to gate admin-only or role-specific endpoints.
+ * Trust model: `role` comes from a server-set Firebase custom claim
+ * (request.auth.token.role in {beneficiary|businessOwner|volunteer|admin}), so it is
+ * trustworthy once the token is verified and is never taken from the request body.
+ * Note the two gates differ on admin: `requireRole` is an exact match (admin is NOT a
+ * superset), `requireAnyRole` always lets admin through.
  */
 import type { NextFunction, Request, Response } from 'express';
 
@@ -22,6 +24,7 @@ export interface AuthedUser {
   role?: Role;
 }
 
+// augment Express.Request so handlers can read `req.user` with types after authenticate runs
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
@@ -31,6 +34,7 @@ declare global {
   }
 }
 
+// verifies the Bearer ID token, sets req.user, then next(); 401 {error} on missing/invalid token
 export async function authenticate(
   req: Request,
   res: Response,
@@ -49,6 +53,7 @@ export async function authenticate(
     req.user = {
       uid: decoded.uid,
       email: decoded.email,
+      // role is a server-set custom claim; absent for users without an assigned role
       role: (decoded.role as Role | undefined) ?? undefined,
     };
     next();
@@ -59,6 +64,7 @@ export async function authenticate(
   }
 }
 
+// gate allowing exactly `role` (no admin override); 401 if unauthenticated, 403 {required} on mismatch
 export function requireRole(role: Role) {
   return function roleGuard(
     req: Request,
@@ -84,7 +90,7 @@ export function requireRole(role: Role) {
  * lets volunteers AND admins in — matching the frontend `hasRole` superset rule).
  */
 export function requireAnyRole(...roles: Role[]) {
-  const allowed = new Set<Role>([...roles, 'admin']);
+  const allowed = new Set<Role>([...roles, 'admin']); // admin folded in as the implicit superset
   return function anyRoleGuard(
     req: Request,
     res: Response,

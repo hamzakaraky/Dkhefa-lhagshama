@@ -1,6 +1,13 @@
 /**
- * GET /api/admin/requests/:id/candidates — ranked volunteer-matching (WS-6).
+ * Ranked volunteer-matching for a single request (WS-6).
  *
+ * Backs GET /api/admin/requests/:id/candidates (admin-only): given a request id,
+ * it loads the active volunteer roster, derives each volunteer's signals (open
+ * assigned-load, category-specific rating track record) from full collection
+ * scans, then runs the transparent rule-based scorer in lib/matchVolunteers.
+ * Collaborators: lib/firebaseAdmin (db), lib/matchVolunteers (scoreVolunteers).
+ * Response: { candidates: [...] } sorted best-first, each carrying score,
+ * matchPercent, human-readable reasons, and a hasClaimed flag. No AI is used.
  * Extracted verbatim from the original single-file router.
  */
 import { type Request, type Response } from 'express';
@@ -13,8 +20,11 @@ import { scoreVolunteers, type MatchVolunteer } from '@/lib/matchVolunteers';
 // request, computes each volunteer's open assigned-load from one full request
 // scan (mirrors the in-memory architecture used elsewhere in this file), then
 // runs the transparent scorer. Admin-gated by the router-level requireRole.
+// statuses that count toward a volunteer's "currently busy" workload signal.
 const OPEN_LOAD_STATUSES = new Set(['pending', 'in_progress', 'awaiting_review']);
 
+// route handler: 404 if the request is missing, else 200 { candidates }; 500 on
+// any failure (errors are logged, never leaked to the client).
 export async function listCandidates(req: Request, res: Response): Promise<void> {
   try {
     const reqSnap = await db().collection('requests').doc(req.params.id).get();
