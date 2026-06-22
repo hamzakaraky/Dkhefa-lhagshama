@@ -1,3 +1,10 @@
+// useDirectoryDeepLink: one-shot effect hook for the directory screen that turns
+// inbound `?category=&tab=` URL params (e.g. from the request form) into UI state
+// — selecting the org tab + answer-category filter. Consumed by the directory
+// screen container, which passes its router + taxonomy + state setters in.
+// Invariant: applies at most once and never overrides a manual user tab/filter
+// change; unknown/absent params are a silent no-op. See the function-level note
+// below for the exact tab-resolution rules.
 import { useEffect, useRef } from 'react'
 import type { NextRouter } from 'next/router'
 import { apiJson } from '../../lib/apiClient'

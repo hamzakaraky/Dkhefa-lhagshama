@@ -1,3 +1,12 @@
+/**
+ * RateExperienceCard (#80) — post-service rating card shown on a beneficiary's
+ * my-requests detail. On mount it asks the backend whether this request was
+ * already rated (GET /api/ratings/:id) and, if not, renders RatingForm to let
+ * the user submit one (POST /api/ratings). Once rated (now or already) it
+ * collapses to a thank-you line. Backend only accepts a rating for `closed`
+ * requests, so submit can fail with not-ready and shows the gentler message.
+ * Bilingual via the shared `t` table (strings under t.ratings).
+ */
 import { CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -48,6 +57,9 @@ export function RateExperienceCard({ requestId, t }: { requestId: string; t: Tra
     }
   };
 
+  // Collapse to the thank-you state if rated just now (`done`) or already
+  // rated server-side (`existing.stars` set). `existing === null` (still
+  // loading) and `{}` (no rating) both keep the form visible.
   const alreadyRated = done || (existing && typeof existing.stars === "number");
 
   return (

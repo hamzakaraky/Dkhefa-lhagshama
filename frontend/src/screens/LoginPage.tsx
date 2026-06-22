@@ -1,3 +1,14 @@
+/**
+ * LoginPage — the public sign-in screen for the Push for Fulfillment platform.
+ *
+ * Renders the two-column auth layout (brand aside with trust signals + the
+ * credentials form) and drives email/password auth through AuthContext.login.
+ * On success it sends the user to a `?next=` destination, but only after
+ * validateRedirect (#88) confirms it is a same-origin relative path — an
+ * open-redirect guard. Fully bilingual via LanguageContext: copy comes from
+ * t.auth.login and the arrow direction flips with isRTL. Reached at /login;
+ * collaborates with AuthContext, LanguageContext, and validateRedirect.
+ */
 import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import Link from 'next/link'
@@ -11,6 +22,8 @@ import AssetImage from '@/components/layout/AssetImage'
 import Reveal from '../components/motion/Reveal'
 import styles from './LoginPage.module.css'
 
+// default-exported page component; holds local form state (email/password/
+// submitting/error) and an emailRef for focus-on-error. no props.
 export default function LoginPage() {
   const { t, lang, isRTL } = useLanguage()
   const { login } = useAuth()
@@ -26,6 +39,8 @@ export default function LoginPage() {
   // credentials are rejected (web-guidelines: "focus first error on submit").
   const emailRef = useRef<HTMLInputElement>(null)
 
+  // submit handler: authenticate, then redirect on success or surface a
+  // generic error (no field-level distinction) and refocus the email field.
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')

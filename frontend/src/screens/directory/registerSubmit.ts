@@ -1,3 +1,12 @@
+/**
+ * Submit handler factory for the "register your business" form on the directory page.
+ * Builds a closure (makeHandleRegisterSubmit) that trims + client-validates the form
+ * (mirroring the backend Zod rules so users get precise messages), POSTs to
+ * /api/businesses, and drives the page's notice/submitting/form state via injected
+ * setters. Owns the UX for the common failure case: 401 -> actionable "Sign in" notice
+ * routing to /login?next=/directory (business registration requires an authenticated
+ * owner, since firestore rules key off ownerId). Used by DirectoryPage.
+ */
 import { apiJson } from '../../lib/apiClient'
 import type { TNode } from '@/types'
 import type { NoticeState } from './constants'
@@ -22,6 +31,8 @@ type SubmitDeps = {
   router: { push: (path: string) => void }
 }
 
+// returns the async submit handler; takes the form snapshot + the page's state setters
+// (d = bilingual dictionary node) so all UI feedback stays in the caller's React state.
 export function makeHandleRegisterSubmit({
   d,
   registerForm,

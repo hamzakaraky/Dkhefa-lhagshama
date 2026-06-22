@@ -1,9 +1,20 @@
+/*
+ * Client-side filtering for the public directory screen (UC-02 answers + UC-03
+ * businesses). Pure functions: the directory page fetches the full approved
+ * list once, then re-derives the visible rows here as the user types category /
+ * region / audience / free-text filters. No network, no mutation of the input.
+ *
+ * All record text is bilingual (he/en); callers pass the language picker `L`
+ * (Bilingual -> active-language string) and `L_arr` (Bilingual -> string[]) so
+ * matching always runs against whatever language is currently active.
+ */
 import type { Bilingual, DirRecord } from './constants'
 
+// language pickers supplied by the caller's LanguageContext
 type L = (v: Bilingual) => string
 type LArr = (v: Bilingual) => string[]
 
-// ── FILTER BUSINESSES ─────────────────────────────────────
+// narrow the businesses list by category + free-text search (name/desc/city/tags)
 export function filterBusinesses(
   businesses: DirRecord[],
   bizCat: string,
@@ -28,7 +39,7 @@ export function filterBusinesses(
   return data
 }
 
-// ── FILTER ANSWERS ──────────────────────────────────────────
+// narrow the answers list by category + region + audience + free-text search
 export function filterAnswers(
   answers: DirRecord[],
   answerCategory: string,

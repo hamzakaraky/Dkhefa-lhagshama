@@ -1,15 +1,28 @@
+/*
+ * DirectoryTabs — the segmented tab control at the top of the community Directory
+ * screen. Lets the user switch the results panel between the three directory types:
+ * businesses, NGOs (עמותות), and partners (שותפים).
+ *
+ * Purely presentational: it owns no state. The parent Directory screen holds
+ * `activeTab` plus the selection/keyboard handlers and renders the panel below;
+ * this component only paints the three tabs and forwards intent. All copy comes
+ * from the bilingual `TNode` (`d`), so labels are already HE/EN resolved.
+ * Implements the WAI-ARIA tabs pattern (roving tabindex + arrow keys) and
+ * `aria-controls="dir-panel"` ties every tab to the shared results panel.
+ */
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { Store, HeartHandshake, Handshake } from 'lucide-react'
 import type { TNode } from '@/types'
 
 type Props = {
-  d: TNode
-  activeTab: string
-  tabStyle: (active: boolean) => CSSProperties
-  selectTab: (tab: string) => void
-  onTablistKeyDown: (e: ReactKeyboardEvent<HTMLDivElement>) => void
+  d: TNode                                          // resolved HE/EN copy for this page (titles + tab labels)
+  activeTab: string                                 // currently selected tab key: 'business' | 'ngo' | 'partner'
+  tabStyle: (active: boolean) => CSSProperties      // parent-supplied inline styling for active vs inactive tab
+  selectTab: (tab: string) => void                  // commit a tab selection (parent updates activeTab + panel)
+  onTablistKeyDown: (e: ReactKeyboardEvent<HTMLDivElement>) => void  // arrow-key roving focus for the tablist
 }
 
+// renders the three directory tabs; selection/keyboard state lives in the parent.
 export default function DirectoryTabs({ d, activeTab, tabStyle, selectTab, onTablistKeyDown }: Props) {
   return (
     /* Segmented tab control sits at the header baseline (no overlap).

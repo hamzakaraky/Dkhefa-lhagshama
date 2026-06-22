@@ -1,3 +1,14 @@
+/*
+ * HomePage — the public marketing landing screen ('/' via pages/index).
+ *
+ * A single scrolling, bilingual (HE/EN, RTL-aware) page: hero with inline stat
+ * strip, areas of activity, volunteers, success-stories tablist, how-it-works,
+ * a partners marquee, and a final CTA. Copy comes from the shared i18n table
+ * (`useLanguage().t`); most sections are static, but the partners marquee is the
+ * one live-data section — it fetches the real `answers` catalog (orgType=partner)
+ * so the page never advertises fabricated organizations, and hides itself when
+ * there are none. All CTAs route to the app's intake/volunteer/admin entry points.
+ */
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { ReactNode, KeyboardEvent } from 'react'
 import { useRouter } from 'next/router'
@@ -36,11 +47,13 @@ function pickLang(value: BilingualValue, lang: string): string {
   return (lang === 'he' ? value.he : value.en) || value.he || value.en || ''
 }
 
+// Thin wrapper over next/router.push so call sites read like navigate('/x').
 const useNavigate = () => {
   const router = useRouter()
   return (to: string) => router.push(to)
 }
 
+// Icon per service key; keys match the i18n `t.services.items` keys (areas grid).
 const SERVICE_ICONS: Record<string, ReactNode> = {
   education:  <GraduationCap size={30} />,
   employment: <Briefcase size={30} />,
@@ -48,6 +61,8 @@ const SERVICE_ICONS: Record<string, ReactNode> = {
   social:     <Users size={30} />,
 }
 
+// Landing screen. No props; reads language/RTL from context and holds two bits
+// of local state: the fetched marquee `partners` and the active success story.
 export default function HomePage() {
   const { t, isRTL, lang } = useLanguage()
   const navigate = useNavigate()

@@ -1,3 +1,14 @@
+/**
+ * RequestCard — one collapsible row in the beneficiary's "my requests" list.
+ *
+ * Responsibility: render a single RequestRecord as a card whose whole header is
+ * a toggle; collapsed it headlines the category + status + 4 facts, expanded it
+ * mounts the per-request timeline, referral panel, and rate-experience card.
+ * Expansion is owned by the parent (single-open accordion via expandedId/onToggle);
+ * this component is otherwise stateless. focusRef + isFocused support the
+ * `?focus=<id>` deep-link (parent scrolls the ref into view, card paints a ring).
+ * The req-NN markers below trace back to NPO/professor feedback rounds.
+ */
 import Link from "next/link";
 import { ChevronDown, Paperclip, Calendar, Tag, MessageCircle } from "lucide-react";
 
@@ -12,7 +23,6 @@ import { RateExperienceCard } from "./RateExperienceCard";
 import type { Translations, RequestRecord } from "./shared";
 import styles from "./RequestCard.module.css";
 
-// ── Request card with expandable timeline ─────────────────────
 // req 11 — the collapsed card headlines the CATEGORY (the raw id moves into
 // the expanded detail panel) and shows 4 facts: category, status, created,
 // deadline. req 12 — the footer carries the attachments indicator + a chat
@@ -34,6 +44,8 @@ export function RequestCard({ item, t, lang, expandedId, onToggle, isFocused, fo
   const urgencyLabel  = (urg: string) => t.myRequests.urgencies[urg]  || urg;
   const tbl = t.myRequests.table;
   const mr = t.myRequests;
+  // attachment count tolerates both record shapes: the hydrated `attachments`
+  // array or the raw `attachmentPaths` from Storage; absent either, 0.
   const attachments = Array.isArray(item.attachments)
     ? item.attachments.length
     : Array.isArray(item.attachmentPaths)

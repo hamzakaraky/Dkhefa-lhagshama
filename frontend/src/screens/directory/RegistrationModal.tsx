@@ -1,9 +1,20 @@
+/*
+ * RegistrationModal — the public "register my business" dialog for the directory
+ * screen (UC-03 community businesses). Pure presentational/controlled component:
+ * all form state and the submit/validate/POST logic live in the parent directory
+ * page; this just renders the fields and forwards changes via callbacks.
+ * Portalled to document.body so the overlay escapes any clipped/positioned
+ * ancestor. Labels and category options are read dynamically from the bilingual
+ * `d` (directory) node, so HE/EN follows the active language with no extra wiring.
+ */
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import type { TNode } from '@/types'
 import { REG_AUTOCOMPLETE } from './constants'
 import styles from './RegistrationModal.module.css'
 
+// Submitted business shape. `website` is optional/free-form (validated as a URL
+// by the parent on submit); the other six are the required core fields.
 type RegisterForm = {
   business_name: string
   owner_name: string
@@ -24,6 +35,10 @@ type Props = {
   handleRegisterSubmit: () => void
 }
 
+// Controlled modal. `d`/`t` are bilingual label nodes (directory + common
+// strings); `registerForm` holds the current values; field edits go through
+// `updateRegisterField` and submit through `handleRegisterSubmit`. Closing
+// (X, Cancel, or overlay click) just flips the parent's `setShowRegForm(false)`.
 export default function RegistrationModal({
   d,
   t,
@@ -34,6 +49,7 @@ export default function RegistrationModal({
   handleRegisterSubmit,
 }: Props) {
   return createPortal(
+    // close only on a click that lands on the overlay itself, not bubbled from inside the box
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowRegForm(false)}>
       <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="dir-reg-title">
         <div className="modal-header">
@@ -45,6 +61,8 @@ export default function RegistrationModal({
           </button>
         </div>
         <div className="modal-body">
+          {/* render the six core fields from a fixed order; `desc` is a textarea,
+              `category` a select over the bilingual taxonomy, the rest plain inputs */}
           {['business_name', 'owner_name', 'phone', 'category', 'city', 'desc'].map(field => (
             <div className="form-group" key={field}>
               <label className="form-label" htmlFor={`dir-reg-${field}`}>
@@ -84,7 +102,8 @@ export default function RegistrationModal({
               )}
             </div>
           ))}
-          {/* Note 2 — optional public website (validated as a URL on submit). */}
+          {/* optional public website, kept out of the loop above so it can use
+              url-specific input affordances; validated as a URL on submit by the parent */}
           <div className="form-group">
             <label className="form-label" htmlFor="biz-website">
               {d.websiteLabel}

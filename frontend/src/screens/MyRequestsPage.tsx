@@ -1,3 +1,17 @@
+/**
+ * MyRequestsPage — the beneficiary's "/my-requests" screen (UC-01 view side).
+ *
+ * Loads the signed-in user's own requests (GET /api/requests/mine) and renders
+ * them as a kanban-style board split into open / in-progress / done columns
+ * (the `done` column is a catch-all so no status can vanish). This file owns
+ * data-fetch, auth-grace redirect, search/filter, the active-vs-archived split,
+ * and three post-submit affordances driven by query params:
+ *   ?new=<id>   success banner + REQ-#### ref + suggest-alternatives card (#94, UC-01 A1)
+ *   ?focus=<id> expand + scroll to a request (arrives from the chat window, req 9)
+ *   #67         save-to-profile offer, read from a uid-bound sessionStorage stash.
+ * Presentation lives in ./my-requests/* (RequestBoard, RequestStates, shared).
+ * Beneficiary-only; redirects to /login when unauthenticated.
+ */
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -204,6 +218,8 @@ export default function MyRequestsPage() {
   // Shared search — filters all three status columns (and the archived group)
   // at once. Matches the friendly REQ-#### ref, the category label, the raw
   // description, and the localized status label.
+  // normalized query, hoisted so it doubles as the memo dependency below and is
+  // passed down to RequestBoard (which highlights matches with the same value).
   const q = search.trim().toLowerCase();
   const matchesSearch = useCallback(
     (it: RequestRecord) => {

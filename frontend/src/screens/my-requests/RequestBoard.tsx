@@ -1,3 +1,10 @@
+// ── My-requests board ─────────────────────────────────────────
+// presentational layout for the beneficiary's "my requests" screen.
+// renders a toolbar (active count + shared search) over three status
+// columns (open / inProgress / done), each a one-at-a-time carousel,
+// then a de-emphasized archived group below. all state (search, cursors,
+// expanded/focus) is owned by the parent page and passed in as props;
+// this component holds no state of its own.
 import { Search, X } from "lucide-react";
 
 import type { LucideIcon } from "lucide-react";
@@ -16,6 +23,10 @@ interface BoardColumn {
   items: RequestRecord[];
 }
 
+// stateless board view. parent supplies the partitioned data (activeItems /
+// archivedItems / per-status columns) plus the carousel cursors and the
+// expand/focus controls; `q` is the trimmed query used only to pick the
+// no-matches empty state. PrevIcon/NextIcon are injected so RTL can flip them.
 export function RequestBoard({
   t,
   lang,
@@ -94,6 +105,8 @@ export function RequestBoard({
       <div className="myreq-board">
         {columns.map((col) => {
           const len = col.items.length;
+          // clamp the stored cursor into range — the column count can shrink
+          // (e.g. after a search) below where the cursor last sat.
           const idx = Math.min(cursorByCol[col.key], Math.max(0, len - 1));
           const item = col.items[idx];
           return (

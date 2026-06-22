@@ -1,3 +1,11 @@
+/*
+ * ReferralPanel — the "you were referred to a partner" timeline block on the
+ * beneficiary's my-requests screen. Rendered by RequestCard whenever a request
+ * reaches status `referred` (Note 8); its data is request.referral (partner
+ * name, optional note, contact channels). Presentational + stateless: no fetch,
+ * no local state. All copy is bilingual via t.lifecycle.referral, and any
+ * website link is run through safeHref before becoming a real anchor.
+ */
 import { Phone, Mail, ExternalLink } from "lucide-react";
 
 import { safeHref } from "@/lib/safeUrl";
@@ -8,9 +16,7 @@ import { labelStyle } from "./shared";
 import type { Translations } from "./shared";
 
 // ── Referral panel (Note 8) ───────────────────────────────────
-// When a request is `referred`, surface the partner + contact to the
-// beneficiary as a timeline event. Partner name + optional note + contact
-// come from `request.referral`; all copy via the lifecycle.referral keys.
+// Props: the request.referral payload + the active translations bundle.
 export function ReferralPanel({ referral, t }: { referral: Referral; t: Translations }) {
   const rf = t.lifecycle.referral;
   const partner = referral.partnerName || "";

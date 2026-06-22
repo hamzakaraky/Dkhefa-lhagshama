@@ -1,3 +1,27 @@
+/**
+ * DirectoryPage — the public community directory screen (UC-02 + UC-03).
+ *
+ * One screen, three tabs: community businesses, NGOs ('ngo' orgType) and
+ * partners ('partner' orgType). It owns all the page state (active tab,
+ * per-tab search/category/region/audience filters, pagination, the business
+ * registration modal + form) and the data fetched from the backend, but
+ * delegates the heavy lifting to the ./directory/* modules: data loaders,
+ * client-side filtering, detail-modal payload builders, registration submit,
+ * deep-link sync, and the presentational sub-components (tabs, controls,
+ * result lists, states, registration modal).
+ *
+ * Key invariants:
+ * - Both org tabs share one `answers` state; only `answerOrgType` (ngo|partner)
+ *   scopes the fetch. The business tab keeps the last org scope loaded.
+ * - Category/region/audience filtering is always client-side; only orgType is
+ *   server-side. So filter chips can reflect the real loaded data.
+ * - `userInteracted` is the cancellation signal that stops an in-flight
+ *   deep-link probe from snapping the tab/category back after a manual click.
+ * - Translatable fields arrive as `{ he, en }`; the L / L_arr helpers render
+ *   the active language and degrade safely for plain values.
+ *
+ * Bilingual (HE/EN) + RTL-aware (arrow direction, keyboard tab order).
+ */
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react'
 import { ArrowRight, ArrowLeft, Plus } from 'lucide-react'

@@ -1,7 +1,17 @@
+/*
+ * Directory data loaders for the public directory screen (UC-02/UC-03).
+ * Factory functions that bind a fetch routine to the page's setState callbacks,
+ * so the screen can wrap each in useCallback and re-run it from a Retry button.
+ * Two sources: businesses (GET /api/businesses) and answers (GET /api/answers,
+ * scoped by orgType). Each loader takes a `live` flag so a stale in-flight
+ * request from an unmounted effect is dropped instead of clobbering fresh state.
+ */
 import { apiJson } from '../../lib/apiClient'
 import type { CaughtError } from '@/types'
 import type { DirRecord } from './constants'
 
+// cancellation token: effects flip `current` to false on cleanup so a late
+// response is ignored; defaults to live so a manual Retry call always applies.
 type Live = { current: boolean }
 
 type BizDeps = {
@@ -39,6 +49,8 @@ type AnswerDeps = {
   setAnswers: (v: DirRecord[]) => void
 }
 
+// builds the answers loader; `answerOrgType` (ngo vs partner) scopes the fetch
+// to the active tab, the rest is filtered client-side (see note inside).
 export function makeLoadAnswers({ answerOrgType, setAnswersLoading, setAnswersError, setAnswers }: AnswerDeps) {
   return async (live: Live = { current: true }) => {
     setAnswersLoading(true)
