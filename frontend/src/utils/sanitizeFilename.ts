@@ -1,8 +1,11 @@
 /**
  * sanitizeFilename — client-side filename sanitizer (#96).
  *
- * Strips non-ASCII and unsafe path characters, prepends a short random hex
- * prefix so two files with the same name do not collide in Storage.
+ * Used by the attachment-upload flow before a file is written to Firebase
+ * Storage: bilingual (HE/EN) users routinely upload files with Hebrew or
+ * accented names, which make for unsafe Storage object keys. This strips
+ * non-ASCII and unsafe path characters and prepends a short random hex prefix
+ * so two files with the same name do not collide in Storage.
  *
  * The server-side counterpart lives in backend/src/lib/sanitizeFilename.ts
  * and uses the same algorithm; keep them in sync if the logic changes.

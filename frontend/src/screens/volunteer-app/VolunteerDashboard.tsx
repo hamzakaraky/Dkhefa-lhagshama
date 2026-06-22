@@ -1,3 +1,16 @@
+/**
+ * VolunteerDashboard — landing screen of the volunteer hub (/volunteer-hub).
+ *
+ * Bilingual (HE/EN) overview a logged-in volunteer sees first: hero KPIs
+ * (active load / next deadline / availability toggle), a link into chats,
+ * their category permissions + a form to request a new one, and per-category
+ * open-pool counts. Read-only aside from two writes: the WorkStatusControl
+ * availability toggle and the "request a category" PATCH.
+ *
+ * Data comes from three parallel GETs on mount (/api/volunteer/{me,assigned,pool}).
+ * Category labels are resolved through the admin-managed taxonomy (useCategories),
+ * with 'uncategorized' special-cased so the raw English id never leaks into HE.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import Link from 'next/link'
@@ -17,6 +30,8 @@ import { ErrorState } from '@/components/admin/AdminUI'
 import Reveal from '@/components/motion/Reveal'
 import styles from './VolunteerDashboard.module.css'
 
+// One request currently assigned to this volunteer (subset of fields the
+// dashboard reads; status drives the in-progress/done KPIs and next-deadline).
 interface AssignedItem {
   id: string
   title?: string
@@ -30,6 +45,8 @@ interface PoolByCategory {
   count: number
 }
 
+// /api/volunteer/pool: open (unassigned) requests this volunteer may claim.
+// items drives the total count; byCategory drives the per-category chips.
 interface PoolResponse {
   items: { id: string }[]
   byCategory: PoolByCategory[]
@@ -39,6 +56,7 @@ interface AssignedResponse {
   items: AssignedItem[]
 }
 
+// Default-exported page component; rendered by the /volunteer-hub route.
 export default function VolunteerDashboard() {
   const { t, lang } = useLanguage()
   const v = t.volunteerApp
@@ -77,6 +95,8 @@ export default function VolunteerDashboard() {
   const [catErr, setCatErr] = useState(false)
 
 
+  // Fetch me/assigned/pool together; a single failure flags the whole screen
+  // (no partial render). Memoized so the mount effect has a stable dep.
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -100,6 +120,7 @@ export default function VolunteerDashboard() {
     load()
   }, [load])
 
+  // Derived hero stats from the assigned list + pool size.
   const kpis = useMemo(() => {
     const inProgress = assigned.filter(
       (a) => a.status === 'in_progress',
@@ -125,6 +146,11 @@ export default function VolunteerDashboard() {
     return { assigned: assigned.length, inProgress, done, poolAvailable, nextDeadline }
   }, [assigned, pool])
 
+  // Submit a new category permission request (PATCH /api/volunteer/me with a
+  // requestCategory payload). Optimistically swaps in the returned VolunteerMe
+  // so the requested-chips list reflects the new pending entry, clears the
+  // form, and surfaces inline success/error feedback. Guarded against empty
+  // category and double-submit.
   const requestCategory = async (e: FormEvent) => {
     e.preventDefault()
     const category = catName.trim()

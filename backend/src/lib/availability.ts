@@ -13,8 +13,11 @@ export interface AvailabilityWindow {
 /** 0=Sun … 6=Sat. Index = the `day` field. */
 export const AVAILABILITY_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
+// strict 24h "HH:MM": hours 00-23, minutes 00-59. anchors prevent partial matches.
 const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
 
+// "HH:MM" -> minutes-since-midnight, so window start/end are comparable as ints.
+// assumes the caller already validated the format against HHMM.
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':');
   return Number(h) * 60 + Number(m);
@@ -53,7 +56,8 @@ export function windowsCoverBefore(
   const days = new Set(windows.map((w) => w.day));
   for (let i = 0; i < 7; i += 1) {
     const ms = now + i * 86_400_000;
-    if (ms > deadlineMs) break;
+    if (ms > deadlineMs) break; // walked past the deadline, no earlier day will match
+    // getUTCDay() shares the 0=Sun..6=Sat convention with window.day
     if (days.has(new Date(ms).getUTCDay())) return true;
   }
   return false;

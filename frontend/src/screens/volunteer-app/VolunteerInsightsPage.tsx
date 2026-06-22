@@ -1,3 +1,16 @@
+/**
+ * VolunteerInsightsPage — the volunteer-hub analytics dashboard (/volunteer-hub/insights).
+ *
+ * Fetches a single volunteer's request metrics from GET /api/volunteer/insights
+ * (server scopes to the authenticated volunteer) and renders four recharts panels:
+ * requests over time (area), current load + avg resolution (stat tiles), and
+ * breakdowns by category and by status (bars). A time-range selector re-queries.
+ *
+ * Bilingual (HE/EN, RTL-aware): status ids resolve via t.lifecycle.statusLabels and
+ * category ids via the admin-managed taxonomy (useCategories.labelFor) before reaching
+ * the charts. Shares the .insights-* CSS + STATUS_COLORS with AdminInsights so the two
+ * dashboards stay visually identical within the locked brand palette.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
@@ -45,6 +58,9 @@ const STATUS_COLORS: Record<string, string> = {
   referred: COLOR_SKY_2,
 }
 
+// Builds a recharts Tooltip content component with a fixed unit suffix
+// (e.g. "requests"). Returns null when the tooltip is inactive/empty so no
+// empty box flashes on hover-out.
 function makeTooltip(valueLabel: string) {
   const TooltipContent = (props: TooltipContentProps) => {
     const { active, payload, label } = props
@@ -90,6 +106,9 @@ export default function VolunteerInsightsPage() {
     setMounted(true)
   }, [])
 
+  // Fetch insights for the active range. 'custom' sends explicit from/to (omitted
+  // entirely when both are blank so the server returns the unbounded set);
+  // every other range passes a named ?range= token the backend understands.
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)

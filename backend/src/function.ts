@@ -17,7 +17,8 @@ import { setGlobalOptions } from 'firebase-functions/v2';
 import { app } from '@/app';
 
 // Region matches the Hosting frameworksBackend region (us-east1) so Hosting and
-// the function are co-located.
+// the function are co-located. maxInstances caps concurrent instances to bound
+// cost / Firestore connection fan-out on the free-tier staging project.
 setGlobalOptions({ region: 'us-east1', maxInstances: 10 });
 
 // invoker: 'public' grants allUsers the run.invoker role so the function accepts

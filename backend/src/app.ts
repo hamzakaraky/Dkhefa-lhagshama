@@ -188,5 +188,7 @@ app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'not_found' });
 });
 
+// Named export for index.ts/function.ts; ALLOWED_ORIGINS is re-exported for
+// reuse (e.g. socket/CORS checks elsewhere). Default export mirrors `app`.
 export { app, ALLOWED_ORIGINS };
 export default app;

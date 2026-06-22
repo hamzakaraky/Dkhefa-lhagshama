@@ -8,8 +8,12 @@
  */
 import { app, ALLOWED_ORIGINS } from '@/app';
 
+// dev port; 3001 is the local default the frontend points NEXT_PUBLIC_API_BASE_URL at.
+// note: Cloud Functions reserves PORT, which is why deploys go through function.ts, not here.
 const PORT = Number(process.env.PORT ?? 3001);
 
+// bind the configured app and log the effective CORS allowlist so dev can see which
+// origins are accepted (localhost is always permitted in addition to ALLOWED_ORIGINS).
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`[backend] listening on http://localhost:${PORT}`);

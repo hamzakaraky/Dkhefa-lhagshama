@@ -1,3 +1,15 @@
+/**
+ * VolunteerPage — the public `/volunteer` screen (UC: volunteering).
+ *
+ * Role-adaptive landing page with two columns. The left panel switches on the
+ * viewer's role: volunteers/admins (hasRole('volunteer'), admin satisfies any
+ * role) get a "you're on the team" panel linking to chats; everyone else (guests,
+ * beneficiaries) gets the apply-to-volunteer CTA. The right column is an
+ * informational, read-only roster of active volunteers sourced from AppContext.
+ *
+ * Bilingual (HE/EN): all copy comes from t.volunteers and each volunteer row
+ * picks its he/en field by `lang`. No mutations happen here — display only.
+ */
 import Link from 'next/link'
 import { MapPin, Clock, HeartHandshake, Users, Sparkles, ArrowLeft, MessagesSquare } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
@@ -104,7 +116,7 @@ export default function VolunteerPage() {
                   {volunteers.length}+ {v.activeSub}
                 </p>
 
-                {/* Summary strip */}
+                {/* Summary strip — two derived counts (total roster, available-now) */}
                 <div className="vol-summary">
                   {[
                     { icon: <Users size={18} />, num: volunteers.length, label: v.statActiveVolunteers },

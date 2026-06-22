@@ -94,8 +94,10 @@ export type RequestStatus =
   | 'referred'
   | string;
 
+/** Request priority. `| string` tail tolerates stale mock/legacy values. */
 export type Urgency = 'low' | 'medium' | 'high' | string;
 
+/** Coarse volunteer assignment state; finer self-status lives on `workStatus`. */
 export type VolunteerStatus = 'available' | 'assigned' | string;
 
 /** A community-owned business listed in the directory (UC-03). */

@@ -1,3 +1,14 @@
+/**
+ * VolunteerPoolPage — the volunteer "open pool" screen.
+ *
+ * Lists unassigned requests a logged-in volunteer can self-claim, grouped by
+ * category. Data comes from GET /api/volunteer/pool; claiming a request POSTs
+ * to /api/volunteer/pool/:id/claim (with an optional note). Rendered inside
+ * VolunteerLayout and reachable from the volunteer hub. All labels are bilingual
+ * (HE/EN) via useLanguage; category ids are resolved to bilingual labels via
+ * useCategories. Claiming is racy by design: a 409 means someone else took it
+ * first, so the list is reloaded after every claim attempt to stay truthful.
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Tag,
@@ -17,6 +28,7 @@ import VolunteerLayout from '@/components/volunteer-app/VolunteerLayout'
 import { ErrorState, EmptyState, StatusBadge } from '@/components/admin/AdminUI'
 import styles from './VolunteerPoolPage.module.css'
 
+// one claimable request in the pool; mirrors the server's pool item shape.
 interface PoolItem {
   id: string
   title?: string
@@ -40,11 +52,15 @@ interface PoolByCategory {
   count: number
 }
 
+// GET /api/volunteer/pool response: the flat item list plus per-category counts
+// used to build the filter chips (byCategory may include 'uncategorized').
 interface PoolResponse {
   items: PoolItem[]
   byCategory: PoolByCategory[]
 }
 
+// screen component: loads the pool, renders category filter chips + the card
+// grid, and drives the per-item self-claim flow.
 export default function VolunteerPoolPage() {
   const { t, lang } = useLanguage()
   const v = t.volunteerApp
@@ -69,6 +85,8 @@ export default function VolunteerPoolPage() {
   const [noteText, setNoteText] = useState('')
   const [notice, setNotice] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
 
+  // fetch (or refetch) the pool; also called after every claim to reflect the
+  // server's truth (handles races where the item was taken by someone else).
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -97,11 +115,15 @@ export default function VolunteerPoolPage() {
     }
   }, [data, activeCat])
 
+  // items shown in the grid: the whole pool, or only the active category's slice.
   const items = useMemo(() => {
     const all = data?.items ?? []
     return activeCat ? all.filter((i) => i.category === activeCat) : all
   }, [data, activeCat])
 
+  // POST a claim for one pool item. 409 = lost the race (already claimed),
+  // any other non-ok = generic failure; either way we reload to resync, then
+  // close the inline note field. Guarded so only one claim runs at a time.
   const claim = async (item: PoolItem, note?: string) => {
     if (item.claimedByMe || claiming) return
     setClaiming(item.id)
@@ -128,9 +150,12 @@ export default function VolunteerPoolPage() {
     }
   }
 
+  // map a request's urgency to a badge color class.
   const urgencyTone = (u?: string) =>
     u === 'high' ? 'badge-red' : u === 'medium' ? 'badge-amber' : 'badge-gray'
 
+  // body switch: error → retry state, loading → skeleton cards, empty → empty
+  // state, else the grid of claimable request cards (each with its claim flow).
   const renderBody = () => {
     if (error) {
       return <ErrorState message={error} onRetry={load} retryLabel={v.ui.retry} />
@@ -220,6 +245,8 @@ export default function VolunteerPoolPage() {
               </div>
             </dl>
 
+            {/* claim control tri-state: already-mine (disabled) → note field open
+                for this item → default "claim" button that opens the note field */}
             {item.claimedByMe ? (
               <button type="button" className="btn btn-primary btn-sm volapp-claim-btn" disabled>
                 <Check size={15} aria-hidden="true" />

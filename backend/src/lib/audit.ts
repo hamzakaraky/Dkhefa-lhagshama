@@ -22,6 +22,8 @@ export interface AuditEntry {
   details?: Record<string, unknown>; // optional extra context (before/after values, notes)
 }
 
+// appends one entry to `auditLogs` with a server-side timestamp; returns the new doc id.
+// fire-and-await: callers should not let an audit failure mask the primary action's success.
 export async function writeAuditLog(entry: AuditEntry): Promise<string> {
   const ref = await db().collection('auditLogs').add({
     ...entry,
