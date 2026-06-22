@@ -1,6 +1,7 @@
 import { Share2 } from 'lucide-react'
 import type { Translations } from '@/contexts/LanguageContext'
 import type { AnswerOption } from './types'
+import styles from './ReferDialog.module.css'
 
 interface ReferDialogProps {
   a: Translations['admin']
@@ -53,16 +54,16 @@ export default function ReferDialog({
         </span>
         <h2 id="refer-title" className="confirm-title">{lc.referral.dialogTitle}</h2>
 
-        <div className="field" style={{ textAlign: 'start' }}>
+        <div className={`field ${styles.field}`}>
           <label className="form-label" htmlFor="refer-partner">
             {lc.referral.choosePartner}
           </label>
           {!answersLoaded ? (
-            <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+            <p className={styles.hint}>
               {a.ui.loading}
             </p>
           ) : answers.length === 0 ? (
-            <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+            <p className={styles.hint}>
               {lc.referral.noPartners}
             </p>
           ) : (
@@ -82,7 +83,7 @@ export default function ReferDialog({
           )}
         </div>
 
-        <div className="field" style={{ textAlign: 'start', marginBlockStart: 'var(--sp-3)' }}>
+        <div className={`field ${styles.fieldSpaced}`}>
           <label className="form-label" htmlFor="refer-note">
             {lc.referral.noteLabel}
           </label>

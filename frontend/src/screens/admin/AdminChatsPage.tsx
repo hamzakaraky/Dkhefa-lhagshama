@@ -18,6 +18,7 @@ import {
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
 import type { ChatKind } from '@/types'
+import styles from './AdminChatsPage.module.css'
 
 // A chat row as returned by GET /api/admin/chats (only what this screen reads).
 interface AdminChatRow {
@@ -131,14 +132,7 @@ export default function AdminChatsPage() {
       {/* ── Summary strip — a calm metric row before the table ────────── */}
       {!loading && !error && items.length > 0 && (
         <Reveal>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 'var(--sp-4)',
-              marginBlockEnd: 'var(--sp-6)',
-            }}
-          >
+          <div className={styles.summaryStrip}>
             <StatCard label={cc.title} value={total} icon={MessagesSquare} />
             <StatCard label={cc.statusActive} value={activeCount} tone="green" icon={MessageCircle} />
             <StatCard label={cc.statusPaused} value={pausedCount} tone="default" icon={PauseCircle} />
@@ -155,17 +149,8 @@ export default function AdminChatsPage() {
         <EmptyState icon={MessagesSquare} title={cc.empty} message={cc.emptyHint} />
       ) : (
         <Reveal delay={0.05}>
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: 'hidden',
-              border: '1px solid var(--hair)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div className="admin-table-wrap" style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}>
+          <div className={`card ${styles.tableCard}`}>
+            <div className={`admin-table-wrap ${styles.tableWrap}`}>
               <table className="admin-data-table">
                 <thead>
                   <tr>
@@ -184,7 +169,8 @@ export default function AdminChatsPage() {
                       <tr
                         key={row.id}
                         aria-busy={busy || undefined}
-                        style={{ opacity: busy ? 0.55 : 1, transition: 'opacity var(--dur-2) var(--ease-out)' }}
+                        className={styles.row}
+                        style={{ opacity: busy ? 0.55 : 1 }}
                       >
                         <td data-label={cc.colKind}>
                           <span className={`badge ${row.kind === 'direct' ? 'badge-ember' : 'badge-blue'}`}>

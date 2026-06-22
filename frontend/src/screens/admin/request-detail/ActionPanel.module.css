@@ -1,0 +1,67 @@
+/* ActionPanel — component-scoped styles (was inline style={{}} + the shared
+   EYEBROW JS object). Static values only; computed styles stay inline. */
+
+.panel {
+  padding: clamp(var(--sp-5), 3vw, var(--sp-6));
+  position: sticky;
+  /* AdminLayout has no fixed top chrome (header scrolls; nav is a left
+     sidebar), so we pin to a small explicit offset rather than borrowing
+     the marketing shell's --nav-h, which produced a bogus ~80px gap. */
+  inset-block-start: var(--sp-5);
+}
+
+/* Shared eyebrow treatment (mirrors EYEBROW in ./types). */
+.eyebrow {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.eyebrowSpaced {
+  margin-block-end: var(--sp-4);
+}
+
+.fieldTopGap {
+  margin-block-start: var(--sp-2);
+}
+
+.fieldSection {
+  margin-block-start: var(--sp-5);
+  padding-block-start: var(--sp-5);
+  border-block-start: 1px solid var(--hair);
+}
+
+.iconLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.iconLabelSpaced {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-block-end: var(--sp-2);
+}
+
+.accentIcon {
+  color: var(--ember);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+}
+
+.muted {
+  margin: 0;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+}

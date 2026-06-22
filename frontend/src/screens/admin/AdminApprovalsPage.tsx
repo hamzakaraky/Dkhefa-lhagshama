@@ -9,6 +9,7 @@ import ConfirmDialog from '@/components/feedback/ConfirmDialog'
 import Reveal from '../../components/motion/Reveal'
 import { EmptyState, ErrorState, TableSkeleton, adminErrorMessage } from '@/components/admin/AdminUI'
 import type { Lang } from '@/types'
+import styles from './AdminApprovalsPage.module.css'
 
 // Orgs live in the answers collection now (split by orgType); nothing writes to
 // a separate organizations collection, so it is not an approval entity.
@@ -181,10 +182,9 @@ export default function AdminApprovalsPage() {
 
       {/* FILTERS: entity tabs that scope the queue by type, with live counts. */}
       <div
-        className="admin-filters"
+        className={`admin-filters ${styles.filters}`}
         role="group"
         aria-label={a.approvals.title}
-        style={{ marginBlockEnd: 'var(--sp-5)' }}
       >
         {ENTITY_FILTERS.map((f) => (
           <button
@@ -287,7 +287,7 @@ export default function AdminApprovalsPage() {
                   })()}
 
                   {/* Actions: approve leads (ember), then request-changes, then reject */}
-                  <div className="admin-row-actions" style={{ marginInlineStart: 'auto' }}>
+                  <div className={`admin-row-actions ${styles.rowActions}`}>
                     <button
                       type="button"
                       className="btn btn-primary btn-sm admin-approval-action"

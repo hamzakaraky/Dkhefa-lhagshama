@@ -16,6 +16,7 @@ import {
   TableSkeleton,
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
+import styles from './AdminRequestsListPage.module.css'
 
 // Canonical lifecycle statuses surfaced as tabs (request-lifecycle spec). The
 // leading '' is the "all active" view; 'archived' is a pseudo-filter handled
@@ -290,9 +291,8 @@ export default function AdminRequestsListPage() {
       actions={
         <button
           type="button"
-          className="btn btn-primary btn-sm"
+          className={`btn btn-primary btn-sm ${styles.createBtn}`}
           onClick={() => setTaskOpen(true)}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <Plus size={16} aria-hidden="true" />
           {a.taskForm.create}
@@ -411,9 +411,8 @@ export default function AdminRequestsListPage() {
               <p>{a.reqList.noMatchesHint}</p>
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
+                className={`btn btn-ghost btn-sm ${styles.clearSearchBtn}`}
                 onClick={() => setSearch('')}
-                style={{ marginBlockStart: 'var(--sp-3)' }}
               >
                 {a.reqList.searchClear}
               </button>
@@ -438,17 +437,7 @@ export default function AdminRequestsListPage() {
               (border, radius, shadow, paper bg, height cap) is neutralised
               inline so only one confident object renders, no nested corners. */}
           <div className="admin-reqlist-table-card">
-            <div
-              className="admin-table-wrap"
-              style={{
-                border: 'none',
-                borderRadius: 0,
-                boxShadow: 'none',
-                background: 'transparent',
-                overflow: 'visible',
-                maxHeight: 'none',
-              }}
-            >
+            <div className={`admin-table-wrap ${styles.tableWrap}`}>
               <table className="admin-data-table">
                 <thead>
                   <tr>

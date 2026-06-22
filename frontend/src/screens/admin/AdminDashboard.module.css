@@ -1,0 +1,99 @@
+/* AdminDashboard — component-scoped styles (was inline style={{}} + JS style objects). */
+
+/* Shared eyebrow — ui-monospace label that opens each section. */
+.eyebrow {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: block;
+  margin-block-end: var(--sp-2);
+}
+
+/* Muted variant of the eyebrow (KPI strip). */
+.eyebrowMuted {
+  color: var(--gray-500);
+}
+
+.sectionHeading {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+/* Smaller heading variant (KPI strip). */
+.sectionHeadingSm {
+  font-size: var(--fs-h3);
+}
+
+.errorWrap {
+  margin-block-end: var(--sp-5);
+}
+
+.attentionSection {
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: clamp(20px, 3vw, 32px);
+  margin-block-end: var(--sp-6);
+}
+
+.attentionHeader {
+  max-width: 42rem;
+  margin-block-end: var(--sp-5);
+  text-align: start;
+}
+
+.skeletonLine {
+  width: 60%;
+}
+
+.skeletonStat {
+  margin-block-start: var(--sp-3);
+}
+
+.attentionEmpty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px dashed var(--gray-300);
+  background: var(--paper);
+  color: var(--gray-600);
+}
+
+.attentionEmptyIcon {
+  color: var(--success);
+}
+
+.kpiSection {
+  margin-block-end: var(--sp-5);
+}
+
+.kpiHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-4);
+}
+
+.kpiHeaderText {
+  text-align: start;
+}
+
+.insightsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

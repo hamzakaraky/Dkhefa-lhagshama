@@ -14,6 +14,7 @@ import {
   TableSkeleton,
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
+import styles from './AdminVolunteersPage.module.css'
 
 // A volunteer row as returned by GET /api/admin/volunteers (pending/active).
 // Loose by design — only the fields this screen reads are declared.
@@ -206,25 +207,11 @@ export default function AdminVolunteersPage() {
       )}
 
       {/* ── Toolbar card holding the segmented queue tabs ────────────────────── */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 'var(--sp-3)',
-          padding: 'var(--sp-2)',
-          background: 'var(--white)',
-          border: '1px solid var(--hair)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-xs)',
-          marginBlockEnd: 'var(--sp-5)',
-        }}
-      >
+      <div className={styles.toolbar}>
         <div
-          className="admin-filters"
+          className={`admin-filters ${styles.tabs}`}
           role="tablist"
           aria-label={a.vol.title}
-          style={{ marginBlockEnd: 0 }}
         >
           <button
             type="button"
@@ -249,7 +236,7 @@ export default function AdminVolunteersPage() {
             {a.vol.filterActive}
           </button>
         </div>
-        <div className="admin-search" style={{ marginBlockEnd: 0, marginInlineStart: 'auto' }}>
+        <div className={`admin-search ${styles.search}`}>
           <Search size={16} aria-hidden="true" className="admin-search-icon" />
           <input
             type="search"

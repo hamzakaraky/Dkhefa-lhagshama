@@ -1,0 +1,117 @@
+/* RequestSummary — component-scoped styles (was inline style={{}} + the shared
+   EYEBROW JS style object). Visually identical; logical props for RTL safety. */
+
+.section {
+  padding: clamp(var(--sp-5), 3vw, var(--sp-6));
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.headerMain {
+  min-width: 0;
+}
+
+/* Shared eyebrow treatment (uppercase mono, ember accent, generous tracking) —
+   mirrors the EYEBROW CSSProperties const in ./types. */
+.eyebrow {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-block: 10px 0;
+  margin-inline: 0;
+  word-break: break-word;
+}
+
+.ref {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: var(--gray-500);
+  margin-block: 8px 0;
+  margin-inline: 0;
+}
+
+.badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.description {
+  color: var(--gray-700);
+  font-size: var(--fs-lede);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-block: var(--sp-4) 0;
+  margin-inline: 0;
+}
+
+.meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-1) var(--sp-5);
+  margin-block: var(--sp-5) 0;
+  margin-inline: 0;
+  padding-block-start: var(--sp-4);
+  border-block-start: 1px solid var(--hair);
+}
+
+.panel {
+  margin-block: var(--sp-5) 0;
+  margin-inline: 0;
+  padding: var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--hair);
+  background: var(--sky-3);
+}
+
+.panelLead {
+  margin-block: var(--sp-2) 0;
+  margin-inline: 0;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.panelText {
+  margin-block: var(--sp-1) 0;
+  margin-inline: 0;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+.panelHint {
+  margin-block: var(--sp-1) 0;
+  margin-inline: 0;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+}
+
+.claims {
+  margin-block: var(--sp-6) 0;
+  margin-inline: 0;
+  padding-block-start: var(--sp-5);
+  border-block-start: 1px solid var(--hair);
+}

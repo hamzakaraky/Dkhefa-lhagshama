@@ -14,6 +14,7 @@ import {
   TableSkeleton,
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
+import styles from './AdminCategoriesPage.module.css'
 
 // A category row as returned by GET /api/admin/categories (archived included,
 // unlike the public /api/categories read the pickers use).
@@ -83,8 +84,8 @@ function CategoryFormDialog({ item, busy, onClose, onSubmit }: FormDialogProps) 
           {item ? cm.editTitle : cm.createTitle}
         </h2>
 
-        <div className="admin-dir-bi-grid" style={{ marginBlockStart: 'var(--sp-3)' }}>
-          <div className="field" style={{ textAlign: 'start' }}>
+        <div className={`admin-dir-bi-grid ${styles.dialogGrid}`}>
+          <div className={`field ${styles.field}`}>
             <label className="form-label" htmlFor="cat-name-he">{cm.fieldNameHe}</label>
             <input
               id="cat-name-he"
@@ -95,7 +96,7 @@ function CategoryFormDialog({ item, busy, onClose, onSubmit }: FormDialogProps) 
               maxLength={80}
             />
           </div>
-          <div className="field" style={{ textAlign: 'start' }}>
+          <div className={`field ${styles.field}`}>
             <label className="form-label" htmlFor="cat-name-en">{cm.fieldNameEn}</label>
             <input
               id="cat-name-en"
@@ -109,10 +110,7 @@ function CategoryFormDialog({ item, busy, onClose, onSubmit }: FormDialogProps) 
         </div>
 
         {formError && (
-          <p
-            role="alert"
-            style={{ margin: 'var(--sp-3) 0 0', color: 'var(--danger)', fontSize: 'var(--fs-sm)', textAlign: 'start' }}
-          >
+          <p role="alert" className={styles.formError}>
             {formError}
           </p>
         )}
@@ -265,21 +263,11 @@ export default function AdminCategoriesPage() {
   return (
     <AdminLayout title={cm.title} subtitle={cm.subtitle}>
       {/* ── Toolbar: the "new category" primary action ─────────────────── */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          gap: 'var(--sp-3)',
-          marginBlockEnd: 'var(--sp-5)',
-        }}
-      >
+      <div className={styles.toolbar}>
         <button
           type="button"
-          className="btn btn-primary"
+          className={`btn btn-primary ${styles.newBtn}`}
           onClick={() => setDialog({ item: null })}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <Plus size={16} aria-hidden="true" />
           {cm.newCategory}
@@ -294,17 +282,8 @@ export default function AdminCategoriesPage() {
         <EmptyState icon={Tags} title={cm.empty} message={cm.emptyHint} />
       ) : !error ? (
         <Reveal>
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: 'hidden',
-              border: '1px solid var(--hair)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div className="admin-table-wrap" style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}>
+          <div className={`card ${styles.tableCard}`}>
+            <div className={`admin-table-wrap ${styles.tableWrap}`}>
               <table className="admin-data-table">
                 <thead>
                   <tr>

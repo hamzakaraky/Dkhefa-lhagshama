@@ -10,10 +10,10 @@ import {
 import type { Translations } from '@/contexts/LanguageContext'
 import { formatRequestRef } from '@/lib/requestRef'
 import { StatusBadge } from '@/components/admin/AdminUI'
-import { EYEBROW } from './types'
 import type { ActiveVolunteer, RequestDetail } from './types'
 import { MetaCell, rdStr } from './helpers'
 import RequestTimeline from './RequestTimeline'
+import styles from './RequestSummary.module.css'
 
 // Anything the Reveal-wrapped main <section> needs from the parent screen.
 interface RequestSummaryProps {
@@ -51,37 +51,15 @@ export default function RequestSummary({
   handleAssignClaim,
 }: RequestSummaryProps) {
   return (
-    <section
-      className="card admin-detail-main"
-      style={{ padding: 'clamp(var(--sp-5), 3vw, var(--sp-6))' }}
-    >
+    <section className={`card admin-detail-main ${styles.section}`}>
       {/* Editorial header: eyebrow → serif name → status */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 'var(--sp-3)',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <span style={EYEBROW}>
+      <div className={styles.header}>
+        <div className={styles.headerMain}>
+          <span className={styles.eyebrow}>
             <UserCircle2 size={14} aria-hidden="true" />
             {a.reqDetail.title}
           </span>
-          <h2
-            style={{
-              fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-              fontSize: 'var(--fs-h2)',
-              fontWeight: 500,
-              lineHeight: 1.15,
-              letterSpacing: '-0.01em',
-              color: 'var(--ink)',
-              margin: '10px 0 0',
-              wordBreak: 'break-word',
-            }}
-          >
+          <h2 className={styles.title}>
             {/* FIX 1 — never render the raw 36-char UUID; fall back to
                 the friendly REQ-#### ref when there's no name. */}
             {fullName || formatRequestRef(request)}
@@ -89,19 +67,11 @@ export default function RequestSummary({
           {/* FIX 1 — always-visible friendly request reference, so the
               admin sees REQ-#### even when a beneficiary name fills the
               heading. Mono caption, never the raw UUID. */}
-          <p
-            style={{
-              fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-              fontSize: 'var(--fs-xs)',
-              letterSpacing: '0.06em',
-              color: 'var(--gray-500)',
-              margin: '8px 0 0',
-            }}
-          >
+          <p className={styles.ref}>
             {rdStr(a, 'requestId')}: {formatRequestRef(request)}
           </p>
         </div>
-        <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
+        <span className={styles.badges}>
           <StatusBadge
             status={request.status ?? ''}
             label={(request.status ? (a.statusLabels as Record<string, string>)[request.status] : '') || request.status || ''}
@@ -118,29 +88,12 @@ export default function RequestSummary({
         </span>
       </div>
 
-      <p
-        style={{
-          color: 'var(--gray-700)',
-          fontSize: 'var(--fs-lede)',
-          lineHeight: 1.6,
-          whiteSpace: 'pre-wrap',
-          margin: 'var(--sp-4) 0 0',
-        }}
-      >
+      <p className={styles.description}>
         {request.description}
       </p>
 
       {/* Meta facts as labelled, icon-led cells */}
-      <dl
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: 'var(--sp-1) var(--sp-5)',
-          margin: 'var(--sp-5) 0 0',
-          paddingBlockStart: 'var(--sp-4)',
-          borderBlockStart: '1px solid var(--hair)',
-        }}
-      >
+      <dl className={styles.meta}>
         <MetaCell icon={Tag} label={a.reqDetail.category}>
           {request.category ? labelFor(request.category) : EMPTY}
         </MetaCell>
@@ -159,20 +112,12 @@ export default function RequestSummary({
           where each side stands. The admin may close for the missing
           party via the Close control in the action panel. */}
       {request.closeRequest && (
-        <div
-          style={{
-            margin: 'var(--sp-5) 0 0',
-            padding: 'var(--sp-4)',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--hair)',
-            background: 'var(--sky-3)',
-          }}
-        >
-          <span style={{ ...EYEBROW, color: 'var(--ember)' }}>
+        <div className={styles.panel}>
+          <span className={styles.eyebrow}>
             <Handshake size={14} aria-hidden="true" />
             {a.reqDetail.closePanelTitle}
           </span>
-          <p style={{ margin: 'var(--sp-2) 0 0', fontWeight: 600, color: 'var(--ink)' }}>
+          <p className={styles.panelLead}>
             {a.reqDetail.closeProposedBy}:{' '}
             {(request.closeRequest.proposedRole &&
               (a.roleLabels as Record<string, string>)[request.closeRequest.proposedRole]) ||
@@ -181,7 +126,7 @@ export default function RequestSummary({
             {' · '}
             {fmt(request.closeRequest.proposedAt ?? undefined)}
           </p>
-          <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-700)', lineHeight: 1.5 }}>
+          <p className={styles.panelText}>
             {(a.roleLabels as Record<string, string>).volunteer}:{' '}
             {request.closeRequest.volunteerApproved
               ? a.reqDetail.closeAgreed
@@ -192,7 +137,7 @@ export default function RequestSummary({
               ? a.reqDetail.closeAgreed
               : a.reqDetail.closeWaiting}
           </p>
-          <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+          <p className={styles.panelHint}>
             {a.reqDetail.closeAdminHint}
           </p>
         </div>
@@ -200,25 +145,16 @@ export default function RequestSummary({
 
       {/* Referral panel (Note 8) — shown once the request was referred */}
       {request.referral && request.referral.partnerName && (
-        <div
-          className="admin-referral-panel"
-          style={{
-            margin: 'var(--sp-5) 0 0',
-            padding: 'var(--sp-4)',
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--hair)',
-            background: 'var(--sky-3)',
-          }}
-        >
-          <span style={{ ...EYEBROW, color: 'var(--ember)' }}>
+        <div className={`admin-referral-panel ${styles.panel}`}>
+          <span className={styles.eyebrow}>
             <Share2 size={14} aria-hidden="true" />
             {lc.actions.refer}
           </span>
-          <p style={{ margin: 'var(--sp-2) 0 0', fontWeight: 600, color: 'var(--ink)' }}>
+          <p className={styles.panelLead}>
             {lc.referral.timelineTitle(request.referral.partnerName)}
           </p>
           {request.referral.note && (
-            <p style={{ margin: 'var(--sp-1) 0 0', color: 'var(--gray-700)', lineHeight: 1.5 }}>
+            <p className={styles.panelText}>
               {request.referral.note}
             </p>
           )}
@@ -229,14 +165,8 @@ export default function RequestSummary({
           Each claimant shows their name, note + when they claimed, with
           an Assign action. Assigning clears the other claims server-side. ── */}
       {request.claims && request.claims.length > 0 && (
-        <div
-          style={{
-            margin: 'var(--sp-6) 0 0',
-            paddingBlockStart: 'var(--sp-5)',
-            borderBlockStart: '1px solid var(--hair)',
-          }}
-        >
-          <span style={{ ...EYEBROW, color: 'var(--ember)' }}>
+        <div className={styles.claims}>
+          <span className={styles.eyebrow}>
             <UserPlus size={14} aria-hidden="true" />
             {a.claims.heading}
           </span>

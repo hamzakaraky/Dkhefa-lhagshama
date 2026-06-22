@@ -1,0 +1,26 @@
+/* AdminChatsPage — component-scoped styles (was inline style={{}}). */
+
+.summaryStrip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-4);
+  margin-block-end: var(--sp-6);
+}
+
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.tableWrap {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.row {
+  transition: opacity var(--dur-2) var(--ease-out);
+}

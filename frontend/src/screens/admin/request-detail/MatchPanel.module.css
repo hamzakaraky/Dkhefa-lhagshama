@@ -1,0 +1,12 @@
+/* MatchPanel — component-scoped styles (was static inline style={{}}). */
+
+.spacedTop {
+  margin-block-start: var(--sp-3);
+}
+
+.statusMessage {
+  margin-block: var(--sp-3) 0;
+  margin-inline: 0;
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+}

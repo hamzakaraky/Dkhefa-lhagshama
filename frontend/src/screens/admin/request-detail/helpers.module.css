@@ -1,0 +1,41 @@
+/* request-detail helpers — component-scoped styles (was inline style={{}}). */
+
+.metaCell {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding-block: var(--sp-2);
+}
+
+.metaIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--sky-3);
+  color: var(--ink-2);
+}
+
+.metaBody {
+  min-width: 0;
+}
+
+.metaLabel {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.metaValue {
+  margin-block: 4px 0;
+  margin-inline: 0;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  word-break: break-word;
+}

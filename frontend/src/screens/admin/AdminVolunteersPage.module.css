@@ -1,0 +1,23 @@
+/* AdminVolunteersPage — component-scoped styles (was inline style={{}}). */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding: var(--sp-2);
+  background: var(--white);
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  margin-block-end: var(--sp-5);
+}
+
+.tabs {
+  margin-block-end: 0;
+}
+
+.search {
+  margin-block-end: 0;
+  margin-inline-start: auto;
+}

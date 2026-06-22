@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { Translations } from '@/contexts/LanguageContext'
 import type { Candidate, MatchReason, MatchingI18n, RequestDetail } from './types'
+import styles from './MatchPanel.module.css'
 
 interface MatchPanelProps {
   request: RequestDetail
@@ -69,9 +70,8 @@ export default function MatchPanel({
     <>
       {isTerminal && (
         <p
-          className="admin-notice admin-notice-warn"
+          className={`admin-notice admin-notice-warn ${styles.spacedTop}`}
           role="status"
-          style={{ marginBlockStart: 'var(--sp-3)' }}
         >
           <AlertTriangle size={16} aria-hidden="true" />
           <span>{a.reqDetail.assignTerminalHint}</span>
@@ -82,7 +82,7 @@ export default function MatchPanel({
           shows WHO it is assigned to + WHY (the assigned volunteer's
           own match reasons), not the ranked list. */}
       {request.assignedVolunteerId && !reassigning ? (
-        <div className="match-assigned" style={{ marginBlockStart: 'var(--sp-3)' }}>
+        <div className={`match-assigned ${styles.spacedTop}`}>
           <p className="match-assigned-head">
             <span className="match-assigned-icon" aria-hidden="true">
               <Check size={15} />
@@ -117,11 +117,11 @@ export default function MatchPanel({
           )}
         </div>
       ) : candidatesError ? (
-        <p style={{ margin: 'var(--sp-3) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+        <p className={styles.statusMessage}>
           {m.loadError}
         </p>
       ) : candidates.length === 0 ? (
-        <p style={{ margin: 'var(--sp-3) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+        <p className={styles.statusMessage}>
           {m.empty}
         </p>
       ) : (
@@ -156,7 +156,7 @@ export default function MatchPanel({
 
           {filteredCandidates.length === 0 ? (
             // No volunteer name matched the active search term.
-            <p style={{ margin: 'var(--sp-3) 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+            <p className={styles.statusMessage}>
               {m.noMatches}
             </p>
           ) : (

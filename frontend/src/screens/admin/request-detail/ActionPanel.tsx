@@ -8,7 +8,6 @@ import {
   Sparkles,
 } from 'lucide-react'
 import type { Translations } from '@/contexts/LanguageContext'
-import { EYEBROW } from './types'
 import type {
   Candidate,
   MatchReason,
@@ -18,6 +17,7 @@ import type {
   TransitionKind,
 } from './types'
 import MatchPanel from './MatchPanel'
+import styles from './ActionPanel.module.css'
 
 interface ActionPanelProps {
   request: RequestDetail
@@ -105,31 +105,17 @@ export default function ActionPanel({
   handleNote,
 }: ActionPanelProps) {
   return (
-    <aside
-      className="card admin-detail-side"
-      style={{
-        padding: 'clamp(var(--sp-5), 3vw, var(--sp-6))',
-        position: 'sticky',
-        // AdminLayout has no fixed top chrome (header scrolls; nav is a
-        // left sidebar), so we pin to a small explicit offset rather than
-        // borrowing the marketing shell's --nav-h, which produced a
-        // bogus ~80px gap above the panel.
-        insetBlockStart: 'var(--sp-5)',
-      }}
-    >
-      <span style={{ ...EYEBROW, marginBlockEnd: 'var(--sp-4)' }}>
+    <aside className={`card admin-detail-side ${styles.panel}`}>
+      <span className={`${styles.eyebrow} ${styles.eyebrowSpaced}`}>
         {a.reqDetail.changeStatus}
       </span>
 
-      <div className="field" style={{ marginBlockStart: 'var(--sp-2)' }}>
-        <span
-          className="form-label"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}
-        >
-          <Sparkles size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+      <div className={`field ${styles.fieldTopGap}`}>
+        <span className={`form-label ${styles.iconLabel}`}>
+          <Sparkles size={15} aria-hidden="true" className={styles.accentIcon} />
           {m.heading}
         </span>
-        <p style={{ margin: '4px 0 0', color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+        <p className={styles.subtitle}>
           {m.subtitle}
         </p>
 
@@ -161,24 +147,14 @@ export default function ActionPanel({
 
       {/* ── Lifecycle transitions (Note 6 + 8) — only legal moves from
           the current status are shown. Refer + archive sit alongside. ── */}
-      <div
-        className="field"
-        style={{
-          marginBlockStart: 'var(--sp-5)',
-          paddingBlockStart: 'var(--sp-5)',
-          borderBlockStart: '1px solid var(--hair)',
-        }}
-      >
-        <span
-          className="form-label"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', marginBlockEnd: 'var(--sp-2)' }}
-        >
-          <Share2 size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+      <div className={`field ${styles.fieldSection}`}>
+        <span className={`form-label ${styles.iconLabelSpaced}`}>
+          <Share2 size={15} aria-hidden="true" className={styles.accentIcon} />
           {a.reqDetail.changeStatus}
         </span>
 
         {transitionControls.length === 0 && !canRefer && !canArchive ? (
-          <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+          <p className={styles.muted}>
             {EMPTY}
           </p>
         ) : (
@@ -223,19 +199,9 @@ export default function ActionPanel({
 
       {/* ── Documents (Note 1) — list attachments; each opens a freshly
           minted short-lived signed URL in a new tab. ── */}
-      <div
-        className="field"
-        style={{
-          marginBlockStart: 'var(--sp-5)',
-          paddingBlockStart: 'var(--sp-5)',
-          borderBlockStart: '1px solid var(--hair)',
-        }}
-      >
-        <span
-          className="form-label"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', marginBlockEnd: 'var(--sp-2)' }}
-        >
-          <FileText size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+      <div className={`field ${styles.fieldSection}`}>
+        <span className={`form-label ${styles.iconLabelSpaced}`}>
+          <FileText size={15} aria-hidden="true" className={styles.accentIcon} />
           {lc.docs.heading}
         </span>
 
@@ -263,26 +229,15 @@ export default function ActionPanel({
             })}
           </ul>
         ) : (
-          <p style={{ margin: 0, color: 'var(--gray-500)', fontSize: 'var(--fs-sm)' }}>
+          <p className={styles.muted}>
             {lc.docs.empty}
           </p>
         )}
       </div>
 
-      <div
-        className="field"
-        style={{
-          marginBlockStart: 'var(--sp-5)',
-          paddingBlockStart: 'var(--sp-5)',
-          borderBlockStart: '1px solid var(--hair)',
-        }}
-      >
-        <label
-          className="form-label"
-          htmlFor="note"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '7px' }}
-        >
-          <StickyNote size={15} aria-hidden="true" style={{ color: 'var(--ember)' }} />
+      <div className={`field ${styles.fieldSection}`}>
+        <label className={`form-label ${styles.iconLabel}`} htmlFor="note">
+          <StickyNote size={15} aria-hidden="true" className={styles.accentIcon} />
           {a.reqDetail.addNote}
         </label>
         <textarea

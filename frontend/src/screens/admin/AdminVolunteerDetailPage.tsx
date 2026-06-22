@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
@@ -31,6 +31,7 @@ import {
   TableSkeleton,
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
+import styles from './AdminVolunteerDetailPage.module.css'
 
 // An active volunteer as returned by GET /api/admin/volunteers. Loose by
 // design — only the fields this screen reads are declared.
@@ -89,70 +90,20 @@ interface MetaCellProps {
 
 function MetaCell({ icon: Icon, label, children }: MetaCellProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'flex-start',
-        paddingBlock: 'var(--sp-2)',
-      }}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          flexShrink: 0,
-          width: '34px',
-          height: '34px',
-          borderRadius: 'var(--radius-sm)',
-          background: 'var(--sky-3)',
-          color: 'var(--ink-2)',
-        }}
-      >
+    <div className={styles.metaCell}>
+      <span aria-hidden="true" className={styles.metaIcon}>
         <Icon size={17} />
       </span>
-      <div style={{ minWidth: 0 }}>
-        <dt
-          style={{
-            fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-            fontSize: 'var(--fs-xs)',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--gray-500)',
-            margin: 0,
-          }}
-        >
+      <div className={styles.metaBody}>
+        <dt className={styles.metaLabel}>
           {label}
         </dt>
-        <dd
-          style={{
-            margin: '4px 0 0',
-            fontWeight: 600,
-            color: 'var(--ink)',
-            lineHeight: 1.4,
-            wordBreak: 'break-word',
-          }}
-        >
+        <dd className={styles.metaValue}>
           {children}
         </dd>
       </div>
     </div>
   )
-}
-
-// Shared eyebrow treatment used to label each block — matches the admin
-// detail surfaces (uppercase mono, ember accent, generous tracking).
-const EYEBROW: CSSProperties = {
-  fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-  fontSize: 'var(--fs-xs)',
-  fontWeight: 600,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: 'var(--ember)',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
 }
 
 export default function AdminVolunteerDetailPage() {
@@ -233,15 +184,14 @@ export default function AdminVolunteerDetailPage() {
     <AdminLayout title={vd.title}>
       <Link
         href="/admin/volunteers"
-        className="admin-back-link"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+        className={`admin-back-link ${styles.backLink}`}
       >
         <BackArrow size={16} aria-hidden="true" />
         {vd.back}
       </Link>
 
       {error && (
-        <div style={{ marginBlockStart: 'var(--sp-4)' }}>
+        <div className={styles.errorWrap}>
           <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />
         </div>
       )}
@@ -249,19 +199,19 @@ export default function AdminVolunteerDetailPage() {
       {/* Loading — a skeleton mirroring the profile card + requests table */}
       {loading && (
         <div
-          style={{ marginBlockStart: 'var(--sp-5)' }}
+          className={styles.loadingWrap}
           role="status"
           aria-live="polite"
           aria-busy="true"
         >
           <span className="sr-only">{a.ui.loading}</span>
-          <section className="card" style={{ padding: 'var(--sp-5)' }} aria-hidden="true">
-            <span className="skeleton skeleton-line" style={{ width: '40%', height: '1.6rem' }} />
-            <span className="skeleton skeleton-line" style={{ width: '100%', marginBlockStart: 'var(--sp-4)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '85%', marginBlockStart: 'var(--sp-2)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '60%', marginBlockStart: 'var(--sp-2)' }} />
+          <section className={`card ${styles.loadingCard}`} aria-hidden="true">
+            <span className={`skeleton skeleton-line ${styles.skelTitle}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLine1}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLine2}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLine3}`} />
           </section>
-          <div style={{ marginBlockStart: 'var(--sp-5)' }} aria-hidden="true">
+          <div className={styles.loadingTable} aria-hidden="true">
             <TableSkeleton rows={4} cols={5} />
           </div>
         </div>
@@ -273,9 +223,8 @@ export default function AdminVolunteerDetailPage() {
               volunteer. Their request history still renders below. */}
           {isFormer && (
             <div
-              className="admin-notice admin-notice-warn"
+              className={`admin-notice admin-notice-warn ${styles.formerNotice}`}
               role="status"
-              style={{ marginBlockStart: 'var(--sp-4)' }}
             >
               <HeartHandshake size={18} aria-hidden="true" />
               <span>{vd.formerNote}</span>
@@ -284,50 +233,18 @@ export default function AdminVolunteerDetailPage() {
 
           {/* ── Profile card: monogram + serif name + status, then the meta
                 fields the roster table never shows ─────────────────────── */}
-          <section
-            className="card"
-            style={{
-              padding: 'clamp(var(--sp-5), 3vw, var(--sp-6))',
-              marginBlockStart: 'var(--sp-5)',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 'var(--sp-3)',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 'var(--sp-4)',
-                  alignItems: 'center',
-                  minWidth: 0,
-                }}
-              >
+          <section className={`card ${styles.profileCard}`}>
+            <div className={styles.profileHead}>
+              <div className={styles.profileIdentity}>
                 <span className="admin-vol-avatar admin-vol-avatar--lg" aria-hidden="true">
                   {initials(name)}
                 </span>
-                <div style={{ minWidth: 0 }}>
-                  <span style={EYEBROW}>
+                <div className={styles.profileNameWrap}>
+                  <span className={styles.eyebrow}>
                     <HeartHandshake size={14} aria-hidden="true" />
                     {vd.title}
                   </span>
-                  <h2
-                    style={{
-                      fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-                      fontSize: 'var(--fs-h2)',
-                      fontWeight: 500,
-                      lineHeight: 1.15,
-                      letterSpacing: '-0.01em',
-                      color: 'var(--ink)',
-                      margin: '10px 0 0',
-                      wordBreak: 'break-word',
-                    }}
-                  >
+                  <h2 className={styles.profileName}>
                     {name}
                   </h2>
                 </div>
@@ -341,16 +258,7 @@ export default function AdminVolunteerDetailPage() {
             {/* Meta facts as labelled, icon-led cells (only for active
                 volunteers — former ones have no roster doc to read from). */}
             {volunteer && (
-              <dl
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                  gap: 'var(--sp-1) var(--sp-5)',
-                  margin: 'var(--sp-5) 0 0',
-                  paddingBlockStart: 'var(--sp-4)',
-                  borderBlockStart: '1px solid var(--hair)',
-                }}
-              >
+              <dl className={styles.metaGrid}>
                 <MetaCell icon={Mail} label={vd.email}>
                   {volunteer.email || EMPTY}
                 </MetaCell>
@@ -375,14 +283,7 @@ export default function AdminVolunteerDetailPage() {
                 </MetaCell>
                 <MetaCell icon={Tag} label={vd.approvedCategories}>
                   {volunteer.approvedCategories && volunteer.approvedCategories.length > 0 ? (
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        flexWrap: 'wrap',
-                        gap: '6px',
-                        alignItems: 'center',
-                      }}
-                    >
+                    <span className={styles.badgeWrap}>
                       {volunteer.approvedCategories.map((c) => (
                         <span key={c} className="badge badge-ember">
                           {labelFor(c)}
@@ -398,7 +299,7 @@ export default function AdminVolunteerDetailPage() {
                 </MetaCell>
                 <MetaCell icon={CalendarRange} label={vd.availabilityWindows}>
                   {volunteer.availabilityWindows && volunteer.availabilityWindows.length > 0 ? (
-                    <span style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span className={styles.windowList}>
                       {volunteer.availabilityWindows.map((w, i) => (
                         <span key={i}>{fmtWindow(w)}</span>
                       ))}
@@ -416,7 +317,7 @@ export default function AdminVolunteerDetailPage() {
 
           {/* ── Assigned requests: every request currently assigned to this
                 volunteer, server-filtered via ?volunteerId= ─────────────── */}
-          <section style={{ marginBlockStart: 'var(--sp-6)' }}>
+          <section className={styles.assignedSection}>
             <div className="admin-reqlist-head">
               <h2 className="admin-reqlist-title">{vd.assignedHeading}</h2>
               <p className="admin-reqlist-count">
@@ -430,7 +331,7 @@ export default function AdminVolunteerDetailPage() {
                 deadlines, so the admin sees the same calendar signal the
                 volunteer does without leaving the page. */}
             {requests.filter((r) => typeof r.deadline === 'string' && r.deadline).length > 0 && (
-              <div className="admin-notice" role="note" style={{ marginBlockEnd: 'var(--sp-4)' }}>
+              <div className={`admin-notice ${styles.deadlinesNotice}`} role="note">
                 <CalendarRange size={16} aria-hidden="true" />
                 <span>
                   {vd.deadlinesHeading}:{' '}

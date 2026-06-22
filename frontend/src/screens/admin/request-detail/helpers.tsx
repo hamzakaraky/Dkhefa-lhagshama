@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { AdminCopy, ActiveVolunteer, RequestEvent } from './types'
+import styles from './helpers.module.css'
 
 // Read a flat (string) reqDetail key, narrowing away the nested MatchingCopy
 // (WS-6) so timeline labels stay typed as plain strings.
@@ -56,53 +57,13 @@ interface MetaCellProps {
 
 export function MetaCell({ icon: Icon, label, children }: MetaCellProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'flex-start',
-        paddingBlock: 'var(--sp-2)',
-      }}
-    >
-      <span
-        aria-hidden="true"
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          flexShrink: 0,
-          width: '34px',
-          height: '34px',
-          borderRadius: 'var(--radius-sm)',
-          background: 'var(--sky-3)',
-          color: 'var(--ink-2)',
-        }}
-      >
+    <div className={styles.metaCell}>
+      <span aria-hidden="true" className={styles.metaIcon}>
         <Icon size={17} />
       </span>
-      <div style={{ minWidth: 0 }}>
-        <dt
-          style={{
-            fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-            fontSize: 'var(--fs-xs)',
-            letterSpacing: '0.06em',
-            textTransform: 'uppercase',
-            color: 'var(--gray-500)',
-            margin: 0,
-          }}
-        >
-          {label}
-        </dt>
-        <dd
-          style={{
-            margin: '4px 0 0',
-            fontWeight: 600,
-            color: 'var(--ink)',
-            lineHeight: 1.4,
-            wordBreak: 'break-word',
-          }}
-        >
-          {children}
-        </dd>
+      <div className={styles.metaBody}>
+        <dt className={styles.metaLabel}>{label}</dt>
+        <dd className={styles.metaValue}>{children}</dd>
       </div>
     </div>
   )

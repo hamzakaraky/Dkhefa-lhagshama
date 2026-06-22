@@ -13,6 +13,7 @@ import {
   TableSkeleton,
   adminErrorMessage,
 } from '@/components/admin/AdminUI'
+import styles from './AdminUsersPage.module.css'
 
 const ROLES = ['beneficiary', 'businessOwner', 'volunteer', 'admin']
 
@@ -135,15 +136,7 @@ export default function AdminUsersPage() {
       {/* ── Summary strip — a calm metric row before the table ────────── */}
       {!loading && !error && items.length > 0 && (
         <Reveal>
-          <div
-            className="admin-user-stats"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 'var(--sp-4)',
-              marginBlockEnd: 'var(--sp-6)',
-            }}
-          >
+          <div className={`admin-user-stats ${styles.statsGrid}`}>
             <StatCard label={a.userMgmt.title} value={total} icon={Users} />
             <StatCard label={a.roleLabels.admin} value={adminCount} tone="ember" icon={ShieldCheck} />
             <StatCard label={a.userMgmt.stateActive} value={activeCount} tone="green" icon={UserCheck} />
@@ -189,17 +182,8 @@ export default function AdminUsersPage() {
         <EmptyState icon={Search} title={a.userMgmt.noMatches} />
       ) : (
         <Reveal delay={0.05}>
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: 'hidden',
-              border: '1px solid var(--hair)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: 'var(--shadow-sm)',
-            }}
-          >
-            <div className="admin-table-wrap" style={{ border: 'none', borderRadius: 0, boxShadow: 'none' }}>
+          <div className={`card ${styles.tableCard}`}>
+            <div className={`admin-table-wrap ${styles.tableWrap}`}>
               <table className="admin-data-table">
                 <thead>
                   <tr>
@@ -224,7 +208,8 @@ export default function AdminUsersPage() {
                       <tr
                         key={u.uid}
                         aria-busy={busy || undefined}
-                        style={{ opacity: busy ? 0.55 : 1, transition: 'opacity var(--dur-2) var(--ease-out)' }}
+                        className={styles.row}
+                        style={{ opacity: busy ? 0.55 : 1 }}
                       >
                         <td data-label={a.userMgmt.colName}>
                           <span className="admin-user-cell">

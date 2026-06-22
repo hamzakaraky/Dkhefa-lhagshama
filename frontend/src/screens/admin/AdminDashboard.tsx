@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import Link from 'next/link'
 import {
@@ -22,30 +21,7 @@ import { apiJson } from '@/lib/apiClient'
 import AdminLayout from '@/components/admin/AdminLayout'
 import { StatCard, ErrorState, adminErrorMessage } from '@/components/admin/AdminUI'
 import Reveal from '../../components/motion/Reveal'
-
-// Shared eyebrow style — ui-monospace label that opens each section, echoing
-// the marketing pages so the admin surface reads as the same product.
-const eyebrowStyle: CSSProperties = {
-  fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-  fontSize: 'var(--fs-xs)',
-  fontWeight: 600,
-  letterSpacing: '0.12em',
-  textTransform: 'uppercase',
-  color: 'var(--ember)',
-  display: 'block',
-  marginBlockEnd: 'var(--sp-2)',
-}
-
-const sectionHeadingStyle: CSSProperties = {
-  fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-  fontSize: 'var(--fs-h2)',
-  fontWeight: 400,
-  color: 'var(--ink)',
-  lineHeight: 1.18,
-  letterSpacing: '-0.01em',
-  margin: 0,
-  textWrap: 'balance',
-}
+import styles from './AdminDashboard.module.css'
 
 interface KpiItem {
   key: string
@@ -173,52 +149,31 @@ export default function AdminDashboard() {
   return (
     <AdminLayout title={a.dash.title} subtitle={a.dash.subtitle}>
       {error && (
-        <div style={{ marginBlockEnd: 'var(--sp-5)' }}>
+        <div className={styles.errorWrap}>
           <ErrorState message={error} onRetry={load} retryLabel={a.ui.retry} />
         </div>
       )}
 
       {/* ── NEEDS ATTENTION — actionable queue, first and bold ──────────────── */}
       <Reveal>
-        <section
-          style={{
-            background: 'var(--white)',
-            border: '1px solid var(--hair)',
-            borderRadius: 'var(--radius-lg)',
-            boxShadow: 'var(--shadow-sm)',
-            padding: 'clamp(20px, 3vw, 32px)',
-            marginBlockEnd: 'var(--sp-6)',
-          }}
-        >
-          <header style={{ maxWidth: '42rem', marginBlockEnd: 'var(--sp-5)', textAlign: 'start' }}>
-            <span style={{ ...eyebrowStyle, color: 'var(--ember)' }}>{ops.attentionEyebrow}</span>
-            <h2 style={sectionHeadingStyle}>{ops.attentionTitle}</h2>
+        <section className={styles.attentionSection}>
+          <header className={styles.attentionHeader}>
+            <span className={styles.eyebrow}>{ops.attentionEyebrow}</span>
+            <h2 className={styles.sectionHeading}>{ops.attentionTitle}</h2>
           </header>
 
           {loading ? (
             <div className="admin-attention-grid">
               {[0, 1, 2].map((i) => (
                 <div key={i} className="admin-attention-card" aria-hidden="true">
-                  <span className="skeleton skeleton-line" style={{ width: '60%' }} />
-                  <span className="skeleton skeleton-stat" style={{ marginBlockStart: 'var(--sp-3)' }} />
+                  <span className={`skeleton skeleton-line ${styles.skeletonLine}`} />
+                  <span className={`skeleton skeleton-stat ${styles.skeletonStat}`} />
                 </div>
               ))}
             </div>
           ) : liveAttention.length === 0 ? (
-            <div
-              role="status"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--sp-3)',
-                padding: 'var(--sp-4)',
-                borderRadius: 'var(--radius)',
-                border: '1px dashed var(--gray-300)',
-                background: 'var(--paper)',
-                color: 'var(--gray-600)',
-              }}
-            >
-              <CheckCircle2 size={18} aria-hidden="true" style={{ color: 'var(--success)' }} />
+            <div role="status" className={styles.attentionEmpty}>
+              <CheckCircle2 size={18} aria-hidden="true" className={styles.attentionEmptyIcon} />
               <span>{ops.attentionEmpty}</span>
             </div>
           ) : (
@@ -251,25 +206,15 @@ export default function AdminDashboard() {
 
       {/* ── KPI STRIP — compact, every number links to its list ─────────────── */}
       <Reveal delay={0.06}>
-        <section style={{ marginBlockEnd: 'var(--sp-5)' }}>
-          <header
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              gap: 'var(--sp-3)',
-              marginBlockEnd: 'var(--sp-4)',
-            }}
-          >
-            <div style={{ textAlign: 'start' }}>
-              <span style={{ ...eyebrowStyle, color: 'var(--gray-500)' }}>{ops.kpiEyebrow}</span>
-              <h2 style={{ ...sectionHeadingStyle, fontSize: 'var(--fs-h3)' }}>{ops.kpiStripTitle}</h2>
+        <section className={styles.kpiSection}>
+          <header className={styles.kpiHeader}>
+            <div className={styles.kpiHeaderText}>
+              <span className={`${styles.eyebrow} ${styles.eyebrowMuted}`}>{ops.kpiEyebrow}</span>
+              <h2 className={`${styles.sectionHeading} ${styles.sectionHeadingSm}`}>{ops.kpiStripTitle}</h2>
             </div>
             <Link
               href="/admin/insights"
-              className="btn btn-ghost btn-sm"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              className={`btn btn-ghost btn-sm ${styles.insightsLink}`}
             >
               <BarChart3 size={15} aria-hidden="true" />
               {ops.viewInsights}

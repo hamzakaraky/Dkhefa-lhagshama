@@ -1,0 +1,172 @@
+/* AdminVolunteerDetailPage — component-scoped styles (was inline style={{}} + the EYEBROW JS style object). */
+
+/* ── MetaCell ─────────────────────────────────────────────── */
+.metaCell {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding-block: var(--sp-2);
+}
+
+.metaIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--sky-3);
+  color: var(--ink-2);
+}
+
+.metaBody {
+  min-width: 0;
+}
+
+.metaLabel {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.metaValue {
+  margin-block: 4px 0;
+  margin-inline: 0;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ── Eyebrow (was the EYEBROW JS style object) ────────────── */
+.eyebrow {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Back link ────────────────────────────────────────────── */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Error / loading wrappers ─────────────────────────────── */
+.errorWrap {
+  margin-block-start: var(--sp-4);
+}
+
+.loadingWrap {
+  margin-block-start: var(--sp-5);
+}
+
+.loadingCard {
+  padding: var(--sp-5);
+}
+
+.skelTitle {
+  width: 40%;
+  height: 1.6rem;
+}
+
+.skelLine1 {
+  width: 100%;
+  margin-block-start: var(--sp-4);
+}
+
+.skelLine2 {
+  width: 85%;
+  margin-block-start: var(--sp-2);
+}
+
+.skelLine3 {
+  width: 60%;
+  margin-block-start: var(--sp-2);
+}
+
+.loadingTable {
+  margin-block-start: var(--sp-5);
+}
+
+/* ── Former-volunteer notice ──────────────────────────────── */
+.formerNotice {
+  margin-block-start: var(--sp-4);
+}
+
+/* ── Profile card ─────────────────────────────────────────── */
+.profileCard {
+  padding: clamp(var(--sp-5), 3vw, var(--sp-6));
+  margin-block-start: var(--sp-5);
+}
+
+.profileHead {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.profileIdentity {
+  display: flex;
+  gap: var(--sp-4);
+  align-items: center;
+  min-width: 0;
+}
+
+.profileNameWrap {
+  min-width: 0;
+}
+
+.profileName {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-h2);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 10px 0 0;
+  word-break: break-word;
+}
+
+/* ── Meta facts grid ──────────────────────────────────────── */
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--sp-1) var(--sp-5);
+  margin: var(--sp-5) 0 0;
+  padding-block-start: var(--sp-4);
+  border-block-start: 1px solid var(--hair);
+}
+
+.badgeWrap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.windowList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── Assigned requests section ────────────────────────────── */
+.assignedSection {
+  margin-block-start: var(--sp-6);
+}
+
+.deadlinesNotice {
+  margin-block-end: var(--sp-4);
+}

@@ -11,6 +11,7 @@ import { useRequestDetail } from './request-detail/useRequestDetail'
 import RequestSummary from './request-detail/RequestSummary'
 import ActionPanel from './request-detail/ActionPanel'
 import ReferDialog from './request-detail/ReferDialog'
+import styles from './AdminRequestDetailPage.module.css'
 
 export default function AdminRequestDetailPage() {
   const { t, isRTL } = useLanguage()
@@ -43,15 +44,14 @@ export default function AdminRequestDetailPage() {
     <AdminLayout title={a.reqDetail.title}>
       <Link
         href="/admin/requests"
-        className="admin-back-link"
-        style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+        className={`admin-back-link ${styles.backLink}`}
       >
         <BackArrow size={16} aria-hidden="true" />
         {a.reqDetail.back}
       </Link>
 
       {error && (
-        <div style={{ marginBlockStart: 'var(--sp-4)' }}>
+        <div className={styles.errorSpacing}>
           <ErrorState message={error} onRetry={() => load()} retryLabel={a.ui.retry} />
         </div>
       )}
@@ -59,24 +59,23 @@ export default function AdminRequestDetailPage() {
       {/* Loading — an intentional skeleton mirroring the final two-column layout */}
       {loading && (
         <div
-          className="admin-detail-grid"
-          style={{ marginBlockStart: 'var(--sp-5)' }}
+          className={`admin-detail-grid ${styles.gridSpacing}`}
           role="status"
           aria-live="polite"
           aria-busy="true"
         >
           <span className="sr-only">{a.ui.loading}</span>
-          <section className="card" style={{ padding: 'var(--sp-5)' }} aria-hidden="true">
-            <span className="skeleton skeleton-line" style={{ width: '45%', height: '1.6rem' }} />
-            <span className="skeleton skeleton-line" style={{ width: '100%', marginBlockStart: 'var(--sp-4)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '92%', marginBlockStart: 'var(--sp-2)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '70%', marginBlockStart: 'var(--sp-2)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '60%', height: '2.6rem', marginBlockStart: 'var(--sp-5)' }} />
+          <section className={`card ${styles.skeletonCard}`} aria-hidden="true">
+            <span className={`skeleton skeleton-line ${styles.skelTitle}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLineFull}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLine92}`} />
+            <span className={`skeleton skeleton-line ${styles.skelLine70}`} />
+            <span className={`skeleton skeleton-line ${styles.skelButton}`} />
           </section>
-          <aside className="card" style={{ padding: 'var(--sp-5)' }} aria-hidden="true">
-            <span className="skeleton skeleton-line" style={{ width: '50%' }} />
-            <span className="skeleton skeleton-line" style={{ width: '100%', height: '2.6rem', marginBlockStart: 'var(--sp-3)' }} />
-            <span className="skeleton skeleton-line" style={{ width: '50%', height: '2.6rem', marginBlockStart: 'var(--sp-5)' }} />
+          <aside className={`card ${styles.skeletonCard}`} aria-hidden="true">
+            <span className={`skeleton skeleton-line ${styles.skelLine50}`} />
+            <span className={`skeleton skeleton-line ${styles.skelInput}`} />
+            <span className={`skeleton skeleton-line ${styles.skelButtonAside}`} />
           </aside>
         </div>
       )}
@@ -84,9 +83,8 @@ export default function AdminRequestDetailPage() {
       {/* #91 — assigned volunteer was deactivated; prompt reassignment */}
       {!loading && request && isFormerVolunteer && !dismissedFormer && (
         <div
-          className="admin-notice admin-notice-warn"
+          className={`admin-notice admin-notice-warn ${styles.errorSpacing}`}
           role="alert"
-          style={{ marginBlockStart: 'var(--sp-4)' }}
         >
           <AlertTriangle size={18} aria-hidden="true" />
           <span>{a.reqDetail.formerVolWarning}</span>
@@ -102,7 +100,7 @@ export default function AdminRequestDetailPage() {
 
       {!loading && request && (
         <Reveal y={16}>
-          <div className="admin-detail-grid" style={{ marginBlockStart: 'var(--sp-5)' }}>
+          <div className={`admin-detail-grid ${styles.gridSpacing}`}>
             <RequestSummary
               request={request}
               a={a}

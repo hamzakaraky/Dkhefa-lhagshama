@@ -1,0 +1,61 @@
+/* AdminRequestDetailPage — component-scoped styles (was static inline style={{}}). */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.errorSpacing {
+  margin-block-start: var(--sp-4);
+}
+
+.gridSpacing {
+  margin-block-start: var(--sp-5);
+}
+
+.skeletonCard {
+  padding: var(--sp-5);
+}
+
+.skelTitle {
+  width: 45%;
+  height: 1.6rem;
+}
+
+.skelLineFull {
+  width: 100%;
+  margin-block-start: var(--sp-4);
+}
+
+.skelLine92 {
+  width: 92%;
+  margin-block-start: var(--sp-2);
+}
+
+.skelLine70 {
+  width: 70%;
+  margin-block-start: var(--sp-2);
+}
+
+.skelButton {
+  width: 60%;
+  height: 2.6rem;
+  margin-block-start: var(--sp-5);
+}
+
+.skelLine50 {
+  width: 50%;
+}
+
+.skelInput {
+  width: 100%;
+  height: 2.6rem;
+  margin-block-start: var(--sp-3);
+}
+
+.skelButtonAside {
+  width: 50%;
+  height: 2.6rem;
+  margin-block-start: var(--sp-5);
+}

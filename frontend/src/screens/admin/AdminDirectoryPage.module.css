@@ -1,0 +1,64 @@
+/* AdminDirectoryPage — component-scoped styles (was inline style={{}}).
+   Static literal values only; computed/dynamic styles stay inline in the TSX. */
+
+/* Form field wrapper — keeps labels/inputs start-aligned in RTL+LTR. */
+.field {
+  text-align: start;
+}
+
+/* Vertical rhythm between stacked bilingual / task grids in the dialog. */
+.gridGap {
+  margin-block-start: var(--sp-3);
+}
+
+/* Business description field: start-aligned + top spacing. */
+.descField {
+  text-align: start;
+  margin-block-start: var(--sp-3);
+}
+
+/* Inline form-error message under the dialog body. */
+.formError {
+  margin: var(--sp-3) 0 0;
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  text-align: start;
+}
+
+/* Toolbar: catalog tabs on one side, the "new entry" action on the other. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  margin-block-end: var(--sp-5);
+}
+
+/* The tab group lives inside the toolbar, so drop its default bottom margin. */
+.filtersFlush {
+  margin-block-end: 0;
+}
+
+/* Primary "new entry" button: icon + label inline. */
+.newBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Table card shell. */
+.tableCard {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Inner table wrap sits flush inside the card (card owns the chrome). */
+.tableWrapFlush {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}

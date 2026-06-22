@@ -1,0 +1,9 @@
+/* AdminApprovalsPage — component-scoped static styles (was inline style={{}}). */
+
+.filters {
+  margin-block-end: var(--sp-5);
+}
+
+.rowActions {
+  margin-inline-start: auto;
+}

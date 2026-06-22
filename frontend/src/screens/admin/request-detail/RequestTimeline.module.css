@@ -1,0 +1,107 @@
+/* RequestTimeline — component-scoped styles (was inline style={{}} + EYEBROW JS object).
+   Dynamic styles that depend on event index (dot fill/border/shadow, row bottom
+   padding) stay inline in the component. */
+
+.root {
+  margin-block: var(--sp-6) 0;
+  margin-inline: 0;
+  padding-block-start: var(--sp-5);
+  border-block-start: 1px solid var(--hair);
+}
+
+/* EYEBROW JS object, lifted to a class. */
+.eyebrow {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ember);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Per-use override for the timeline eyebrow. */
+.eyebrowInk {
+  color: var(--ink-2);
+}
+
+.list {
+  list-style: none;
+  margin-block: var(--sp-4) 0;
+  margin-inline: 0;
+  padding: 0;
+  position: relative;
+}
+
+.item {
+  display: flex;
+  gap: var(--sp-3);
+}
+
+.marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 14px;
+  /* line box of the first label line — keeps the dot vertically centered on
+     that line, not the whole (possibly multi-line) label. */
+  height: calc(var(--fs-body) * 1.45);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.connector {
+  position: absolute;
+  /* start just past the centered dot (half the line box + half the dot) and
+     extend through the row's bottom padding to meet the next marker. */
+  inset-block-start: calc(50% + 7px);
+  inset-block-end: calc(var(--sp-4) * -1);
+  width: 2px;
+  background: var(--hair);
+}
+
+.eventBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--sp-3);
+  align-items: baseline;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+}
+
+.eventLabel {
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.eventTime {
+  color: var(--gray-500);
+  font-size: var(--fs-sm);
+  white-space: nowrap;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-block: var(--sp-4) 0;
+  margin-inline: 0;
+  padding: var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px dashed var(--gray-300);
+  background: var(--paper);
+  color: var(--gray-500);
+}

@@ -1,0 +1,25 @@
+/* AdminRequestsListPage — component-scoped styles (was static inline style={{}}). */
+
+/* "Create task" action button in the AdminLayout header. */
+.createBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* "Clear search" button inside the no-matches empty state. */
+.clearSearchBtn {
+  margin-block-start: var(--sp-3);
+}
+
+/* Neutralise the global .admin-table-wrap chrome (border, radius, shadow, paper
+   bg, height cap) so the outer editorial card owns the frame: one confident
+   object renders, no nested corners. */
+.tableWrap {
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  overflow: visible;
+  max-height: none;
+}
