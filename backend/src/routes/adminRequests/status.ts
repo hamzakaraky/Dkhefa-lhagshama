@@ -1,5 +1,14 @@
 /**
- * POST /api/admin/requests/:id/status — change status (#75).
+ * Admin status-change handler for a single request (#75), part of the
+ * adminRequests router. Mounted at POST /api/admin/requests/:id/status and
+ * called by the admin UI to move a request through its lifecycle.
+ *
+ * Flow: validate body -> transaction-guarded transition (lib/requestTransitions
+ * is the canonical map, validated under role 'admin') -> post-commit side
+ * effects (request event + audit log + chat.active sync + beneficiary notify).
+ * Invariant: the status write commits in a Firestore transaction first; every
+ * side effect runs only afterward and its failure never fails the response.
+ * Responds { ok: true, status } on success, or 400/404/409/500 on failure.
  *
  * Extracted verbatim from the original single-file router.
  */

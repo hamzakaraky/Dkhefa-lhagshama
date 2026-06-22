@@ -27,10 +27,13 @@ import { localMidnightUtc } from '@/lib/dashboardStats';
 import { Timestamp } from 'firebase-admin/firestore';
 
 const router = Router();
+// every route on this router is admin-only: must be authenticated + carry the admin role.
 router.use(authenticate, requireRole('admin'));
 
 type WhereOp = FirebaseFirestore.WhereFilterOp;
 
+// generic aggregate counter: optional single where-clause, then a server-side
+// count() so we never read/page the matching documents.
 async function count(
   collection: string,
   field?: string,

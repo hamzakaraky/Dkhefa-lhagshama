@@ -16,6 +16,8 @@ import { db } from '@/lib/firebaseAdmin';
 
 const router = Router();
 
+// GET /api/categories — public, no auth. Returns { items: [{ id, nameHe, nameEn }] }
+// of non-archived categories, Hebrew-sorted. 500 -> { error: 'internal' } on failure.
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const snap = await db().collection('categories').get();

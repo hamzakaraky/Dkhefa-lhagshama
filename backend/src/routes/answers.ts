@@ -1,3 +1,11 @@
+/**
+ * Public read API for the community "answers" directory (UC-02): the curated
+ * catalog of NGOs, partners, initiatives, and public bodies shown on the
+ * frontend DirectoryPage. Mounted at /api/answers; serves only `status==='approved'`
+ * docs. Translatable fields (title/body/region/audience) flow through as the
+ * bilingual `{ he, en }` contract and are rendered/filtered in the active
+ * language client-side; `category` and `orgType` are enum keys filtered here.
+ */
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 
@@ -5,6 +13,9 @@ import { db } from '@/lib/firebaseAdmin';
 
 const router = Router();
 
+// optional filter params; only `category`/`orgType` (enum keys) are applied
+// server-side. `region`/`audience` are accepted but filtered client-side
+// because they are bilingual objects (see GET handler).
 const querySchema = z.object({
   category: z.string().trim().min(1).max(80).optional(),
   region: z.string().trim().min(1).max(80).optional(),
@@ -12,6 +23,10 @@ const querySchema = z.object({
   orgType: z.enum(['ngo', 'partner']).optional(),
 });
 
+// GET /api/answers — list approved directory entries. Validates the query
+// (400 with fieldErrors on bad input), filters by category/orgType, and
+// responds `{ items: [...] }`. Each item carries the bilingual fields, optional
+// contact/source fields, and a normalized orgType.
 router.get('/', async (req: Request, res: Response) => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {

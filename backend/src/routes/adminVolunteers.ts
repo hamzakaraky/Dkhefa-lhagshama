@@ -6,6 +6,9 @@
  *   POST /api/admin/volunteers/:id/approve — approve a volunteer application
  *   POST /api/admin/volunteers/:id/reject  — reject a volunteer application
  *   POST /api/admin/volunteers/:uid/deactivate — deactivate an active volunteer
+ *   POST /api/admin/volunteers/:uid/categories — approve/reject a category request (req 15)
+ *
+ * Every route is admin-gated by the router-level authenticate + requireRole('admin').
  *
  * On approve:
  *   1. Updates volunteerApplications/{id}.status = 'approved'

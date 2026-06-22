@@ -1,3 +1,11 @@
+// Express router for the community-business directory (UC-03). Mounted at
+// /api/businesses. Two endpoints: a PUBLIC GET that lists only approved
+// businesses for the bilingual directory, and an authenticated POST that
+// submits a new business into the admin approval queue (status 'pending').
+// Source of truth is the firestore `businesses` collection; this router is the
+// trusted server write path (firestore.rules forbid client creates). Key
+// invariant: translatable fields are stored under the `{ he, en }` contract so
+// they match the seeded shape and the directory renderer.
 import { FieldValue } from 'firebase-admin/firestore';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
@@ -11,6 +19,8 @@ const router = Router();
 
 const businessCategorySchema = z.enum(['food', 'services', 'health', 'education', 'beauty', 'tech']);
 
+// Validates the POST body: trims+bounds every field, restricts category to the
+// fixed enum, and accepts an optional http(s) website (or "").
 const createBusinessSchema = z.object({
   name: z.string().trim().min(1).max(120),
   ownerName: z.string().trim().min(1).max(120),
@@ -34,6 +44,9 @@ const createBusinessSchema = z.object({
 
 type CreateBusinessInput = z.infer<typeof createBusinessSchema>;
 
+// GET /api/businesses — public read. Returns `{ items }` of approved
+// businesses, newest first, with each field defaulted so the client never sees
+// undefined. No auth/guard: this is the public-facing directory feed.
 router.get('/', async (_req: Request, res: Response) => {
   try {
     const snapshot = await db()
@@ -56,8 +69,7 @@ router.get('/', async (_req: Request, res: Response) => {
         city: data.city ?? null,
         description: data.description ?? null,
         tags: data.tags ?? { he: [], en: [] },
-        // Optional public website (URL string), null when not set. `category`
-        // stays an enum key.
+        // Optional public website (URL string), null when not set.
         website: data.website ?? null,
         approved: data.approved ?? false,
         featured: data.featured ?? false,

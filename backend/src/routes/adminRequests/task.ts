@@ -1,7 +1,14 @@
 /**
- * POST /api/admin/requests/task — create a volunteer task request (req 20/21).
+ * Admin-side handler for POST /api/admin/requests/task (req 20/21): creates a
+ * volunteer "task request" that originates from staff and lands directly in the
+ * available volunteer pool to be claimed (req 22), as opposed to a UC-01
+ * beneficiary request. Mounted by the adminRequests router behind admin auth.
  *
- * Extracted verbatim from the original single-file router.
+ * Validates the body with zod (including an async check that `category` is an
+ * ACTIVE id in the admin-managed taxonomy), enforces the per-request attachment
+ * storage-isolation invariant, then `create()`s the doc under a server-generated
+ * id. Collaborates with: firebaseAdmin (Firestore), categoriesCache (taxonomy),
+ * requestEvents (timeline) and audit (audit log).
  */
 import { randomUUID } from 'node:crypto';
 

@@ -23,8 +23,11 @@ import { authenticate, requireRole, type Role } from '@/middleware/auth';
 import { writeAuditLog } from '@/lib/audit';
 
 const router = Router();
+// every route below is admin-gated at the router level: authenticate then requireRole.
 router.use(authenticate, requireRole('admin'));
 
+// valid roles, used to validate the GET ?role= filter (the promote body is
+// validated separately by promoteSchema below).
 const ROLES: Role[] = ['beneficiary', 'businessOwner', 'volunteer', 'admin'];
 
 /**
@@ -66,6 +69,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const limit = Math.min(parseInt(limitStr ?? '50', 10) || 50, 200);
 
     // Page through Auth (1000/page); the project is far below one page today.
+    // The 10000 cap is a safety stop so a runaway/cyclic pageToken can't loop forever.
     const authUsers = [];
     let pageToken: string | undefined;
     do {
@@ -84,6 +88,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     let items = authUsers.map((u) => {
       const m = mirror.get(u.uid);
       const v = volunteers.get(u.uid);
+      // best-available display name, in priority order: mirror displayName,
+      // mirror first+last, Auth displayName, then the volunteers roster name.
       const displayName =
         (typeof m?.displayName === 'string' && m.displayName.trim()) ||
         [m?.firstName, m?.lastName].filter(Boolean).join(' ').trim() ||
@@ -98,6 +104,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         uid: u.uid,
         email: u.email ?? m?.email ?? null,
         displayName,
+        // Auth custom claim is the source of truth for role; mirror is a fallback.
         role: ((u.customClaims?.role as string | undefined) ?? m?.role ?? null) as
           | string
           | null,
@@ -123,11 +130,15 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+// request body for promote: the target role to grant.
 const promoteSchema = z.object({
   role: z.enum(['beneficiary', 'businessOwner', 'volunteer', 'admin']),
 });
 
 // ── POST /api/admin/users/:uid/promote ───────────────────────────────────
+// Sets the target role via Auth custom claim + users/{uid}.role mirror, keeps
+// the volunteers/{uid} doc in sync, and audits. Body: { role }. 400 on bad
+// body; 403 cannot_modify_self / cannot_modify_admin; { ok: true } on success.
 router.post('/:uid/promote', async (req: Request, res: Response): Promise<void> => {
   const parsed = promoteSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -221,7 +232,8 @@ router.post('/:uid/promote', async (req: Request, res: Response): Promise<void> 
 });
 
 // ── POST /api/admin/users/:uid/demote ────────────────────────────────────
-// Resets role to 'beneficiary' (the default).
+// Resets role to 'beneficiary' (the default) + deactivates any volunteer doc.
+// 403 cannot_modify_self / cannot_modify_admin; { ok: true } on success.
 router.post('/:uid/demote', async (req: Request, res: Response): Promise<void> => {
   const targetUid = req.params.uid;
   const actorId = req.user!.uid;
@@ -285,7 +297,9 @@ router.post('/:uid/demote', async (req: Request, res: Response): Promise<void> =
 });
 
 // ── POST /api/admin/users/:uid/disable ───────────────────────────────────
-// Soft-disable: sets users/{uid}.disabled = true. Does NOT lock Firebase Auth.
+// Soft-disable: sets users/{uid}.disabled = true + deactivates any volunteer
+// doc. Does NOT lock Firebase Auth. 403 cannot_modify_self /
+// cannot_modify_admin; { ok: true } on success.
 router.post('/:uid/disable', async (req: Request, res: Response): Promise<void> => {
   const targetUid = req.params.uid;
   const actorId = req.user!.uid;
@@ -345,6 +359,9 @@ router.post('/:uid/disable', async (req: Request, res: Response): Promise<void> 
 });
 
 // ── POST /api/admin/users/:uid/enable ────────────────────────────────────
+// Clears the soft-disable flag (users/{uid}.disabled = false) + audits.
+// No self/admin guard needed (re-enabling is not a destructive action).
+// { ok: true } on success. Note: does NOT reactivate the volunteers doc.
 router.post('/:uid/enable', async (req: Request, res: Response): Promise<void> => {
   const targetUid = req.params.uid;
   const actorId = req.user!.uid;

@@ -18,9 +18,11 @@ import { sanitizeFilename } from '@/lib/sanitizeFilename';
 
 import { ALLOWED_MIME_TYPES, MAX_FILE_BYTES, chatIsActive } from './helpers';
 
-// Upload a file into a chat. Raw bytes in, `?filename=` for the name. Stored to
-// chats/{chatId}/{safeName} via the Admin SDK bucket, then a messages doc with
-// an `attachment` payload is created so the chat UI renders it inline.
+// POST /api/chats/:id/attachments — upload a file into a chat. Raw bytes in,
+// `?filename=` for the name. Validates: authed + participant + active chat +
+// MIME allowlist + buffer body + size cap. Stored to chats/{chatId}/{safeName}
+// via the Admin SDK bucket, then a messages doc with an `attachment` payload is
+// created so the chat UI renders it inline. Responds 201 { ok, attachment }.
 export async function uploadAttachment(req: Request, res: Response): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'not_authenticated' });
@@ -99,6 +101,9 @@ export async function uploadAttachment(req: Request, res: Response): Promise<voi
       size: req.body.length,
     };
 
+    // Write the object first, then the message doc, then bump lastMessageAt:
+    // a message is only created once the bytes are durably saved, so the UI
+    // never references an attachment that failed to upload.
     const msgRef = db().collection('messages').doc();
     const now = FieldValue.serverTimestamp();
     await msgRef.set({
@@ -125,8 +130,10 @@ export async function uploadAttachment(req: Request, res: Response): Promise<voi
   }
 }
 
-// Mint a short-lived signed read URL for a chat attachment. Participant-gated
-// with an admin read bypass (oversight).
+// GET /api/chats/:id/attachments/:name — mint a short-lived signed read URL for
+// a chat attachment (storage rules deny client reads, so the backend brokers).
+// Participant-gated with an admin read bypass (oversight). Responds 200
+// { url, expiresAt }; 404 if the object is missing.
 export async function getAttachmentUrl(req: Request, res: Response): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'not_authenticated' });

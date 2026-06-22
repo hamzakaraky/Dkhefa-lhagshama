@@ -15,6 +15,9 @@ import { type RequestStatus } from '@/routes/requests';
 // best-effort update of every chat linked to the request, never fatal.
 export const CHAT_END_STATES = new Set<RequestStatus>(['closed', 'rejected', 'referred']);
 
+// flips `chats.active` on every chat tied to a request. callers run this after
+// the request write has committed; swallows errors so a chat-flag failure never
+// rolls back or fails the request transition.
 export async function setChatsActiveForRequest(requestId: string, active: boolean): Promise<void> {
   try {
     const chats = await db().collection('chats').where('requestId', '==', requestId).get();

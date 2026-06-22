@@ -1,7 +1,15 @@
 /**
- * POST /api/admin/requests/:id/refer — refer the request to a partner (#75).
+ * Admin "refer to partner" handler for a single request (#75).
  *
- * Extracted verbatim from the original single-file router.
+ * Mounted as POST /api/admin/requests/:id/refer by the adminRequests router.
+ * Closes out a request by handing the beneficiary to an approved org from the
+ * public `answers` catalog: snapshots that partner's name + contact onto the
+ * request's `referral` field, moves status to `referred` (a terminal, helped
+ * state) and archives it. Collaborates with the transition map (requestTransitions),
+ * request-event + audit logs, and the chat lifecycle (shared.ts).
+ *
+ * Invariants: only `approved` answers may be referred to; the partner snapshot
+ * is frozen at referral time so it survives later edits to the answer doc.
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { type Request, type Response } from 'express';
@@ -24,6 +32,10 @@ const referSchema = z.object({
   note: z.string().trim().max(2000).optional(),
 });
 
+// Express handler. Validates body { answerId, note? }, resolves+approves the
+// partner, then transactionally flips the request to `referred`. Responds 400
+// (bad body), 404 (partner/request missing), 409 (not approved / bad transition
+// / concurrent write), 500, or 200 { ok, status, referral }.
 export async function referRequest(req: Request, res: Response): Promise<void> {
   const parsed = referSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -112,6 +124,8 @@ export async function referRequest(req: Request, res: Response): Promise<void> {
       res.status(err.httpStatus).json({ error: err.code, ...err.extra });
       return;
     }
+    // Firestore gRPC code 10 = ABORTED: the txn lost an optimistic-concurrency
+    // retry race. Surface as 409 so the client can re-fetch and retry.
     const code = (err as { code?: number }).code;
     if (code === 10) {
       res.status(409).json({ error: 'concurrent_update' });

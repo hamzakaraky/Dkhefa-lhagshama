@@ -1,3 +1,11 @@
+/**
+ * Admin approval-queue routes (UC-05). Mounted at /api/admin; every route is
+ * gated by authenticate + requireRole('admin'). Governs the moderation
+ * lifecycle of submitted businesses + answers (ngo/partner orgs): list pending,
+ * then approve / reject / request-changes. Each mutation stamps the actor +
+ * server timestamp on the doc and appends an immutable audit-log entry. Status
+ * is the single source of truth: pending -> approved | rejected | needs_changes.
+ */
 import { Router, Request, Response } from 'express';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
@@ -22,7 +30,8 @@ const actionSchema = z.object({
   note:       z.string().max(500).optional(),
 });
 
-// GET /api/admin/pending — list all pending entities across collections
+// GET /api/admin/pending — fan-out a status=='pending' query across every
+// approvable collection, normalize each doc, and return { items } newest-first.
 router.get('/pending', async (req: Request, res: Response): Promise<void> => {
   try {
     const snapshots = await Promise.all(
@@ -75,7 +84,9 @@ router.get('/pending', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/admin/approve — approve a pending entity
+// POST /api/admin/approve — body { entityType, entityId, note? } (actionSchema).
+// 400 invalid_input / 404 not_found, else sets status='approved' + approver
+// stamps, writes an audit log, and returns { ok: true }.
 router.post('/approve', async (req: Request, res: Response): Promise<void> => {
   const parsed = actionSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -114,7 +125,8 @@ router.post('/approve', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/admin/reject — reject a pending entity
+// POST /api/admin/reject — same contract as /approve; sets status='rejected'
+// + rejecter stamps, audit-logs, returns { ok: true }.
 router.post('/reject', async (req: Request, res: Response): Promise<void> => {
   const parsed = actionSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -153,7 +165,8 @@ router.post('/reject', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-// POST /api/admin/request-changes — request changes on a pending entity
+// POST /api/admin/request-changes — same contract as /approve; sets
+// status='needs_changes' + requester stamps, audit-logs, returns { ok: true }.
 router.post('/request-changes', async (req: Request, res: Response): Promise<void> => {
   const parsed = actionSchema.safeParse(req.body);
   if (!parsed.success) {

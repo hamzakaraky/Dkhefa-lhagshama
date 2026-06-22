@@ -1,8 +1,15 @@
 /**
- * POST /api/chats/direct — Admin-only: create a direct (staff/group) chat that
- * is NOT bound to a request. The creator is always included in participants;
- * every other uid must exist in Firebase Auth or the users collection
- * (best-effort check).
+ * POST /api/chats/direct — create a direct (staff/group) chat that is NOT bound
+ * to a request. Unlike request chats (auto-created on volunteer assignment), a
+ * direct chat is an ad-hoc admin-to-staff/group thread (kind: 'direct',
+ * requestId: null).
+ *
+ * Mounted in routes/chats/index.ts behind authenticate + requireRole('admin'),
+ * so admin auth and req.user are guaranteed by the time this runs. The creator
+ * is always a participant; every other uid is verified best-effort against
+ * Firebase Auth / the users collection (findUnknownUids). On success it seeds a
+ * 'chat_created' system message and writes an audit log. Collaborators:
+ * ./helpers (uid check + system message), lib/audit, lib/firebaseAdmin.
  */
 import { FieldValue } from 'firebase-admin/firestore';
 import { type Request, type Response } from 'express';
@@ -13,11 +20,18 @@ import { writeAuditLog } from '@/lib/audit';
 
 import { findUnknownUids, postSystemMessage } from './helpers';
 
+// Request body shape: 1-20 non-empty participant uids + an optional title.
 export const directSchema = z.object({
   participantUids: z.array(z.string().trim().min(1).max(128)).min(1).max(20),
   title: z.string().trim().min(1).max(120).optional(),
 });
 
+/**
+ * Express handler for POST /api/chats/direct. Validates the body, verifies the
+ * named participants exist, creates the chat doc, and responds 201 with the
+ * created chat ({ id, kind, title, participants, active }). Error shapes:
+ * 400 validation / 400 unknown_participants / 500 internal.
+ */
 export async function createDirectChat(req: Request, res: Response): Promise<void> {
   const parsed = directSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -28,12 +42,15 @@ export async function createDirectChat(req: Request, res: Response): Promise<voi
   const actor = req.user!.uid;
   // Dedupe and make sure the creator participates in their own chat.
   const participants = [...new Set([actor, ...parsed.data.participantUids])];
+  // schema caps participantUids at 20, but adding the creator can push the
+  // deduped total to 21, so re-check the hard cap here.
   if (participants.length > 20) {
     res.status(400).json({ error: 'validation', detail: 'max 20 participants' });
     return;
   }
 
   try {
+    // verify only the named participants; the creator is trusted (already authed).
     const unknown = await findUnknownUids(participants.filter((uid) => uid !== actor));
     if (unknown.length > 0) {
       res.status(400).json({ error: 'unknown_participants', uids: unknown });

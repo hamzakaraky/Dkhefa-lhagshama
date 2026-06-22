@@ -108,13 +108,23 @@ export const REPLY_NOTIFY_THROTTLE_MS = 15 * 60 * 1000;
 // a non-participant) is a no-op 200. The membership write runs in a
 // transaction together with the guard reads.
 
+/**
+ * Result of a participant mutation. `code` is the HTTP status the route should
+ * send; the handler maps it (404 not-found, 403 forbidden, 409 protected, 200
+ * ok). `changed` distinguishes a real membership write from a no-op so callers
+ * can skip side effects.
+ */
 export interface ParticipantTxOutcome {
   code: 200 | 403 | 404 | 409;
   error?: string;
   changed?: boolean;
 }
 
-/** Shared transaction body for add/remove. */
+/**
+ * Shared transaction body for add/remove. Reads + guards + the membership write
+ * all run in one Firestore transaction so the authorization decision can't race
+ * the write. Returns an outcome code instead of throwing.
+ */
 export async function mutateParticipants(
   chatId: string,
   targetUid: string,

@@ -52,8 +52,12 @@ async function ensureUserProfile(
  * Caller must have just signed up via Firebase Auth (Email/Password). The
  * `authenticate` middleware verifies the ID token; we then promote the user
  * to `beneficiary`. Idempotent — calling again is harmless.
+ *
+ * Responses: 200 { ok, role, alreadyAssigned? } on success, 401
+ * { error:"not_authenticated" }, 500 { error:"role_assignment_failed" }.
  */
 router.post("/register", authenticate, async (req: Request, res: Response) => {
+  // authenticate populates req.user from a verified token; bail if it didn't.
   if (!req.user) {
     res.status(401).json({ error: "not_authenticated" });
     return;
