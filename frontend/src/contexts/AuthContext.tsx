@@ -39,6 +39,21 @@ export type { Role };
  */
 type StoredRole = Role | 'businessOwner';
 
+/**
+ * Debounced session-presence signal, derived from `user` + `loading`.
+ * - `pending`  — auth is still resolving, OR a transient null is inside the
+ *   grace window (Firebase briefly emits a null user during a token refresh).
+ * - `authenticated` — a user is present.
+ * - `anonymous` — the user has been absent past the grace window (a real sign-out).
+ * Route guards key off this single signal instead of each running their own
+ * redirect timer, which keeps the no-flicker behavior in exactly one place.
+ */
+export type SessionState = 'pending' | 'authenticated' | 'anonymous';
+
+/** Grace window (ms) before a (loading=false, user=null) tick counts as a real
+ *  sign-out. Long enough to ride out Firebase's transient token-refresh nulls. */
+const SESSION_GRACE_MS = 600;
+
 interface AuthContextValue {
   user: User | null;
   /**
@@ -48,6 +63,8 @@ interface AuthContextValue {
    */
   role: StoredRole | null;
   loading: boolean;
+  /** Debounced session presence; see {@link SessionState}. */
+  sessionState: SessionState;
   /** True when the user's role satisfies `r`. Admin satisfies any role. */
   hasRole: (r: Role) => boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -149,6 +166,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsub;
   }, [user]);
 
+  // Debounced session-presence. A (loading=false, user=null) tick can be a real
+  // sign-out OR a transient null mid token-refresh. We hold off declaring the
+  // session `anonymous` until the grace window elapses with the user still gone;
+  // if the user reappears first, the timer is cancelled. Centralising this here
+  // means route guards never need their own redirect timers.
+  const [graceElapsed, setGraceElapsed] = useState(false);
+  useEffect(() => {
+    if (loading || user) {
+      setGraceElapsed(false);
+      return;
+    }
+    const handle = setTimeout(() => setGraceElapsed(true), SESSION_GRACE_MS);
+    return () => clearTimeout(handle);
+  }, [loading, user]);
+
+  const sessionState: SessionState = loading
+    ? 'pending'
+    : user
+      ? 'authenticated'
+      : graceElapsed
+        ? 'anonymous'
+        : 'pending';
+
   // Admin is a superset: it satisfies any role check. Otherwise an exact match.
   // (Fixes the old exact-match bug where an admin failed a `volunteer` check.)
   const hasRole = useCallback(
@@ -182,8 +222,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
-    user, role, loading, hasRole, login, register, logout, refreshClaims,
-  }), [user, role, loading, hasRole, login, register, logout, refreshClaims]);
+    user, role, loading, sessionState, hasRole, login, register, logout, refreshClaims,
+  }), [user, role, loading, sessionState, hasRole, login, register, logout, refreshClaims]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
