@@ -42,6 +42,8 @@ interface UserPickerDialogProps {
   onClose: () => void
 }
 
+// Controlled modal: parent owns open/busy/error and the submit side-effect;
+// this component owns only roster fetch + local search/selection state.
 export default function UserPickerDialog({
   open,
   heading,
@@ -107,6 +109,8 @@ export default function UserPickerDialog({
 
   const excluded = useMemo(() => new Set(excludeUids ?? []), [excludeUids])
 
+  // visible roster: drop excluded/disabled users, then apply the case-insensitive
+  // name-or-email filter. recomputed on roster/search/exclude changes.
   const visible = useMemo(() => {
     const q = search.trim().toLowerCase()
     return users.filter((u) => {
@@ -118,6 +122,7 @@ export default function UserPickerDialog({
     })
   }, [users, search, excluded])
 
+  // early-return after hooks so hook order stays stable across renders.
   if (!open) return null
 
   const toggle = (uid: string) => {
@@ -127,6 +132,7 @@ export default function UserPickerDialog({
     )
   }
 
+  // require at least one selection; defer all server work to the parent.
   const submit = () => {
     if (selected.length === 0) {
       setMinOneError(true)

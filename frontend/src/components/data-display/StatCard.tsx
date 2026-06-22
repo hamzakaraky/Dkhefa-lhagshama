@@ -1,13 +1,26 @@
+/*
+ * StatCard - animated impact-number tile for the home page hero/impact strip.
+ *
+ * Renders a single statistic (e.g. requests fulfilled) that counts up from 0 to
+ * `num` once it scrolls into view, then formats with toLocaleString + an optional
+ * suffix. Motion is gated by prefers-reduced-motion to match Reveal/MagneticButton.
+ * Self-contained: no data fetching: the caller passes the final number in.
+ * Styling lives in the colocated StatCard.module.css.
+ */
 import { useEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import styles from './StatCard.module.css'
 
+// num: target value to count up to; suffix: appended unit (e.g. '+', '%');
+// delay: ms to wait after the card enters the viewport before the count-up starts.
 interface StatCardProps {
   num: number
   suffix?: string
   delay?: number
 }
 
+// counts displayed from 0 to num on first viewport entry (IntersectionObserver,
+// threshold 0.5), guarded by the `started` ref so it fires only once.
 export default function StatCard({ num, suffix = '', delay = 0 }: StatCardProps) {
   const [displayed, setDisplayed] = useState(0)
   const ref = useRef<HTMLDivElement | null>(null)

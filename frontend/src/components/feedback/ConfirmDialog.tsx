@@ -113,6 +113,9 @@ export default function ConfirmDialog({
   return (
     <div
       className="confirm-overlay"
+      // mousedown (not click) so a press that starts inside the box and
+      // drags onto the backdrop doesn't dismiss; only a true backdrop press
+      // (target === currentTarget) cancels.
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !busy) onCancel?.()
       }}

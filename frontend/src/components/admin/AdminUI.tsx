@@ -1,3 +1,10 @@
+// AdminUI — shared presentational primitives for the admin/ pages (dashboard,
+// requests, volunteers, directory, etc.). Stateless, prop-driven building blocks:
+// stat tiles, empty/error/loading states, status badges, table skeletons, plus
+// adminErrorMessage() for localizing api errors. No data fetching or routing
+// logic lives here; all text is passed in by callers (i18n stays in their
+// translations file). Tone strings (StatTone / STATUS_TONE keys) map domain
+// status enums to CSS classes, so any new status must be added to STATUS_TONE.
 import { Inbox, AlertCircle, ArrowUpRight } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
@@ -72,6 +79,8 @@ interface EmptyStateProps {
   icon?: LucideIcon
 }
 
+// EmptyState — "nothing here yet" placeholder for empty lists/tables; defaults
+// to the inbox icon. role="status" so screen readers announce it politely.
 export function EmptyState({ title, message, icon: Icon = Inbox }: EmptyStateProps) {
   return (
     <div className="admin-empty" role="status">
@@ -90,6 +99,8 @@ interface ErrorStateProps {
   retryLabel?: ReactNode
 }
 
+// ErrorState — inline error banner (role="alert") with an optional retry button;
+// the button only renders when onRetry is provided.
 export function ErrorState({ message, onRetry, retryLabel }: ErrorStateProps) {
   return (
     <div className="admin-error" role="alert">
@@ -147,6 +158,8 @@ interface TableSkeletonProps {
   cols?: number
 }
 
+// TableSkeleton — loading placeholder mimicking a rows x cols data table;
+// aria-hidden since it conveys no real content.
 export function TableSkeleton({ rows = 5, cols = 4 }: TableSkeletonProps) {
   return (
     <div className="admin-table-wrap" aria-hidden="true">

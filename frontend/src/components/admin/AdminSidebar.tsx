@@ -1,3 +1,12 @@
+/**
+ * AdminSidebar — persistent left-rail navigation for the /admin/* console.
+ *
+ * renders the brand link, a fixed list of admin section links (NAV_ITEMS), and a
+ * back-to-site footer. highlights the current section by matching router.pathname.
+ * labels are pulled from t.admin.nav (HE/EN via LanguageContext), so the order of
+ * sections lives here in NAV_ITEMS while the strings live in translations.
+ * used by the admin layout that wraps every /admin page.
+ */
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import {
@@ -15,6 +24,8 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
 
+// one admin section link. key indexes into t.admin.nav for the label; exact means
+// match the route only (used for /admin so its prefix doesn't light up every child).
 interface NavItem {
   href: string
   key: string
@@ -22,6 +33,7 @@ interface NavItem {
   exact?: boolean
 }
 
+// section order is intentional (dashboard first, back-to-site rendered separately).
 const NAV_ITEMS: NavItem[] = [
   { href: '/admin', key: 'dashboard', icon: LayoutDashboard, exact: true },
   { href: '/admin/requests', key: 'requests', icon: Inbox },
@@ -34,11 +46,14 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/insights', key: 'insights', icon: BarChart3 },
 ]
 
+// active when the route equals the item, or (non-exact) is a child of it. the
+// trailing-slash prefix check avoids /admin/requests also matching /admin/requests-foo.
 function isActive(pathname: string, item: NavItem) {
   if (item.exact) return pathname === item.href
   return pathname === item.href || pathname.startsWith(item.href + '/')
 }
 
+// stateless nav rail; reads the active route from the router and labels from i18n.
 export default function AdminSidebar() {
   const { t } = useLanguage()
   const router = useRouter()

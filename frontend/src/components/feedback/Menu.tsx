@@ -14,12 +14,21 @@ import Link from 'next/link'
 import { Check } from 'lucide-react'
 
 /* ────────────────────────────────────────────────────────────
-   Menu — reusable accessible dropdown primitive.
+   Menu — reusable accessible dropdown primitive (WAI-ARIA menu).
+
+   Shared UI used by the app shell / nav (e.g. the account + language
+   menus). Renders nothing globally: a parent passes a trigger node and
+   <MenuItem> children; this component owns open/close state, roving
+   keyboard focus, and ARIA wiring. Styling lives in menu.css.
 
    <Menu trigger={...} align="end" label="Account">
      <MenuItem onSelect={...} icon={...} selected>…</MenuItem>
      <MenuItem href="/admin">…</MenuItem>
    </Menu>
+
+   Key invariant: only concrete element children count as items, and each
+   item is cloned with hidden bookkeeping props (__index/__storeNode/
+   __closeMenu) so the parent can drive focus and dismissal.
 
    - Opens on click / Enter / Space.
    - role="menu" / role="menuitem"; aria-haspopup, aria-expanded.
@@ -67,6 +76,9 @@ interface InjectedItemProps {
   __closeMenu?: () => void
 }
 
+// Single menu entry. Renders a <button> (onSelect handler) or a next/link
+// (href) sharing the same role="menuitem" / aria-checked markup. The injected
+// __* props let the parent <Menu> register the DOM node and close on activate.
 export function MenuItem(props: MenuItemProps & InjectedItemProps) {
   const {
     onSelect,
@@ -80,6 +92,8 @@ export function MenuItem(props: MenuItemProps & InjectedItemProps) {
     __closeMenu,
   } = props
 
+  // Hand the rendered button/link node back to the parent, keyed by index,
+  // so the parent can call .focus() on it for roving keyboard navigation.
   const setRef = useCallback(
     (el: HTMLElement | null) => {
       if (typeof __index === 'number') __storeNode?.(__index, el)
@@ -139,6 +153,9 @@ export function MenuItem(props: MenuItemProps & InjectedItemProps) {
   )
 }
 
+// Container that owns the dropdown. State: `open` (visibility) and
+// `activeIndex` (which item holds roving focus). Refs track the root (for
+// outside-click), the trigger (for focus return), and each item node.
 export default function Menu({ trigger, align = 'end', label, children }: MenuProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -206,6 +223,8 @@ export default function Menu({ trigger, align = 'end', label, children }: MenuPr
     return () => router.events.off('routeChangeStart', onRouteChange)
   }, [open, router.events])
 
+  // Keyboard on the closed trigger: open it. ArrowUp opens at the last item
+  // (mirrors native menu behavior), everything else opens at the first.
   const onTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
     switch (e.key) {
       case 'Enter':
@@ -224,6 +243,9 @@ export default function Menu({ trigger, align = 'end', label, children }: MenuPr
     }
   }
 
+  // Keyboard on the open surface: Arrow keys wrap the roving index, Home/End
+  // jump to the ends, Esc closes (returning focus), Tab dismisses without
+  // hijacking focus so it flows to the next element naturally.
   const onMenuKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     switch (e.key) {
       case 'ArrowDown':

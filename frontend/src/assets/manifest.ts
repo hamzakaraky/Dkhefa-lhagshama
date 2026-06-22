@@ -23,6 +23,8 @@ export interface AssetSlot {
   ratio?: string;
 }
 
+// The closed set of valid slot keys. Adding artwork = add a key here + an
+// entry in assetManifest; the Record type below forces both to stay in sync.
 export type AssetSlotKey =
   | 'authAside'
   | 'volunteerInvite'
@@ -30,6 +32,8 @@ export type AssetSlotKey =
   | 'story1'
   | 'storyWisdomLetter';
 
+// Single source of truth. Keyed by AssetSlotKey so the type system guarantees
+// every key has exactly one slot (no missing or stray entries).
 export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
   authAside: {
     src: '/logo.jpg',
@@ -77,6 +81,8 @@ export const assetManifest: Record<AssetSlotKey, AssetSlot> = {
   },
 };
 
+// Typed accessor used by <AssetImage>. The key type makes a missing slot a
+// compile error, so the lookup always returns a defined slot.
 export function getAssetSlot(key: AssetSlotKey): AssetSlot {
   return assetManifest[key];
 }

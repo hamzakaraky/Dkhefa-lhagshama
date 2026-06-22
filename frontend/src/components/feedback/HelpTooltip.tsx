@@ -2,22 +2,22 @@ import { useId } from 'react'
 import { HelpCircle } from 'lucide-react'
 
 /**
- * Inline help affordance: a small ⓘ trigger that reveals a short tip on
- * hover and on keyboard focus. The tip text is bound to t.* by the caller.
- * The button is aria-describedby the bubble so screen readers announce it.
- *
- * Props:
- *  - text  : string — the tip copy (bilingual via t.*).
- *  - label : string — accessible name for the trigger (e.g. "More info").
+ * inline help affordance used across forms/labels: a small help-circle trigger
+ * whose tip bubble shows on hover + keyboard focus. presentation (.tooltip /
+ * .tooltip-bubble) is global css; this component only wires up markup + a11y.
+ * callers pass already-translated copy (text/label come from the shared t.*).
+ * invariant: the bubble's id is generated once and referenced by the button's
+ * aria-describedby so screen readers announce the tip when the trigger is read.
  */
 interface HelpTooltipProps {
-  /** The tip copy (bilingual via t.*). */
+  // tip copy, pre-translated by the caller
   text: string
-  /** Accessible name for the trigger (e.g. "More info"). */
+  // accessible name for the icon-only trigger (e.g. "More info")
   label: string
 }
 
 export default function HelpTooltip({ text, label }: HelpTooltipProps) {
+  // stable per-instance id so aria-describedby and the bubble's id match (ssr-safe)
   const id = useId()
   return (
     <span className="tooltip">

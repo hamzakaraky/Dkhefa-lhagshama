@@ -1,3 +1,12 @@
+/**
+ * CreateTaskDialog — admin modal for creating a "task" request on behalf of the
+ * NGO (req 20 + 21). Rendered by the admin requests views; a two-step submit
+ * first creates the request to get its id, then streams each picked file to the
+ * uploads endpoint carrying a per-file volunteer-visibility flag. Category
+ * options reuse the admin-managed taxonomy (useCategories) so there is no second
+ * list to drift from the beneficiary form. Controlled component: parent owns
+ * `open` and gets the new id back via `onCreated` to refresh its list.
+ */
 import { useRef, useState } from 'react'
 import { ClipboardList, Paperclip, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -31,12 +40,12 @@ interface CreateTaskDialogProps {
 const URGENCIES = ['low', 'medium', 'high'] as const
 
 /**
- * Admin "create task request" dialog (req 20 + 21). Flow:
- *   1. POST /api/admin/requests/task → { id }
+ * Submit flow:
+ *   1. POST /api/admin/requests/task -> { id }
  *   2. for each picked file: POST raw bytes to
  *      /api/uploads/requests/{id}?filename=...&volunteerVisible=<checkbox>
- * Category options come from the admin-managed taxonomy (useCategories), the
- * same list the beneficiary form renders — no parallel list to drift.
+ * Key state: form fields, `files` (PickedFile[] with visibility), `busy`
+ * (blocks close + double-submit), `error` (validation/upload/create message).
  */
 export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTaskDialogProps) {
   const { t } = useLanguage()
@@ -54,6 +63,7 @@ export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTas
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // unmount-equivalent when closed; hooks above stay unconditional so order is stable.
   if (!open) return null
 
   const reset = () => {
@@ -67,7 +77,7 @@ export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTas
   }
 
   const close = () => {
-    if (busy) return
+    if (busy) return // don't let overlay/cancel close mid-submit
     reset()
     onClose()
   }
@@ -132,12 +142,15 @@ export default function CreateTaskDialog({ open, onClose, onCreated }: CreateTas
           deadline: deadline || undefined,
         }),
       })
-      // 2. Attach each file with its per-file visibility flag.
+      // 2. Attach each file with its per-file visibility flag. Sequential so a
+      //    failure can be flagged per-file; the request itself already exists.
       let uploadFailed = false
       for (const picked of files) {
         const ok = await uploadOne(created.id, picked)
         if (!ok) uploadFailed = true
       }
+      // partial-failure: surface upload error but still treat the create as done
+      // (request exists with id), so the parent list refreshes regardless.
       if (uploadFailed) setError(f.uploadError)
       reset()
       onCreated(created.id)

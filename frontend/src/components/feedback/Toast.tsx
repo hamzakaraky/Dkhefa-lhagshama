@@ -1,3 +1,10 @@
+/**
+ * Toast notification renderer. Mounted once near the app root; reads the live
+ * `toasts` queue from AppContext and paints each one as a dismissible banner.
+ * Adding/removing toasts happens elsewhere (AppContext.addToast/removeToast);
+ * this component is purely presentational. Type/message/dismiss text are
+ * localized (HE/EN); the container is an aria-live polite region for SRs.
+ */
 import type { ReactNode } from 'react'
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react'
 import { useApp } from '@/contexts/AppContext'
@@ -11,6 +18,7 @@ interface ToastItem {
   message: string
 }
 
+// one icon per toast type; indexed by `t.type` at render time.
 const ICONS: Record<ToastItem['type'], ReactNode> = {
   success: <CheckCircle size={16} />,
   error:   <AlertCircle size={16} />,
@@ -18,6 +26,7 @@ const ICONS: Record<ToastItem['type'], ReactNode> = {
   warning: <AlertTriangle size={16} />,
 }
 
+// renders the current toast queue; takes no props (state comes from AppContext).
 export default function ToastContainer() {
   const { toasts, removeToast } = useApp()
   // Note: the map var below is also named `t` (a toast item), so the language

@@ -1,3 +1,11 @@
+/*
+ * Modal.tsx — the app's single global modal surface.
+ * Renders whatever `modal` payload AppContext currently holds (set via openModal/closeModal),
+ * portaled to document.body so it escapes parent stacking/overflow. There is exactly one of
+ * these mounted app-wide; any feature opens a dialog by pushing content into context, not by
+ * rendering its own modal. Closes on overlay click or Escape, and locks body scroll while open.
+ * Visual chrome uses global `modal-*` classes; only title/close-button get module-scoped styles.
+ */
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -12,10 +20,14 @@ interface ModalContent {
   footer?: ReactNode
 }
 
+// global modal host; reads the active payload from AppContext and renders nothing when none is set.
 export default function Modal() {
   const { modal: rawModal, closeModal } = useApp()
+  // context types modal as a bare ReactNode; we actually pass a {title,content,footer} object.
   const modal = rawModal as ModalContent | null
 
+  // while open: Escape closes, and body scroll is locked. cleanup restores both, so the effect
+  // re-runs on every modal change (open/close/swap) and never leaves a stuck overflow:hidden.
   useEffect(() => {
     if (!modal) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') closeModal() }
@@ -30,6 +42,7 @@ export default function Modal() {
   if (!modal) return null
 
   return createPortal(
+    // close only on a true backdrop click (target === overlay), not on clicks bubbling from the box.
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && closeModal()}>
       <div className="modal-box" role="dialog" aria-modal="true">
         {modal.title && (
