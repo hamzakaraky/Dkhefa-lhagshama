@@ -1,3 +1,16 @@
+/**
+ * useReferralAndDocs: admin request-detail sub-hook for two side flows.
+ *   1. referral: open a dialog, lazy-load the live answers catalog, and POST a
+ *      referral of the current request to a chosen answer/org.
+ *   2. document viewer: re-mint a short-lived signed URL for a request
+ *      attachment and open it in a new tab (storage paths never reach client).
+ *
+ * Split out of useRequestDetail so that hook stays focused; this one owns only
+ * referral + doc state and handlers, and is composed back into its return.
+ * Collaborates with the backend admin/request routes via apiClient, and depends
+ * on the parent for `id`, current `lang`, lifecycle copy (`lc`), `toast`,
+ * `setError`, and `load` (used to silently refresh after a successful refer).
+ */
 import { useState, useCallback } from 'react'
 import type { Translations } from '@/contexts/LanguageContext'
 import { apiJson, apiFetch } from '@/lib/apiClient'
@@ -5,6 +18,8 @@ import type { AnswerOption } from './types'
 
 type Toast = (msg: string, kind: 'success' | 'error') => void
 
+// injected by useRequestDetail; `id` is the route param so it carries the
+// next/router string|string[]|undefined shape.
 interface Deps {
   id: string | string[] | undefined
   lang: string
@@ -14,8 +29,8 @@ interface Deps {
   load: (opts?: { silent?: boolean }) => Promise<void>
 }
 
-// Referral flow (Note 8) + document viewer (Note 1) — state and handlers,
-// mechanically lifted out of useRequestDetail so each file stays focused.
+// returns the referral dialog state + handlers and the doc-viewer state +
+// handler; consumed by useRequestDetail which spreads them to the screen.
 export function useReferralAndDocs({ id, lang, lc, toast, setError, load }: Deps) {
   // Referral flow (Note 8).
   const [referOpen, setReferOpen] = useState(false)
@@ -43,6 +58,9 @@ export function useReferralAndDocs({ id, lang, lc, toast, setError, load }: Deps
     }
   }, [answersLoaded])
 
+  // picks the right side of a {he,en} title for the current lang, tolerating a
+  // plain string (legacy data) and falling back to the other locale if one
+  // side is empty.
   const resolveBilingual = useCallback(
     (v: AnswerOption['title']): string => {
       if (!v) return ''
@@ -52,6 +70,9 @@ export function useReferralAndDocs({ id, lang, lc, toast, setError, load }: Deps
     [lang],
   )
 
+  // POST /api/admin/requests/:id/refer with the chosen answerId + optional note.
+  // 409/422 means the request can't be referred from its current status, so map
+  // to the illegal-transition message; on success refresh in place and reset.
   const submitReferral = async () => {
     if (!referAnswerId) return
     setReferring(true)

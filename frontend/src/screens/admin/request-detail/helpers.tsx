@@ -1,3 +1,15 @@
+/*
+ * helpers for the admin request-detail screen.
+ *
+ * pure, render-free building blocks shared by the request-detail view: a typed
+ * accessor into the (HE/EN) admin copy, the timeline event-to-label formatter,
+ * and the small MetaCell presentational component for the request summary grid.
+ * kept out of the screen module so they stay testable and never remount.
+ *
+ * key invariant: eventLabel resolves a stored volunteer uid back to a display
+ * name via the loaded active-volunteers list, so the timeline never leaks raw
+ * database ids. all label text comes from AdminCopy (no hardcoded strings).
+ */
 import type { LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
 import type { AdminCopy, ActiveVolunteer, RequestEvent } from './types'
@@ -10,6 +22,9 @@ export function rdStr(a: AdminCopy, key: string): string {
   return typeof v === 'string' ? v : ''
 }
 
+// Format one timeline RequestEvent into a localized human-readable label.
+// Each event type pulls its phrasing from AdminCopy and unpacks the event's
+// loosely-typed details; falls back to the raw ev.type for unknown events.
 export function eventLabel(ev: RequestEvent, a: AdminCopy, volunteers: ActiveVolunteer[]): string {
   switch (ev.type) {
     case 'assigned': {
@@ -55,6 +70,7 @@ interface MetaCellProps {
   children: ReactNode
 }
 
+// Renders one icon + dt/dd pair for the summary grid; children is the value.
 export function MetaCell({ icon: Icon, label, children }: MetaCellProps) {
   return (
     <div className={styles.metaCell}>

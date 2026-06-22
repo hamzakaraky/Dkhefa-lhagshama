@@ -1,3 +1,15 @@
+/**
+ * AdminVolunteersPage — admin console screen for the volunteer roster (UC-05).
+ *
+ * Loads GET /api/admin/volunteers once and renders three things off that one
+ * payload: live queue counts, a category-permission approval list (req 15),
+ * and a tabbed table that switches between the Active roster and the Pending
+ * application queue. Admins approve/reject applications, deactivate active
+ * volunteers, and grant/deny per-category permissions from here; Active rows
+ * drill into /admin/volunteers/[uid]. Client-side search + a ?tab= deep-link
+ * (WS-9) refine the view. Bilingual (HE/EN) via useLanguage; category labels
+ * come from the admin-managed taxonomy (useCategories).
+ */
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { HeartHandshake, Clock, CheckCircle2, Check, X, Search } from 'lucide-react'
@@ -69,6 +81,9 @@ export default function AdminVolunteersPage() {
     if (param === 'pending' || param === 'active') setTab(param)
   }, [])
 
+  // Fetch the full roster payload (pending + active + categoryRequests) in one
+  // call; re-bound on lang so error messages localize. All mutations call this
+  // again to refresh rather than patching local state.
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -109,6 +124,9 @@ export default function AdminVolunteersPage() {
     load()
   }, [load])
 
+  // Apply a roster lifecycle action via POST /api/admin/volunteers/:id/:action
+  // (approve | reject on pending docs, keyed by row id; deactivate on active
+  // rows, keyed by uid). busyId disables that row's buttons while in flight.
   const act = async (id: string | undefined, action: string) => {
     setBusyId(id ?? null)
     setError(null)
@@ -126,6 +144,9 @@ export default function AdminVolunteersPage() {
     }
   }
 
+  // Visible rows: pick the active tab's list, then narrow by the search box
+  // (name/uid + email, case-insensitive). Empty query short-circuits to the
+  // full list so we don't allocate a new array every render.
   const baseRows = tab === 'pending' ? data.pending : data.active
   const q = query.trim().toLowerCase()
   const rows = useMemo(() => {

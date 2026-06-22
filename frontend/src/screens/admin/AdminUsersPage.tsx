@@ -1,3 +1,13 @@
+/**
+ * AdminUsersPage — UC-05 admin user-management console.
+ *
+ * Lists every platform user (GET /api/admin/users) and lets an admin change a
+ * user's role (promote/demote) or lock/unlock the account (enable/disable).
+ * Each mutation re-fetches the full list so the table reflects server truth.
+ * Admin accounts are protected: their role/disable controls are hidden behind a
+ * lock indicator, mirroring the backend's 403 cannot_modify_admin guard.
+ * Rendered inside AdminLayout; copy comes from the shared HE/EN translations.
+ */
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { Users, ShieldCheck, UserCheck, UserX, Lock, Search, X } from 'lucide-react'
 import { useLanguage } from '@/contexts/LanguageContext'
@@ -51,6 +61,7 @@ export default function AdminUsersPage() {
   const [confirmDisableUid, setConfirmDisableUid] = useState<string | null>(null)
   const [query, setQuery] = useState('') // WS-9 client-side search (name + email + role label)
 
+  // fetch the full user list; the single source of truth re-pulled after every mutation.
   const load = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -68,6 +79,8 @@ export default function AdminUsersPage() {
     load()
   }, [load])
 
+  // role change: beneficiary is the demote target (POST .../demote), any other
+  // role promotes (POST .../promote with {role}). reloads on success.
   const changeRole = async (uid: string, role: string) => {
     setBusyId(uid)
     setError(null)
@@ -90,6 +103,8 @@ export default function AdminUsersPage() {
     }
   }
 
+  // lock/unlock the account: when currently disabled -> enable, else -> disable
+  // (POST .../enable | .../disable). disable is gated by the confirm dialog upstream.
   const toggleDisabled = async (uid: string, disabled: boolean | undefined) => {
     setBusyId(uid)
     setError(null)

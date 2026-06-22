@@ -1,3 +1,14 @@
+/*
+ * Type contracts + shared constants for the admin request-detail screen.
+ *
+ * Single source of the shapes this screen reads (RequestDetail, Candidate,
+ * volunteers, i18n copy) and of the legal status moves it can offer
+ * (ADMIN_TRANSITIONS, which mirrors the backend authority in
+ * lib/requestTransitions — keep the two in sync). Data interfaces are
+ * intentionally loose ([key: string]: unknown) so only the fields the UI
+ * actually uses are declared. Consumed by the request-detail component and
+ * its sub-blocks (lifecycle controls, refer, ranked-matching candidates).
+ */
 import type { CSSProperties } from 'react'
 import type { Attachment, CloseRequestSummary, RequestStatus } from '@/types'
 

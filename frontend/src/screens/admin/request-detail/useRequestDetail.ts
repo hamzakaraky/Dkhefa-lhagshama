@@ -14,9 +14,15 @@ import { rdStr } from './helpers'
 import { buildTransitionCopy, buildTransitionControls } from './transitions'
 import { useReferralAndDocs } from './useReferralAndDocs'
 
-// All state, data fetching and action handlers for the admin request-detail
-// screen. Mechanically lifted out of the page component so the page stays a
-// thin shell that wires this hook into the presentational children.
+// Headless controller hook for the admin request-detail screen. Owns all of
+// its state, data fetching and action handlers and returns one flat object the
+// page spreads into its presentational children, so the page stays a thin
+// shell. Talks to the Express admin API (`/api/admin/requests/:id` +
+// /volunteers + /candidates) via apiJson/apiFetch, pulls bilingual copy from
+// LanguageContext, toasts via AppContext, and delegates the referral + document
+// flows to the companion useReferralAndDocs hook. Invariant: every successful
+// action re-fetches the detail with `{ silent: true }` so the body updates in
+// place rather than blanking back to the loading skeleton.
 export function useRequestDetail(id: string | string[] | undefined) {
   const { t, lang } = useLanguage()
   const a = t.admin
@@ -82,6 +88,8 @@ export function useRequestDetail(id: string | string[] | undefined) {
     load()
   }, [load])
 
+  // Shared action primitive for every POST against this request (assign, note,
+  // etc.); returns true on success so callers can chain toasts/state resets.
   // apiFetch returns the raw Response and does NOT throw on non-2xx, so we must
   // inspect res.ok ourselves. `onError(status, body)` lets callers map a
   // specific failure (e.g. #92 status conflicts) to a friendly message.
@@ -134,6 +142,8 @@ export function useRequestDetail(id: string | string[] | undefined) {
       toast(a.claims.assignSuccess, 'success')
     } else toast(a.claims.assignError, 'error')
   }
+  // Render one match-reason chip to a bilingual label, inlining the value the
+  // backend attached to that reason (language name, category-specific rating).
   const reasonChipLabel = (r: MatchReason): string => {
     if (r.key === 'speaksLanguage') {
       const langName = (r.lang && m.langLabels[r.lang]) || r.lang || ''

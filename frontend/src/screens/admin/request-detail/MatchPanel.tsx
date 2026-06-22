@@ -15,6 +15,10 @@ import type { Translations } from '@/contexts/LanguageContext'
 import type { Candidate, MatchReason, MatchingI18n, RequestDetail } from './types'
 import styles from './MatchPanel.module.css'
 
+// All state lives in the parent; this component is fully controlled.
+// candidates = full ranked list; filteredCandidates = after the name search;
+// visibleCandidates = the windowed slice the carousel actually renders;
+// safeIdx = clamped carousel position (drives the counter + nav disabled state).
 interface MatchPanelProps {
   request: RequestDetail
   a: Translations['admin']
@@ -40,8 +44,14 @@ interface MatchPanelProps {
   handleAssignCandidate: (uid: string) => void
 }
 
-// The matching / assignment body of the action aside: assigned summary, ranked
-// candidate carousel, search and reassign toggle. Pure presentation.
+// Matching/assignment body of the admin request-detail action aside (UC-05).
+// Pure presentation: all data + handlers come from the parent request-detail
+// screen, which owns the candidate fetch (GET /api/admin/requests/:id/candidates,
+// ranked best-first by the rule-based matcher) and the assign/reassign state.
+// Core invariant of the render: if the request already has an assignedVolunteerId
+// and we are not actively reassigning, show the assigned summary (who + why);
+// otherwise show the searchable ranked candidate carousel. HE/RTL aware (nav
+// chevrons flip on isRTL).
 export default function MatchPanel({
   request,
   a,
@@ -177,6 +187,7 @@ export default function MatchPanel({
             </button>
             <ul className="match-list match-carousel-list">
             {visibleCandidates.map((c, i) => {
+              // this row's assign is in flight (one assign at a time across the list)
               const busy = assigningUid === c.uid
               return (
                 <li

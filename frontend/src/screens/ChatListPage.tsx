@@ -1,3 +1,20 @@
+/*
+ * ChatListPage — the /chats inbox. Renders the signed-in user's conversations
+ * as a live list, split into "active" vs "past" tabs.
+ *
+ * Source of truth is a realtime Firestore `chats` query (participants
+ * array-contains the user, newest lastMessageAt first); two lazy Express
+ * fan-outs enrich each row: /api/requests/:id for the linked request's status +
+ * friendly displayId (drives the active/past split), and
+ * /api/chats/:id/participants for untitled direct-chat labels. Admins can spin
+ * up a direct/staff chat via UserPickerDialog (POST /api/chats/direct).
+ *
+ * Invariants: missing/failed enrichment fails OPEN toward "active" so a chat is
+ * never wrongly hidden; pre-direct-chat docs are read tolerantly as request
+ * chats. ?requestId= deep-links from a my-requests card highlight (and, if it's
+ * the only match, auto-open) the matching chat. Collaborates with
+ * AuthContext/LanguageContext, apiClient, and the /chats/[id] window screen.
+ */
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -94,6 +111,8 @@ export default function ChatListPage() {
   const isRtl = lang === "he";
   const ChevronIcon = isRtl ? ChevronLeft : ChevronRight;
 
+  // Realtime subscription to the user's chats; maps each doc to a ChatListItem
+  // with tolerant reads, and surfaces permission-denied vs generic load errors.
   useEffect(() => {
     if (authLoading || !user) {
       setLoading(false);
@@ -314,6 +333,9 @@ export default function ChatListPage() {
     </div>
   );
 
+  // Picks the right view for the current state, in priority order: auth-loading
+  // skeleton → signed-out → list-loading skeleton → permission/generic error →
+  // empty inbox → empty tab → the chat list itself.
   const renderBody = () => {
     if (authLoading) return skeletonList();
 

@@ -1,3 +1,12 @@
+/*
+ * RequestTimeline — the audit/history rail on the admin request-detail screen.
+ * Renders request.events (status changes, claims, assignments, etc.) as a
+ * vertical timeline, newest-first as ordered by the server. Pure presentation:
+ * no fetching/state; the parent passes the request, the admin i18n bundle, the
+ * active-volunteer list (used to resolve actor names in labels) and a date
+ * formatter. eventLabel() turns each raw event into a localized line. Falls
+ * back to an empty-state when the request has no events.
+ */
 import { Clock3, History } from 'lucide-react'
 import type { Translations } from '@/contexts/LanguageContext'
 import type { ActiveVolunteer, RequestDetail } from './types'
@@ -7,12 +16,12 @@ import styles from './RequestTimeline.module.css'
 interface RequestTimelineProps {
   request: RequestDetail
   a: Translations['admin']
+  // active volunteers, so eventLabel can render names for uid-only event actors
   volunteers: ActiveVolunteer[]
+  // shared date formatter from the parent (locale-aware)
   fmt: (ts: string | number | Date | undefined) => string
 }
 
-// The request audit/timeline rail. Pure presentation lifted from the screen's
-// main <section>.
 export default function RequestTimeline({ request, a, volunteers, fmt }: RequestTimelineProps) {
   return (
     <div className={styles.root}>
@@ -41,6 +50,7 @@ export default function RequestTimeline({ request, a, volunteers, fmt }: Request
                 magic numbers, and it re-balances if the label wraps.
               */}
               <span aria-hidden="true" className={styles.marker}>
+                {/* first item (i===0) is the latest event = current state: ember-filled + ring; older events are hollow */}
                 <span
                   className={styles.dot}
                   style={{

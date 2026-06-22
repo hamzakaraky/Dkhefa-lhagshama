@@ -1,3 +1,12 @@
+/*
+ * ActionPanel — the sticky right-rail <aside> on the admin request-detail screen.
+ * Pure presentation: it renders four stacked sections (volunteer matching/assignment
+ * via the nested MatchPanel, the legal lifecycle transitions for the current status,
+ * the attachment list, and the free-text note field) but owns no state or data
+ * fetching. Every value and callback is driven by the parent screen via props, so
+ * this component is a dumb, fully-controlled view. Bilingual: all copy comes from
+ * the LanguageContext slices (a/lc/m/t) and layout flips with isRTL.
+ */
 import type { LucideIcon } from 'lucide-react'
 import {
   StickyNote,
@@ -19,6 +28,8 @@ import type {
 import MatchPanel from './MatchPanel'
 import styles from './ActionPanel.module.css'
 
+// all props are supplied by the parent request-detail screen; grouped by the
+// section they feed (matching, lifecycle, documents, note). nothing is local.
 interface ActionPanelProps {
   request: RequestDetail
   a: Translations['admin']
@@ -66,8 +77,8 @@ interface ActionPanelProps {
   handleNote: () => void
 }
 
-// The sticky action <aside>: matching/assignment, lifecycle transitions,
-// documents and the note field. Pure presentation lifted from the screen.
+// renders the four sections top-to-bottom: matching/assignment (MatchPanel),
+// lifecycle transitions, documents, note. fully controlled by props.
 export default function ActionPanel({
   request,
   a,
@@ -197,8 +208,8 @@ export default function ActionPanel({
         )}
       </div>
 
-      {/* ── Documents (Note 1) — list attachments; each opens a freshly
-          minted short-lived signed URL in a new tab. ── */}
+      {/* ── Documents (Note 1) — list attachments; viewDoc (parent) mints a
+          fresh short-lived signed URL on click. busy-per-row via openingDoc. ── */}
       <div className={`field ${styles.fieldSection}`}>
         <span className={`form-label ${styles.iconLabelSpaced}`}>
           <FileText size={15} aria-hidden="true" className={styles.accentIcon} />
@@ -248,6 +259,7 @@ export default function ActionPanel({
           onChange={(e) => setNote(e.target.value)}
           placeholder={a.reqDetail.notePH}
         />
+        {/* guard blocks saving an empty/whitespace-only note */}
         <button
           type="button"
           className="btn btn-outline admin-side-btn"

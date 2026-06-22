@@ -1,3 +1,12 @@
+// Admin drill-down for a single volunteer (route /admin/volunteers/[uid]).
+// Renders a profile card (identity + roster meta the table never shows) and the
+// volunteer's full assigned-request history. Reads two backend endpoints in
+// parallel: the bulk active roster (GET /api/admin/volunteers, find by uid) and
+// this volunteer's requests (GET /api/admin/requests?volunteerId=…&archived=all,
+// archived=all so referral/archive history stays visible). A uid missing from
+// the active roster is a deactivated "former" volunteer, not an error — the
+// requests still render under a notice. Bilingual (HE/EN) + RTL via useLanguage;
+// category labels from the admin taxonomy via useCategories. Read-only screen.
 import { useEffect, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import type { LucideIcon } from 'lucide-react'

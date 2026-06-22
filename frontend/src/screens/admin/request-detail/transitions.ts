@@ -1,3 +1,14 @@
+/**
+ * Admin request-detail lifecycle transitions.
+ *
+ * Pure helpers (no React/IO) that drive the status-action UI on the admin
+ * request-detail screen. `buildTransitionControls` reads the request's current
+ * status and returns only the legal admin actions for it, gated by the
+ * ADMIN_TRANSITIONS allow-map in ./types; `buildTransitionCopy` supplies the
+ * matching bilingual confirm/success/error strings keyed by transition kind.
+ * Status flow: pending -> in_progress -> awaiting_review -> closed, with
+ * reopen/sendBack/reject/archive as side branches.
+ */
 import type { LucideIcon } from 'lucide-react'
 import {
   CheckCircle2,
@@ -29,6 +40,8 @@ export function buildTransitionCopy(
   }
 }
 
+// One admin status-action button: label + icon to render, the pending
+// transition it fires on click, and whether it's destructive (danger styling).
 export interface TransitionControl {
   key: TransitionKind
   label: string

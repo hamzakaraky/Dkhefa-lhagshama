@@ -1,3 +1,16 @@
+/**
+ * RequestSummary — the read-only main column of the admin request-detail screen.
+ *
+ * Renders one request's full picture: editorial header (name/REQ-#### ref + status
+ * badges), description, meta facts (category/city/assignee), and the optional panels
+ * that appear by request state — pending consent-close handshake (req 25), referral
+ * (Note 8), and the multi-claimant "volunteers requesting this" list (req 22) with an
+ * Assign action. Ends with the RequestTimeline.
+ *
+ * Pure presentation: all data, i18n maps (a/lc), formatters (fmt) and the assign
+ * handler are passed down from the parent screen; this component holds no state and
+ * triggers no fetches. Mechanically lifted out of the screen's main <section>.
+ */
 import type { ReactNode } from 'react'
 import {
   MapPin,
@@ -32,9 +45,9 @@ interface RequestSummaryProps {
   handleAssignClaim: (volunteerId: string) => void
 }
 
-// Editorial header → meta facts → consent-close panel → referral panel →
-// claimant list → timeline. Pure presentation; mechanically lifted from the
-// screen's main <section>.
+// Render order: editorial header → description → meta facts → consent-close panel →
+// referral panel → claimant list → timeline. The three middle panels render only
+// when the matching request fields are present (see guards below).
 export default function RequestSummary({
   request,
   a,
