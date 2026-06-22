@@ -1,0 +1,52 @@
+/* 404 page — component-scoped styles (was inline style={{}}). */
+
+.main {
+  min-height: calc(100vh - var(--nav-h));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-block: 80px;
+  padding-inline: 24px;
+  background: var(--paper);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.eyebrow {
+  color: var(--ember);
+}
+
+.bigCode {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: clamp(4rem, 14vw, 8rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.03em;
+}
+
+.divider {
+  margin-block: 24px;
+}
+
+.title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-weight: 400;
+  font-size: var(--fs-h2);
+  color: var(--ink);
+  margin-block: 0 12px;
+  margin-inline: 0;
+  text-wrap: balance;
+}
+
+.lede {
+  margin-block: 0 28px;
+  margin-inline: auto;
+  max-width: 30rem;
+}
