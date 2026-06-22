@@ -1,0 +1,61 @@
+/* RegisterPage — component-scoped styles (was static inline style={{}}). */
+
+.tabToggle {
+  margin-block-end: 22px;
+}
+
+.fieldError {
+  margin-block-start: 6px;
+}
+
+.pwChecks {
+  margin-block-start: 8px;
+}
+
+.submitBtn {
+  margin-block-start: 4px;
+  justify-content: center;
+}
+
+.fieldStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optPillRound {
+  border-radius: 999px;
+}
+
+.availRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.motivationInput {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.photoNotice {
+  color: var(--gray-600);
+}
+
+.backBtn {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.submitFlexBtn {
+  flex: 1;
+  justify-content: center;
+}
+
+.authGrid {
+  min-height: calc(100vh - var(--nav-h));
+}
+
+.eyebrowEmber {
+  color: var(--ember);
+}

@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import type { TNode } from '@/types'
 import { PER_PAGE } from './constants'
+import styles from './DirectoryStates.module.css'
 
 type Props = {
   d: TNode
@@ -28,7 +29,7 @@ export default function DirectoryStates({ d, t, loading, error, resultsCount, re
             <AlertTriangle size={26} aria-hidden="true" />
           </span>
           <h3 className="section-display dir-state-title">{d.loadError}</h3>
-          <button className="btn btn-ember" onClick={() => retry()} style={{ marginBlockStart: '12px' }}>
+          <button className={`btn btn-ember ${styles.retryBtn}`} onClick={() => retry()}>
             {d.retry}
           </button>
         </div>

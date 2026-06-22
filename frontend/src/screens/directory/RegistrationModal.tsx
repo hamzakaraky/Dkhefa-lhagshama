@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import type { TNode } from '@/types'
 import { REG_AUTOCOMPLETE } from './constants'
+import styles from './RegistrationModal.module.css'
 
 type RegisterForm = {
   business_name: string
@@ -36,7 +37,7 @@ export default function RegistrationModal({
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowRegForm(false)}>
       <div className="modal-box" role="dialog" aria-modal="true" aria-labelledby="dir-reg-title">
         <div className="modal-header">
-          <h3 id="dir-reg-title" style={{ fontFamily: 'Frank Ruhl Libre, Georgia, serif', fontSize: '20px', fontWeight: 700, color: 'var(--ink)' }}>
+          <h3 id="dir-reg-title" className={styles.title}>
             {d.registerNew}
           </h3>
           <button onClick={() => setShowRegForm(false)} className="btn btn-ghost btn-sm dir-modal-close" aria-label={t.common.cancel}>

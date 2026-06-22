@@ -4,6 +4,7 @@ import { Phone, Mail, MapPin, Globe } from 'lucide-react'
 import { safeHref } from '../../lib/safeUrl'
 import type { TNode } from '@/types'
 import type { Bilingual, DirRecord } from './constants'
+import styles from './detailModals.module.css'
 
 // ── DETAIL MODALS (Note 2) ────────────────────────────────────
 // The shared <Modal> (pages/_app.tsx) renders an object payload as
@@ -48,12 +49,12 @@ export function makeOpenBusinessModal({ L, d, openModal }: ModalDeps) {
     const footer = (
       <>
         {phone && (
-          <a href={`tel:${phone}`} className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+          <a href={`tel:${phone}`} className={`btn btn-outline btn-sm dir-modal-cta ${styles.ctaLink}`}>
             <Phone size={14} aria-hidden="true" /> {callLabel}
           </a>
         )}
         {website && (
-          <a href={website} target="_blank" rel="noopener noreferrer" className="btn btn-ember btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+          <a href={website} target="_blank" rel="noopener noreferrer" className={`btn btn-ember btn-sm dir-modal-cta ${styles.ctaLink}`}>
             <Globe size={14} aria-hidden="true" /> {visitLabel}
           </a>
         )}
@@ -101,17 +102,17 @@ export function makeOpenAnswerModal({ L, d, openModal, closeModal, router, Arrow
     const footer = (
       <>
         {phone && (
-          <a href={`tel:${phone}`} className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+          <a href={`tel:${phone}`} className={`btn btn-outline btn-sm dir-modal-cta ${styles.ctaLink}`}>
             <Phone size={14} aria-hidden="true" /> {callLabel}
           </a>
         )}
         {email && (
-          <a href={`mailto:${email}`} className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+          <a href={`mailto:${email}`} className={`btn btn-outline btn-sm dir-modal-cta ${styles.ctaLink}`}>
             <Mail size={14} aria-hidden="true" /> {emailLabel}
           </a>
         )}
         {website && (
-          <a href={website} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm dir-modal-cta" style={{ textDecoration: 'none' }}>
+          <a href={website} target="_blank" rel="noopener noreferrer" className={`btn btn-outline btn-sm dir-modal-cta ${styles.ctaLink}`}>
             <Globe size={14} aria-hidden="true" /> {visitLabel}
           </a>
         )}

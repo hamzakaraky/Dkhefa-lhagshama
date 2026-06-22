@@ -2,6 +2,7 @@ import { ShieldCheck } from 'lucide-react'
 import { FormGroup } from '@/components/forms/FormElements'
 import UploadArea from '@/components/forms/UploadArea'
 import { useLanguage } from '@/contexts/LanguageContext'
+import styles from './Step3Documents.module.css'
 
 interface Step3DocumentsProps {
   errors: Record<string, string>
@@ -53,7 +54,7 @@ export default function Step3Documents({
           }}
         />
       </FormGroup>
-      <div className="soft-note" style={{ marginTop:'16px' }}>
+      <div className={`soft-note ${styles.securityNote}`}>
         <ShieldCheck size={18} className="soft-note-icon" aria-hidden="true" />
         <p>{rq.step3.security}</p>
       </div>

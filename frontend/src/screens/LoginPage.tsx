@@ -9,6 +9,7 @@ import { validateRedirect } from '../utils/validateRedirect' // #88
 import { mockStats } from '../data/mockData'
 import AssetImage from '@/components/layout/AssetImage'
 import Reveal from '../components/motion/Reveal'
+import styles from './LoginPage.module.css'
 
 export default function LoginPage() {
   const { t, lang, isRTL } = useLanguage()
@@ -68,7 +69,7 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="auth-grid" style={{ minHeight: 'calc(100vh - var(--nav-h))' }}>
+    <div className={`auth-grid ${styles.grid}`}>
       {/* ── Brand aside — image + welcome + quiet trust signals. Hidden on small screens. ── */}
       <aside className="auth-aside">
         {/* Flat tinted corner blocks give the panel depth without a gradient. */}

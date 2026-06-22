@@ -1,0 +1,123 @@
+/* HomePage — component-scoped styles (was static inline style={{}}). */
+
+/* HERO — per-element rise delays (static literals coupled to .hero-rise). */
+.heroEyebrowRise {
+  --rise-delay: 40ms;
+}
+
+.heroTitleRise {
+  --rise-delay: 90ms;
+}
+
+.heroLedeRise {
+  margin: 0 0 28px;
+  --rise-delay: 150ms;
+}
+
+.heroActionsRise {
+  --rise-delay: 210ms;
+}
+
+.heroStatsRise {
+  --rise-delay: 270ms;
+}
+
+.heroStatNum {
+  margin: 0;
+}
+
+/* SECTION backgrounds + paddings. */
+.sectionPaper {
+  background: var(--paper);
+}
+
+.sectionInk {
+  background: var(--ink);
+}
+
+.volunteersSection {
+  background: var(--cream);
+  padding-block: clamp(56px, 8vw, 96px);
+}
+
+.partnersSection {
+  background: var(--sky-2);
+  padding-block: clamp(48px, 6vw, 72px);
+  overflow: hidden;
+}
+
+.finalCtaSection {
+  background: var(--ink);
+  padding-block: clamp(56px, 8vw, 88px);
+}
+
+/* SERVICES lede. */
+.servicesLede {
+  margin: 12px auto 0;
+}
+
+/* VOLUNTEERS block. */
+.volunteersEyebrow {
+  color: var(--ember);
+  display: block;
+  margin-block-end: 12px;
+}
+
+.volunteersTitle {
+  margin-block-end: 16px;
+}
+
+.volunteersBody {
+  margin: 0 0 28px;
+}
+
+.volunteersCta {
+  margin-block-start: 32px;
+}
+
+/* HOW IT WORKS lede. */
+.stepsLede {
+  margin: 0;
+}
+
+/* SUCCESS STORIES — story image fill + appreciation-letter figure. */
+.storyPanelImg {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.letterFigure {
+  margin: clamp(36px, 6vw, 56px) 0 0;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.letterCaptionWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.letterCaptionEyebrow {
+  margin-block-end: 0;
+}
+
+.letterSource {
+  font-size: 13.5px;
+  color: rgba(244, 238, 224, 0.62);
+}
+
+/* PARTNERS title. */
+.partnersTitle {
+  font-size: var(--fs-h2);
+  margin: 0 0 24px;
+}
+
+/* FINAL CTA title. */
+.ctaTitle {
+  margin: 0 0 14px;
+}

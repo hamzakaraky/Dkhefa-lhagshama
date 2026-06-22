@@ -1,0 +1,5 @@
+/* LoginPage — component-scoped styles (was inline style={{}}). */
+
+.grid {
+  min-height: calc(100vh - var(--nav-h));
+}

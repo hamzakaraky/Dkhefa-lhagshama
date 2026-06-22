@@ -1,0 +1,11 @@
+/* RequestFormShell — component-scoped styles (was static inline style={{}}). */
+
+.card {
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.cardBody {
+  padding-block: clamp(24px, 4vw, 40px);
+  padding-inline: clamp(24px, 4vw, 40px);
+}

@@ -1,0 +1,5 @@
+/* Step3Documents — component-scoped styles (was inline style={{}}). */
+
+.securityNote {
+  margin-block-start: 16px;
+}

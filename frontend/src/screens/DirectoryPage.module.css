@@ -1,0 +1,14 @@
+/* DirectoryPage — component-scoped styles (was static inline style={{}}). */
+
+.headerSection {
+  background: var(--cream);
+  border-block-end: 1px solid var(--hair);
+}
+
+.pageTitle {
+  margin: 0;
+}
+
+.registerBtn {
+  flex-shrink: 0;
+}

@@ -1,0 +1,8 @@
+/* RegistrationModal — component-scoped styles (was inline style={{}}). */
+
+.title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}

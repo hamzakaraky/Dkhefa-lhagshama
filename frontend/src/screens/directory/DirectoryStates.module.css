@@ -1,0 +1,5 @@
+/* DirectoryStates — component-scoped styles (was inline style={{}}). */
+
+.retryBtn {
+  margin-block-start: 12px;
+}

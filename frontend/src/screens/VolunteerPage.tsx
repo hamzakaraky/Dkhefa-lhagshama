@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import { useApp } from '../contexts/AppContext'
 import { useAuth } from '../contexts/AuthContext'
 import Reveal from '../components/motion/Reveal'
+import styles from './VolunteerPage.module.css'
 
 export default function VolunteerPage() {
   const { t, lang, isRTL } = useLanguage()
@@ -20,7 +21,7 @@ export default function VolunteerPage() {
   // Directional arrow for CTAs (points "forward" in the reading direction).
   const DirArrow = isRTL
     ? <ArrowLeft size={18} aria-hidden="true" />
-    : <ArrowLeft size={18} aria-hidden="true" style={{ transform: 'scaleX(-1)' }} />
+    : <ArrowLeft size={18} aria-hidden="true" className={styles.dirArrowFlip} />
 
   return (
     <main>

@@ -2,6 +2,7 @@ import { FormGroup } from '@/components/forms/FormElements'
 import { useLanguage } from '@/contexts/LanguageContext'
 import type { Lang } from '@/types'
 import type { RequestFormValues, FormChangeHandler } from './types'
+import styles from './Step4Summary.module.css'
 
 interface Step4SummaryProps {
   values: RequestFormValues
@@ -24,8 +25,8 @@ export default function Step4Summary({
       <span className="eyebrow req-step-eyebrow">
         {lang === 'he' ? `שלב 4 מתוך 4` : `Step 4 of 4`}
       </span>
-      <h2 className="req-step-title" style={{ marginBlockEnd:'var(--sp-5)' }}>{rq.step4.title}</h2>
-      <div className="review-panel" style={{ marginBottom:'24px' }}>
+      <h2 className={`req-step-title ${styles.title}`}>{rq.step4.title}</h2>
+      <div className={`review-panel ${styles.reviewPanel}`}>
         <dl className="review-grid">
           {[
             [rq.step4.fullName,  `${values.firstName} ${values.lastName}`],
@@ -46,8 +47,8 @@ export default function Step4Summary({
         </dl>
         {values.description && (
           <div className="review-note">
-            <div style={{ fontSize:'12px', color:'var(--gray-500)', marginBottom:'4px' }}>{rq.step4.description}</div>
-            <div style={{ fontSize:'14px', color:'var(--gray-700)', lineHeight:1.7 }}>{values.description}</div>
+            <div className={styles.noteLabel}>{rq.step4.description}</div>
+            <div className={styles.noteText}>{values.description}</div>
           </div>
         )}
       </div>
@@ -63,7 +64,7 @@ export default function Step4Summary({
           />
           <span>{rq.step4.consent}</span>
         </label>
-        {errors.consent && <div id="consent-error" role="alert" className="form-error" style={{ marginTop:'8px' }}>{errors.consent}</div>}
+        {errors.consent && <div id="consent-error" role="alert" className={`form-error ${styles.consentError}`}>{errors.consent}</div>}
       </FormGroup>
     </div>
   )

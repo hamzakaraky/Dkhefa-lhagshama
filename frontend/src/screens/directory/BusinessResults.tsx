@@ -4,6 +4,7 @@ import Reveal from '../../components/motion/Reveal'
 import type { TNode } from '@/types'
 import { PER_PAGE, BIZ_CAT_ICONS } from './constants'
 import type { Bilingual, DirRecord } from './constants'
+import styles from './BusinessResults.module.css'
 
 type Props = {
   d: TNode
@@ -81,7 +82,7 @@ export default function BusinessResults({
                   <a href={`tel:${biz.phone}`} className="btn btn-outline btn-sm dir-biz-call" aria-label={`${L(biz.name)} — ${biz.phone}`}>
                     <Phone size={14} aria-hidden="true" /> {biz.phone}
                   </a>
-                  <button className="btn btn-ember btn-sm" style={{ flex: '0 0 auto', whiteSpace: 'nowrap' }} onClick={() => openBusinessModal(biz)}>{d.moreBtn}</button>
+                  <button className={`btn btn-ember btn-sm ${styles.moreBtn}`} onClick={() => openBusinessModal(biz)}>{d.moreBtn}</button>
                 </div>
               </div>
             </Reveal>

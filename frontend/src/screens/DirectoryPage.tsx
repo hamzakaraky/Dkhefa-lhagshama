@@ -21,6 +21,7 @@ import { makeLoadBusinesses, makeLoadAnswers } from './directory/loaders'
 import { makeOpenBusinessModal, makeOpenAnswerModal } from './directory/detailModals'
 import { makeHandleRegisterSubmit } from './directory/registerSubmit'
 import { useDirectoryDeepLink } from './directory/useDirectoryDeepLink'
+import styles from './DirectoryPage.module.css'
 
 export default function DirectoryPage() {
   const { t, lang, isRTL } = useLanguage() as unknown as LangCtx
@@ -264,7 +265,7 @@ export default function DirectoryPage() {
   return (
     <main>
       {/* ── EDITORIAL HEADER — eyebrow → serif display → lede ──────── */}
-      <section style={{ background: 'var(--cream)', borderBlockEnd: '1px solid var(--hair)' }}>
+      <section className={styles.headerSection}>
         <div className="page-container dir-band-compact">
           <Reveal>
             <div className="dir-header-row">
@@ -272,14 +273,13 @@ export default function DirectoryPage() {
                 <span className="eyebrow dir-header-eyebrow">
                   {lang === 'he' ? 'מדריך קהילתי' : 'Community directory'}
                 </span>
-                <h1 className="section-display-bold" style={{ margin: 0 }}>
+                <h1 className={`section-display-bold ${styles.pageTitle}`}>
                   {d.pageTitle}
                 </h1>
               </div>
               <button
-                className="btn btn-ember"
+                className={`btn btn-ember ${styles.registerBtn}`}
                 onClick={openRegister}
-                style={{ flexShrink: 0 }}
               >
                 <Plus size={16} aria-hidden="true" />
                 {d.registerBiz}

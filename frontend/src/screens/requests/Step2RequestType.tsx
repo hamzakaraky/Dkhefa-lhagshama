@@ -7,6 +7,7 @@ import HelpTooltip from '@/components/feedback/HelpTooltip'
 import { useLanguage } from '@/contexts/LanguageContext'
 import type { Suggestion, Category, Lang } from '@/types'
 import type { RequestFormValues, FormChangeHandler } from './types'
+import styles from './Step2RequestType.module.css'
 
 // ── Constants ──────────────────────────────────────────────────
 // Category LIST comes from the admin-managed taxonomy (useCategories); only
@@ -71,13 +72,12 @@ export default function Step2RequestType({
       <p className="req-step-intro">{rq.step2.subtitle}</p>
       <div
         id="category"
-        className="choice-grid"
+        className={`choice-grid ${styles.categoryGrid}`}
         role="radiogroup"
         aria-label={rq.step2.title}
         aria-invalid={!!errors.category}
         aria-describedby={errors.category ? 'category-error' : undefined}
         tabIndex={errors.category ? -1 : undefined}
-        style={{ marginBottom:'24px' }}
       >
         {catsLoading
           ? // Brief skeleton tiles while the taxonomy loads — same grid
@@ -85,8 +85,7 @@ export default function Step2RequestType({
             [0, 1, 2, 3].map((i) => (
               <span
                 key={i}
-                className="skeleton"
-                style={{ minHeight:'76px', borderRadius:'var(--radius-lg)' }}
+                className={`skeleton ${styles.skeletonTile}`}
                 aria-hidden="true"
               />
             ))
@@ -108,7 +107,7 @@ export default function Step2RequestType({
                   <span className="choice-tile-icon" aria-hidden="true" style={{ background:bg, color }}>
                     <Icon size={20} />
                   </span>
-                  <span style={{ minWidth:0 }}>
+                  <span className={styles.tileLabel}>
                     <span className="choice-tile-title">{labelFor(id)}</span>
                     {hint && <span className="choice-tile-hint">{hint}</span>}
                   </span>
@@ -116,15 +115,15 @@ export default function Step2RequestType({
               )
             })}
       </div>
-      {errors.category && <div id="category-error" role="alert" className="form-error" style={{ marginBottom:'14px' }}>{errors.category}</div>}
+      {errors.category && <div id="category-error" role="alert" className={`form-error ${styles.categoryError}`}>{errors.category}</div>}
 
       {/* Taxonomy failed to load (backend down / unseeded): without
           tiles step 2 is a dead end, so surface the failure + a retry
           (useCategories never caches failures, so retry refetches). */}
       {!catsLoading && categories.length === 0 && (
-        <div className="form-banner form-banner-info" role="alert" style={{ marginBottom:'24px' }}>
+        <div className={`form-banner form-banner-info ${styles.banner}`} role="alert">
           <AlertTriangle size={16} aria-hidden="true" />
-          <span style={{ flex:1 }}>{rq.step2.catsLoadError}</span>
+          <span className={styles.bannerText}>{rq.step2.catsLoadError}</span>
           <button type="button" className="btn btn-outline btn-sm" onClick={() => refreshCats()}>
             {rq.step2.catsRetry}
           </button>
@@ -160,8 +159,7 @@ export default function Step2RequestType({
       {values.category && orgSuggestions.length > 0 && (
         <button
           type="button"
-          className="btn btn-ghost btn-sm"
-          style={{ marginBottom:'24px' }}
+          className={`btn btn-ghost btn-sm ${styles.seeAllBtn}`}
           onClick={() => navigate(`/directory?category=${encodeURIComponent(values.category)}`)}
         >
           {rq.step2.seeAllOrgs} · {labelFor(values.category)}
@@ -186,7 +184,7 @@ export default function Step2RequestType({
         </FormGroup>
         {/* #68 — deadline picker */}
         <FormGroup>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <span className={styles.labelWithTip}>
             <Label htmlFor="deadline">{s2.deadline.label}</Label>
             <HelpTooltip text={s2.deadline.tip} label={s2.deadline.tipLabel} />
           </span>
@@ -200,7 +198,7 @@ export default function Step2RequestType({
         </FormGroup>
         {/* WS-6 — preferred language; drives the volunteer matcher */}
         <FormGroup>
-          <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+          <span className={styles.labelWithTip}>
             <Label htmlFor="preferredLanguage">{rq.step2.prefLang}</Label>
             <HelpTooltip text={rq.step2.prefLangHint} label={rq.step2.prefLang} />
           </span>

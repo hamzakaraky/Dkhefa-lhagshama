@@ -1,0 +1,35 @@
+/* Step2RequestType — component-scoped styles (was static inline style={{}}). */
+
+.categoryGrid {
+  margin-block-end: 24px;
+}
+
+.skeletonTile {
+  min-height: 76px;
+  border-radius: var(--radius-lg);
+}
+
+.tileLabel {
+  min-width: 0;
+}
+
+.categoryError {
+  margin-block-end: 14px;
+}
+
+.banner {
+  margin-block-end: 24px;
+}
+
+.bannerText {
+  flex: 1;
+}
+
+.seeAllBtn {
+  margin-block-end: 24px;
+}
+
+.labelWithTip {
+  display: inline-flex;
+  align-items: center;
+}

@@ -1,0 +1,6 @@
+/* BusinessResults — component-scoped styles (was inline style={{}}). */
+
+.moreBtn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}

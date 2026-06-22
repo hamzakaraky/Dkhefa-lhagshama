@@ -1,0 +1,23 @@
+/* Step1Personal — component-scoped styles (was inline style={{}}). */
+
+.headText {
+  min-width: 0;
+}
+
+.labelRow {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pillGroup {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pillGroupSpaced {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-block-end: 12px;
+}

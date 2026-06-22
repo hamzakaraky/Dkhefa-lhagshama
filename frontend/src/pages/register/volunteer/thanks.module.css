@@ -1,0 +1,74 @@
+/* /register/volunteer/thanks — page-scoped styles (was inline style={{}}). */
+
+.main {
+  min-height: calc(100vh - var(--nav-h));
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  padding-block: clamp(48px, 9vw, 96px);
+  padding-inline: clamp(20px, 5vw, 40px);
+}
+
+.card {
+  width: 100%;
+  max-width: 34rem;
+  text-align: center;
+  padding-block: clamp(40px, 6vw, 56px);
+  padding-inline: clamp(24px, 5vw, 48px);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--hair);
+  background: var(--white);
+  box-shadow: var(--shadow-lg);
+}
+
+.medallion {
+  display: inline-grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  margin-block-end: var(--sp-5);
+  color: var(--ember);
+  background: var(--ember-soft);
+  box-shadow: 0 0 0 8px var(--sky-3);
+}
+
+.eyebrow {
+  display: block;
+  color: var(--ember);
+  margin-block-end: var(--sp-3);
+}
+
+.title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-display);
+  font-weight: 400;
+  line-height: 1.14;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 var(--sp-4);
+  text-wrap: balance;
+}
+
+.lede {
+  margin: 0 auto;
+  max-width: 30rem;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.divider {
+  display: block;
+  height: 1px;
+  background: var(--hair);
+  margin: var(--sp-6) auto;
+  max-width: 12rem;
+}
+
+.homeLink {
+  text-decoration: none;
+}
+
+.homeArrow {
+  transition: transform var(--dur-2) var(--ease-out);
+}

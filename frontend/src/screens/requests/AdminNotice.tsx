@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import Reveal from '@/components/motion/Reveal'
 import { useLanguage } from '@/contexts/LanguageContext'
+import styles from './AdminNotice.module.css'
 
 interface AdminNoticeProps {
   navigate: (to: string) => void
@@ -27,24 +28,14 @@ export default function AdminNotice({ navigate }: AdminNoticeProps) {
       </section>
       <div className="page-container req-admin-shell">
         <Reveal>
-          <div className="card" style={{ padding:'clamp(32px, 5vw, 48px)', textAlign:'center', boxShadow:'var(--shadow-lg)' }}>
-            <div aria-hidden="true" style={{
-              width:'68px', height:'68px',
-              background:'var(--ember-soft)',
-              borderRadius:'var(--radius-lg)',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              marginInline:'auto', marginBlockEnd:'var(--sp-5)',
-            }}>
+          <div className={`card ${styles.card}`}>
+            <div aria-hidden="true" className={styles.icon}>
               <AlertTriangle size={30} color="var(--ember)" />
             </div>
-            <h2 style={{
-              fontFamily:'Frank Ruhl Libre, Georgia, serif',
-              fontSize:'var(--fs-h2)', fontWeight:400, color:'var(--ink)',
-              lineHeight:1.18, letterSpacing:'-0.01em', marginBlockEnd:'var(--sp-3)', textWrap:'balance',
-            }}>
+            <h2 className={styles.title}>
               {s2.adminNotice.title}
             </h2>
-            <p style={{ color:'var(--gray-600)', fontSize:'var(--fs-body)', marginBlockEnd:'var(--sp-6)', lineHeight:1.7 }}>
+            <p className={styles.body}>
               {s2.adminNotice.body}
             </p>
             <button className="btn btn-outline" onClick={() => navigate('/')}>

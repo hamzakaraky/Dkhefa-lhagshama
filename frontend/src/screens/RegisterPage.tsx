@@ -26,6 +26,7 @@ import { apiFetch } from '../lib/apiClient'
 import { getIdToken } from '../lib/auth'
 import UploadArea from '../components/forms/UploadArea'
 import Reveal from '../components/motion/Reveal'
+import styles from './RegisterPage.module.css'
 
 // ── Note 11: optional volunteer profile photo ────────────────────────────────
 // Client-side guards that mirror the backend avatar endpoint contract.
@@ -90,7 +91,7 @@ function PwCheck({ ok, label }: { ok: boolean; label: ReactNode }) {
 // ── Tab toggle ────────────────────────────────────────────────────────────────
 function TabToggle({ active, labels, onChange }: { active: string; labels: Record<string, ReactNode>; onChange: (tab: string) => void }) {
   return (
-    <div className="seg" role="tablist" style={{ marginBlockEnd: 22 }}>
+    <div className={`seg ${styles.tabToggle}`} role="tablist">
       {['beneficiary', 'volunteer'].map((tab) => (
         <button
           key={tab}
@@ -135,7 +136,7 @@ function StepIndicator({ current, labels, progressLabel }: { current: number; la
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
   return (
-    <div id={id} className="form-error" role="alert" style={{ marginBlockStart: 6 }}>
+    <div id={id} className={`form-error ${styles.fieldError}`} role="alert">
       <AlertCircle size={12} aria-hidden="true" /><span>{message}</span>
     </div>
   )
@@ -203,7 +204,7 @@ function BeneficiaryForm({ t }: { t: Translations }) {
           aria-describedby={`ben-pw-checks${fieldErrors.password ? ' ben-pw-err' : ''}`}
           value={password} onChange={(e) => setPassword(e.target.value)} className={`form-input${fieldErrors.password ? ' error' : ''}`} />
         {password.length > 0 && (
-          <div id="ben-pw-checks" className="pw-checks" role="status" aria-live="polite" style={{ marginBlockStart: 8 }}>
+          <div id="ben-pw-checks" className={`pw-checks ${styles.pwChecks}`} role="status" aria-live="polite">
             <PwCheck ok={password.length >= 8} label={a.pwRuleLength} />
             <PwCheck ok={/\d/.test(password)} label={a.pwRuleDigit} />
           </div>
@@ -220,7 +221,7 @@ function BeneficiaryForm({ t }: { t: Translations }) {
         <FieldError id="ben-confirm-err" message={fieldErrors.confirm} />
       </label>
       {error && <div className="form-error" role="alert"><AlertCircle size={12} aria-hidden="true" /><span>{error}</span></div>}
-      <button type="submit" disabled={submitting} className={`btn btn-ember btn-lg${submitting ? ' is-loading' : ''}`} aria-busy={submitting} style={{ marginBlockStart: 4, justifyContent: 'center' }}>
+      <button type="submit" disabled={submitting} className={`btn btn-ember btn-lg ${styles.submitBtn}${submitting ? ' is-loading' : ''}`} aria-busy={submitting}>
         {submitting ? a.submitting : a.submit}
       </button>
       <div className="reg-alt">
@@ -276,7 +277,7 @@ function VolunteerStep1({ v, a, lang, onNext }: { v: VolunteerSignup; a: AuthReg
           aria-describedby={`vol-pw-checks${fieldErrors.password ? ' vol-pw-err' : ''}`}
           value={password} onChange={(e) => setPassword(e.target.value)} className={`form-input${fieldErrors.password ? ' error' : ''}`} />
         {password.length > 0 && (
-          <div id="vol-pw-checks" className="pw-checks" role="status" aria-live="polite" style={{ marginBlockStart: 8 }}>
+          <div id="vol-pw-checks" className={`pw-checks ${styles.pwChecks}`} role="status" aria-live="polite">
             <PwCheck ok={password.length >= 8} label={a.pwRuleLength} />
             <PwCheck ok={/\d/.test(password)} label={a.pwRuleDigit} />
           </div>
@@ -292,7 +293,7 @@ function VolunteerStep1({ v, a, lang, onNext }: { v: VolunteerSignup; a: AuthReg
           value={confirm} onChange={(e) => setConfirm(e.target.value)} className={`form-input${fieldErrors.confirm ? ' error' : ''}`} />
         <FieldError id="vol-confirm-err" message={fieldErrors.confirm} />
       </label>
-      <button type="submit" className="btn btn-ember btn-lg" style={{ marginBlockStart: 4, justifyContent: 'center' }}>
+      <button type="submit" className={`btn btn-ember btn-lg ${styles.submitBtn}`}>
         {v.nextStep}
       </button>
       <div className="reg-alt">
@@ -488,7 +489,7 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
           onChange={(e) => setProfession(e.target.value)} className="form-input" />
       </label>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} role="group" aria-labelledby="vol-areas-label" ref={areasRef}>
+      <div className={styles.fieldStack} role="group" aria-labelledby="vol-areas-label" ref={areasRef}>
         <div id="vol-areas-label" className="reg-field-label">{v.areasOfHelp}</div>
         <div className="reg-pillset">
           {v.areasList.map((area: string) => {
@@ -499,8 +500,7 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggleArea(area)}
-                className={`opt-pill${on ? ' is-on' : ''}`}
-                style={{ borderRadius: 999 }}
+                className={`opt-pill ${styles.optPillRound}${on ? ' is-on' : ''}`}
               >
                 {on && <Check size={13} strokeWidth={3} aria-hidden="true" />}
                 {area}
@@ -517,9 +517,9 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
           onChange={(e) => setLanguagesRaw(e.target.value)} className="form-input" />
       </label>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }} role="radiogroup" aria-labelledby="vol-avail-label">
+      <div className={styles.fieldStack} role="radiogroup" aria-labelledby="vol-avail-label">
         <div id="vol-avail-label" className="reg-field-label">{v.availability}</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className={styles.availRow}>
           {availOptions.map((opt) => (
             <label key={opt.value} className={`opt-pill${availability === opt.value ? ' is-on' : ''}`}>
               <input type="radio" name="availability" value={opt.value}
@@ -534,15 +534,14 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
       <label className="reg-field" htmlFor="vol-motivation">
         {v.motivation}
         <textarea id="vol-motivation" rows={3} placeholder={v.motivationPH} value={motivation}
-          onChange={(e) => setMotivation(e.target.value)} className="form-input"
-          style={{ resize: 'vertical', minHeight: 72 }} />
+          onChange={(e) => setMotivation(e.target.value)} className={`form-input ${styles.motivationInput}`} />
       </label>
 
       {/* Note 11 — optional profile photo. Reuses UploadArea without a
           requestId (no real Storage write here); the chosen image is held in
           state and uploaded to the backend on submit. Image-only client-side
           validation runs in onPhotoPicked. */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className={styles.fieldStack}>
         <UploadArea
           label={v.photoLabel}
           hint={v.photoHint}
@@ -557,17 +556,17 @@ function VolunteerStep2({ v, a, lang, isRTL, accountData, onBack }: { v: Volunte
       {error && <div className="form-error" role="alert"><AlertCircle size={12} aria-hidden="true" /><span>{error}</span></div>}
 
       {photoNotice && (
-        <div className="form-error" role="status" style={{ color: 'var(--gray-600)' }}>
+        <div className={`form-error ${styles.photoNotice}`} role="status">
           <AlertCircle size={12} aria-hidden="true" /><span>{photoNotice}</span>
         </div>
       )}
 
       <div className="reg-actions">
-        <button type="button" onClick={onBack} className="btn btn-outline btn-lg" style={{ flex: '0 0 auto', gap: 6 }}>
+        <button type="button" onClick={onBack} className={`btn btn-outline btn-lg ${styles.backBtn}`}>
           <BackArrow size={16} aria-hidden="true" />
           {v.backStep}
         </button>
-        <button type="submit" disabled={submitting} className={`btn btn-ember btn-lg${submitting ? ' is-loading' : ''}`} aria-busy={submitting} style={{ flex: 1, justifyContent: 'center' }}>
+        <button type="submit" disabled={submitting} className={`btn btn-ember btn-lg ${styles.submitFlexBtn}${submitting ? ' is-loading' : ''}`} aria-busy={submitting}>
           {submitting ? v.submitting : v.submit}
         </button>
       </div>
@@ -622,7 +621,7 @@ export default function RegisterPage() {
   const joinEyebrow = lang === 'he' ? 'הצטרפות לקהילה' : 'Join the community'
 
   return (
-    <div className="auth-grid" style={{ minHeight: 'calc(100vh - var(--nav-h))' }}>
+    <div className={`auth-grid ${styles.authGrid}`}>
       {/* ── BRAND ASIDE — editorial, ink-toned, sets the tone.
            `auth-aside` (login.css) hides this under 900px so the form
            stacks to a single, full-width column on phones/tablets.
@@ -641,7 +640,7 @@ export default function RegisterPage() {
             className="reg-aside-avatar"
           />
 
-          <span className="eyebrow" style={{ color: 'var(--ember)' }}>{joinEyebrow}</span>
+          <span className={`eyebrow ${styles.eyebrowEmber}`}>{joinEyebrow}</span>
 
           {/* Decorative brand display — presentational only (aria-hidden);
               the canonical page <h1> lives in the form <main> region. */}
@@ -670,7 +669,7 @@ export default function RegisterPage() {
                 eyebrow → serif heading → lede rhythm and an accessible <h1>
                 (the aside h1 is decorative + hidden under 900px). */}
             <div className="reg-head">
-              <span className="eyebrow" style={{ color: 'var(--ember)' }}>{joinEyebrow}</span>
+              <span className={`eyebrow ${styles.eyebrowEmber}`}>{joinEyebrow}</span>
               <h1 className="reg-head-title">{a.title}</h1>
               {a.subtitle && <p className="reg-head-sub">{a.subtitle}</p>}
             </div>

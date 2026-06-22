@@ -13,6 +13,7 @@ import { Check, ArrowLeft, ArrowRight } from 'lucide-react'
 
 import { useLanguage } from '@/contexts/LanguageContext'
 import Reveal from '@/components/motion/Reveal'
+import styles from './thanks.module.css'
 
 export default function VolunteerThanksPage() {
   const { t, isRTL } = useLanguage()
@@ -23,104 +24,36 @@ export default function VolunteerThanksPage() {
   const [homeHover, setHomeHover] = useState(false)
 
   return (
-    <main
-      style={{
-        minHeight: 'calc(100vh - var(--nav-h))',
-        display: 'grid',
-        placeItems: 'center',
-        background: 'var(--paper)',
-        paddingBlock: 'clamp(48px, 9vw, 96px)',
-        paddingInline: 'clamp(20px, 5vw, 40px)',
-      }}
-    >
+    <main className={styles.main}>
       <Reveal>
         <section
           role="status"
           aria-live="polite"
-          className="card"
-          style={{
-            width: '100%',
-            maxWidth: '34rem',
-            textAlign: 'center',
-            paddingBlock: 'clamp(40px, 6vw, 56px)',
-            paddingInline: 'clamp(24px, 5vw, 48px)',
-            borderRadius: 'var(--radius-xl)',
-            border: '1px solid var(--hair)',
-            background: 'var(--white)',
-            boxShadow: 'var(--shadow-lg)',
-          }}
+          className={`card ${styles.card}`}
         >
           {/* Success medallion — tinted ember disc, ember check, soft sky halo.
               Reveals a beat after the card so the check reads as confirmation. */}
           <Reveal delay={0.12} y={8}>
-            <span
-              aria-hidden="true"
-              style={{
-                display: 'inline-grid',
-                placeItems: 'center',
-                width: '76px',
-                height: '76px',
-                borderRadius: '50%',
-                marginBlockEnd: 'var(--sp-5)',
-                color: 'var(--ember)',
-                background: 'var(--ember-soft)',
-                boxShadow: '0 0 0 8px var(--sky-3)',
-              }}
-            >
+            <span aria-hidden="true" className={styles.medallion}>
               <Check size={34} strokeWidth={2.25} />
             </span>
           </Reveal>
 
           {/* Eyebrow label — monospace, uppercase, ember */}
-          <span
-            className="eyebrow"
-            style={{
-              display: 'block',
-              color: 'var(--ember)',
-              marginBlockEnd: 'var(--sp-3)',
-            }}
-          >
+          <span className={`eyebrow ${styles.eyebrow}`}>
             {v.thanksEyebrow}
           </span>
 
-          <h1
-            style={{
-              fontFamily: 'Frank Ruhl Libre, Georgia, serif',
-              fontSize: 'var(--fs-display)',
-              fontWeight: 400,
-              lineHeight: 1.14,
-              letterSpacing: '-0.01em',
-              color: 'var(--ink)',
-              margin: '0 0 var(--sp-4)',
-              textWrap: 'balance',
-            }}
-          >
+          <h1 className={styles.title}>
             {v.thanksTitle}
           </h1>
 
-          <p
-            className="section-lede"
-            style={{
-              margin: '0 auto',
-              maxWidth: '30rem',
-              color: 'var(--ink-2)',
-              textWrap: 'pretty',
-            }}
-          >
+          <p className={`section-lede ${styles.lede}`}>
             {v.thanksSubtitle}
           </p>
 
           {/* Divider before the primary action */}
-          <span
-            aria-hidden="true"
-            style={{
-              display: 'block',
-              height: '1px',
-              background: 'var(--hair)',
-              margin: 'var(--sp-6) auto',
-              maxWidth: '12rem',
-            }}
-          />
+          <span aria-hidden="true" className={styles.divider} />
 
           <Link
             href="/"
@@ -128,14 +61,13 @@ export default function VolunteerThanksPage() {
             onMouseLeave={() => setHomeHover(false)}
             onFocus={() => setHomeHover(true)}
             onBlur={() => setHomeHover(false)}
-            className="btn btn-primary btn-lg"
-            style={{ textDecoration: 'none' }}
+            className={`btn btn-primary btn-lg ${styles.homeLink}`}
           >
             <HomeArrow
               size={16}
               aria-hidden="true"
+              className={styles.homeArrow}
               style={{
-                transition: 'transform var(--dur-2) var(--ease-out)',
                 transform: homeHover
                   ? `translateX(${isRTL ? '3px' : '-3px'})`
                   : 'translateX(0)',

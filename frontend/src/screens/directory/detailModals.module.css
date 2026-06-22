@@ -1,0 +1,5 @@
+/* detailModals — component-scoped styles (was inline style={{}}). */
+
+.ctaLink {
+  text-decoration: none;
+}

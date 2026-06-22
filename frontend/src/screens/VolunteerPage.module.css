@@ -1,0 +1,5 @@
+/* VolunteerPage — component-scoped styles (was static inline style={{}}). */
+
+.dirArrowFlip {
+  transform: scaleX(-1);
+}

@@ -1,0 +1,37 @@
+/* AdminNotice — component-scoped styles (was inline style={{}}). */
+
+.card {
+  padding: clamp(32px, 5vw, 48px);
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.icon {
+  width: 68px;
+  height: 68px;
+  background: var(--ember-soft);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+  margin-block-end: var(--sp-5);
+}
+
+.title {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  font-size: var(--fs-h2);
+  font-weight: 400;
+  color: var(--ink);
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  margin-block-end: var(--sp-3);
+  text-wrap: balance;
+}
+
+.body {
+  color: var(--gray-600);
+  font-size: var(--fs-body);
+  margin-block-end: var(--sp-6);
+  line-height: 1.7;
+}

@@ -25,6 +25,7 @@ import Step4Summary from './requests/Step4Summary'
 import AdminNotice from './requests/AdminNotice'
 import RequestFormShell from './requests/RequestFormShell'
 import { SAVE_PROFILE_OFFER_KEY, loadDraft, saveDraft, clearDraft } from './requests/draft'
+import styles from './RequestsPage.module.css'
 
 // ── Component ─────────────────────────────────────────────────
 export default function RequestsPage() {
@@ -355,8 +356,8 @@ export default function RequestsPage() {
   // ── Auth / role gates ─────────────────────────────────────────
   if (authLoading || !user) {
     return (
-      <div className="page-container" style={{ padding: '80px 24px', textAlign: 'center' }}>
-        <div style={{ color: 'var(--gray-500)' }}>{t.common.loading}</div>
+      <div className={`page-container ${styles.loadingWrap}`}>
+        <div className={styles.loadingText}>{t.common.loading}</div>
       </div>
     )
   }

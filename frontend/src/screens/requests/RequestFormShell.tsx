@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react'
 import Reveal from '@/components/motion/Reveal'
 import StepIndicator from '@/components/forms/StepIndicator'
 import { useLanguage } from '@/contexts/LanguageContext'
+import styles from './RequestFormShell.module.css'
 
 interface RequestFormShellProps {
   step: number
@@ -90,8 +91,8 @@ export default function RequestFormShell({
         )}
 
         <Reveal>
-        <div className="card" style={{ overflow:'hidden', boxShadow:'var(--shadow-lg)' }}>
-          <div className="card-body" style={{ padding:'clamp(24px, 4vw, 40px)' }}>
+        <div className={`card ${styles.card}`}>
+          <div className={`card-body ${styles.cardBody}`}>
 
             {children}
 

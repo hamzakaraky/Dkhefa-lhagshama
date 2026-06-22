@@ -3,6 +3,7 @@ import { FormGroup, Label, Input, Select, FormRow } from '@/components/forms/For
 import HelpTooltip from '@/components/feedback/HelpTooltip'
 import { useLanguage } from '@/contexts/LanguageContext'
 import type { RequestFormValues, FormChangeHandler } from './types'
+import styles from './Step1Personal.module.css'
 
 interface Step1PersonalProps {
   role: string | null
@@ -28,7 +29,7 @@ export default function Step1Personal({
   return (
     <div className="req-step" key="step1">
       <div className="req-step-head req-step-head--split">
-        <div style={{ minWidth:0 }}>
+        <div className={styles.headText}>
           <span className="eyebrow req-step-eyebrow">
             {lang === 'he' ? `שלב 1 מתוך 4` : `Step 1 of 4`}
           </span>
@@ -63,11 +64,11 @@ export default function Step1Personal({
 
       {/* #66 — ID type selector */}
       <FormGroup>
-        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        <span className={styles.labelRow}>
           <Label required>{s2.idType.label}</Label>
           <HelpTooltip text={s2.idType.tip} label={s2.idType.tipLabel} />
         </span>
-        <div style={{ display:'flex', gap:'10px', flexWrap:'wrap', marginBottom:'12px' }}>
+        <div className={styles.pillGroupSpaced}>
           {[
             ['israeli_id', s2.idType.israeliId],
             ['passport',   s2.idType.passport],
@@ -102,7 +103,7 @@ export default function Step1Personal({
                 placeholder={rq.step1.passportPH} maxLength={40} error={errors.idNumber} />
             </FormGroup>
           )}
-          <FormGroup style={values.idType === 'none' ? {} : {}}>
+          <FormGroup>
             <Label htmlFor="idNote">{s2.idType.noteLabel}</Label>
             <Input id="idNote" name="idNote" value={values.idNote || ''} onChange={handleChange}
               placeholder={s2.idType.notePH} maxLength={400} />
@@ -145,7 +146,7 @@ export default function Step1Personal({
 
       <FormGroup>
         <Label>{rq.step1.gender}</Label>
-        <div style={{ display:'flex', gap:'10px', flexWrap:'wrap' }}>
+        <div className={styles.pillGroup}>
           {[['M', rq.step1.genderM], ['F', rq.step1.genderF], ['O', rq.step1.genderO]].map(([val, label]) => (
             <label key={val} className={`opt-pill${values.gender === val ? ' is-on' : ''}`}>
               <input type="radio" name="gender" value={val}

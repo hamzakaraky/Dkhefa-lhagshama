@@ -1,0 +1,11 @@
+/* RequestsPage — component-scoped styles (was inline style={{}}). */
+
+.loadingWrap {
+  padding-block: 80px;
+  padding-inline: 24px;
+  text-align: center;
+}
+
+.loadingText {
+  color: var(--gray-500);
+}

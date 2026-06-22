@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import type { CSSProperties, ReactNode, KeyboardEvent } from 'react'
+import type { ReactNode, KeyboardEvent } from 'react'
 import { useRouter } from 'next/router'
 import { ArrowLeft, ArrowRight, GraduationCap, Briefcase, Scale, Users, Star, Check, HeartHandshake } from 'lucide-react'
 import { useReducedMotion } from 'motion/react'
@@ -12,6 +12,7 @@ import AssetImage from '@/components/layout/AssetImage'
 import type { AssetSlotKey } from '@/assets/manifest'
 import Reveal from '../components/motion/Reveal'
 import MagneticButton from '../components/motion/MagneticButton'
+import styles from './HomePage.module.css'
 
 // A partner org as fetched for the homepage marquee. Built from the real
 // `answers` catalog (orgType=partner), the same source the /directory page uses
@@ -141,15 +142,15 @@ export default function HomePage() {
 
         <div className="page-container hero-bg-inner">
           <div className="hero-copy hero-copy-onphoto">
-            <span className="eyebrow hero-rise hero-eyebrow-onphoto" style={{ '--rise-delay': '40ms' } as CSSProperties}>{t.hero.badge}</span>
-            <h1 className="hero-title-bold hero-title-onphoto hero-rise" style={{ '--rise-delay': '90ms' } as CSSProperties}>
+            <span className={`eyebrow hero-rise hero-eyebrow-onphoto ${styles.heroEyebrowRise}`}>{t.hero.badge}</span>
+            <h1 className={`hero-title-bold hero-title-onphoto hero-rise ${styles.heroTitleRise}`}>
               {t.hero.title1}{' '}
               <em>{t.hero.titleHighlight}</em>{' '}
               {t.hero.title2}
             </h1>
-            <p className="section-lede hero-lede-onphoto hero-rise" style={{ margin: '0 0 28px', '--rise-delay': '150ms' } as CSSProperties}>{t.hero.subtitle}</p>
+            <p className={`section-lede hero-lede-onphoto hero-rise ${styles.heroLedeRise}`}>{t.hero.subtitle}</p>
 
-            <div className="hero-rise hero-actions" style={{ '--rise-delay': '210ms' } as CSSProperties}>
+            <div className={`hero-rise hero-actions ${styles.heroActionsRise}`}>
               <MagneticButton className="btn btn-ember btn-lg" onClick={() => navigate('/requests')}>
                 {t.hero.cta}
                 <ArrowIcon size={16} />
@@ -163,10 +164,7 @@ export default function HomePage() {
             </div>
 
             {/* Inline stat strip — woven into the hero, not a separate metric band */}
-            <dl
-              className="hero-rise hero-stats-onphoto"
-              style={{ '--rise-delay': '270ms' } as CSSProperties}
-            >
+            <dl className={`hero-rise hero-stats-onphoto ${styles.heroStatsRise}`}>
               {[
                 { num: mockStats.beneficiaries, suffix: '',  label: t.hero.stats.beneficiaries },
                 { num: mockStats.volunteers,    suffix: '+', label: t.hero.stats.volunteers },
@@ -174,7 +172,7 @@ export default function HomePage() {
                 { num: mockStats.yearsActive,   suffix: '',  label: t.hero.stats.years },
               ].map((s, i) => (
                 <div className="hero-stat" key={i}>
-                  <dd className="hero-stat-num hero-stat-num-onphoto" style={{ margin: 0 }}>
+                  <dd className={`hero-stat-num hero-stat-num-onphoto ${styles.heroStatNum}`}>
                     <StatCard num={s.num} suffix={s.suffix} delay={i * 120} />
                   </dd>
                   <dt className="hero-stat-label-onphoto">{s.label}</dt>
@@ -186,12 +184,12 @@ export default function HomePage() {
       </section>
 
       {/* ── AREAS OF ACTIVITY — four evenly-weighted icon explainers ────────── */}
-      <section id="services-section" className="section-padding" style={{ background: 'var(--paper)' }}>
+      <section id="services-section" className={`section-padding ${styles.sectionPaper}`}>
         <div className="page-container">
           <Reveal>
             <header className="home-section-head">
               <h2 className="section-display-bold">{t.services.title}</h2>
-              <p className="section-lede" style={{ margin: '12px auto 0' }}>{t.services.subtitle}</p>
+              <p className={`section-lede ${styles.servicesLede}`}>{t.services.subtitle}</p>
             </header>
           </Reveal>
 
@@ -210,7 +208,7 @@ export default function HomePage() {
       </section>
 
       {/* ── VOLUNTEERS — the people who show up, and how they help ─────────── */}
-      <section style={{ background: 'var(--cream)', paddingBlock: 'clamp(56px, 8vw, 96px)' }}>
+      <section className={styles.volunteersSection}>
         <div className="page-container impact-grid">
           <Reveal delay={0.1} y={32}>
             <div className="volunteers-figure">
@@ -229,11 +227,11 @@ export default function HomePage() {
 
           <Reveal>
             <div>
-              <span className="eyebrow" style={{ color: 'var(--ember)', display: 'block', marginBlockEnd: '12px' }}>
+              <span className={`eyebrow ${styles.volunteersEyebrow}`}>
                 {t.home.volunteers.eyebrow}
               </span>
-              <h2 className="section-display-bold" style={{ marginBlockEnd: '16px' }}>{t.home.volunteers.title}</h2>
-              <p className="section-lede" style={{ margin: '0 0 28px' }}>{t.home.volunteers.body}</p>
+              <h2 className={`section-display-bold ${styles.volunteersTitle}`}>{t.home.volunteers.title}</h2>
+              <p className={`section-lede ${styles.volunteersBody}`}>{t.home.volunteers.body}</p>
 
               <ul className="volunteers-points">
                 {t.home.volunteers.points.map((p, i) => (
@@ -247,7 +245,7 @@ export default function HomePage() {
                 ))}
               </ul>
 
-              <button className="btn btn-ember btn-lg" style={{ marginBlockStart: '32px' }} onClick={() => navigate('/volunteer')}>
+              <button className={`btn btn-ember btn-lg ${styles.volunteersCta}`} onClick={() => navigate('/volunteer')}>
                 {t.home.volunteers.cta}
                 <ArrowIcon size={16} />
               </button>
@@ -257,7 +255,7 @@ export default function HomePage() {
       </section>
 
       {/* ── SUCCESS STORIES — image-led, one story takes the stage at a time ── */}
-      <section className="section-padding" style={{ background: 'var(--ink)' }}>
+      <section className={`section-padding ${styles.sectionInk}`}>
         <div className="page-container">
           <Reveal>
             <header className="home-section-head-start">
@@ -290,9 +288,8 @@ export default function HomePage() {
                   >
                     <AssetImage
                       slot={s.image as AssetSlotKey}
-                      className="story-panel-img"
+                      className={`story-panel-img ${styles.storyPanelImg}`}
                       rounded="0"
-                      style={{ position: 'absolute', inset: 0, height: '100%', width: '100%' }}
                     />
                     <span className="story-panel-scrim" aria-hidden="true" />
 
@@ -321,26 +318,18 @@ export default function HomePage() {
 
           {/* Proof — a small "letter of appreciation" figure from Wisdom Academy. */}
           <Reveal delay={0.15}>
-            <figure
-              style={{
-                margin: 'clamp(36px, 6vw, 56px) 0 0',
-                maxWidth: '360px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '14px',
-              }}
-            >
+            <figure className={styles.letterFigure}>
               <AssetImage
                 slot="storyWisdomLetter"
                 rounded="var(--radius-md)"
                 border="1px solid rgba(244,238,224,0.16)"
                 shadow="var(--shadow-lg)"
               />
-              <figcaption style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <span className="home-eyebrow-onink" style={{ marginBlockEnd: 0 }}>
+              <figcaption className={styles.letterCaptionWrap}>
+                <span className={`home-eyebrow-onink ${styles.letterCaptionEyebrow}`}>
                   {t.stories.letterCaption}
                 </span>
-                <span style={{ fontSize: '13.5px', color: 'rgba(244,238,224,0.62)' }}>
+                <span className={styles.letterSource}>
                   {t.stories.letterSource}
                 </span>
               </figcaption>
@@ -350,14 +339,14 @@ export default function HomePage() {
       </section>
 
       {/* ── HOW IT WORKS — a real ordered sequence, numbers earn their place ── */}
-      <section className="section-padding" style={{ background: 'var(--paper)' }}>
+      <section className={`section-padding ${styles.sectionPaper}`}>
         <div className="page-container">
           <Reveal>
             <header className="home-section-head-start">
               <h2 className="section-display-bold">
                 {lang === 'he' ? 'איך זה עובד' : 'How it works'}
               </h2>
-              <p className="section-lede" style={{ margin: 0 }}>
+              <p className={`section-lede ${styles.stepsLede}`}>
                 {lang === 'he' ? 'שלושה צעדים מהגשת הבקשה ועד הסיוע.' : 'Three steps from request to support.'}
               </p>
             </header>
@@ -398,10 +387,10 @@ export default function HomePage() {
 
       {/* ── PARTNERS — an auto-scrolling trail of real partner organisations ── */}
       {marqueePartners.length > 0 && (
-        <section style={{ background: 'var(--sky-2)', paddingBlock: 'clamp(48px, 6vw, 72px)', overflow: 'hidden' }}>
+        <section className={styles.partnersSection}>
           <div className="page-container">
             <Reveal>
-              <h2 className="section-display" style={{ fontSize: 'var(--fs-h2)', margin: '0 0 24px' }}>
+              <h2 className={`section-display ${styles.partnersTitle}`}>
                 {t.partners.title}
               </h2>
             </Reveal>
@@ -423,10 +412,10 @@ export default function HomePage() {
       )}
 
       {/* ── FINAL CTA — full-bleed ink band ───────────────────────────────── */}
-      <section style={{ background: 'var(--ink)', paddingBlock: 'clamp(56px, 8vw, 88px)' }}>
+      <section className={styles.finalCtaSection}>
         <Reveal>
           <div className="page-container home-cta">
-            <h2 className="home-display-onink" style={{ margin: '0 0 14px' }}>{t.cta.title}</h2>
+            <h2 className={`home-display-onink ${styles.ctaTitle}`}>{t.cta.title}</h2>
             <p className="home-cta-lede">{t.cta.subtitle}</p>
             <div className="home-cta-actions">
               <MagneticButton className="btn btn-ember btn-lg" onClick={() => navigate('/requests')}>
